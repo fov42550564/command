@@ -1,0 +1,9 @@
+FriendlyName:vimentry
+CTagsName:vimentry
+PythonExtensionMatcher:vimentry
+VimExtensionMatcher:vimentry
+Suffix:vimentry
+VimSyntaxes:vimentry
+VimFileTypes:vimentry
+
+# vim: ff=unix:noet

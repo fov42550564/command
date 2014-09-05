@@ -1,0 +1,21 @@
+#!/bin/bash
+#############################################
+# author:fang
+# name  : install exvim
+#############################################
+
+src_path=$(pwd)
+cd ~
+
+if [ -a ~/.vim ];then
+	echo backup .vim
+	echo mv ~/.vim ~/.vimback
+fi
+
+if [ -a ~/.vimrc ];then
+	echo backup .vimrc
+	echo mv ~/.vim ~/.vimrcback
+fi
+
+echo ln -s ${src_path}/.vim .vim
+echo ln -s ${src_path}/.vimrc .vimrc
