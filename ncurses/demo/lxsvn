@@ -1,0 +1,505 @@
+#!/bin/bash
+######################################
+#name:xsvn                           #
+#author:fang                         #
+#version 1.0                         #
+######################################
+
+
+declare -a FILES
+declare -a FLAGS
+FLAG=(OFF ON)
+DIALOG=~/command/lxdialog
+DIALOG_HEIGHT=30
+DIALOG_WIDTH=70
+CHILD_HEIGHT=20
+
+FILES=(fang yun jiang)
+
+function show_help()
+{
+	echo this is a help tip>rs.out
+	$DIALOG --title "help" --textbox rs.out $DIALOG_HEIGHT $DIALOG_WIDTH
+}
+
+
+function fang()
+{
+	echo $1----
+}
+
+
+#
+#FUNCTION_NAME:show_files
+#PARAMETERS:type,callback,title,disp
+#----------type:check radio
+#----------callback:the function do with rs
+#----------title:title
+#----------disp:discription
+#
+function show_files()
+{	
+	local type title callback disp
+
+	type="$1"
+	callback="$2"
+	title="$3"
+	disp="$4"
+
+
+	for ((i=0;i<${#FILES[*]};i++));do
+		FLAGS[$i]=0
+	done
+
+	if [ "$type" == "radio" ];then
+		FLAGS[0]=1
+	fi
+
+	while true;do
+		i=0
+		list=
+		for x in ${FILES[*]};do
+			list="$list '$i' '$x' ${FLAG[${FLAGS[$i]}]} "
+			((i++))
+		done
+
+		if [ "$type" == "radio" ];then
+	 		$DIALOG --title "$title" --radiolist "$disp" $DIALOG_HEIGHT $DIALOG_WIDTH $CHILD_HEIGHT $list 2>rs.out
+		else
+	 		$DIALOG --title "$title" --checklist "$disp" $DIALOG_HEIGHT $DIALOG_WIDTH $CHILD_HEIGHT $list 2>rs.out
+		fi
+
+		ret=$?
+		rs=$(cat rs.out|sed 's/\x27//g;s/"//g')
+
+		case "$ret" in
+		0)
+			for x in $rs;do
+				tip="$tip ${FILES[$x]}"
+			done
+			echo $callback "$tip"
+			break;;
+		1)
+			for ((i=0;i<${#FILES[*]};i++));do
+				FLAGS[$i]=0
+			done
+			sel=$(echo $rs|sed -r 's/^.*[[:blank:]]*([0-9]+)[[:blank:]]*$/\1/')
+			rs=$(echo $rs|sed -r 's/^(.*)[[:blank:]]*[0-9]+[[:blank:]]*$/\1/')
+			for x in $rs;do
+				FLAGS[$x]=1
+			done
+			show_help ;;
+		esac
+	done
+}
+
+
+
+function do_task()
+{
+	case "$1" in
+	"d")
+		show_files "radio" "show_diff" "show the difference" "show the difference"
+		;;
+	"r")
+		show_files "radio" "recover_file" "recover the file" "recover the file"
+		;;
+	"c")
+		show_files "check" "commit_file" "commit files" "commit files"
+		;;
+	"v")
+		show_files "radio" "edit_file" "edit file" "edit file with vim"
+		;;
+	"n")
+		show_files "check" "delete_note" "delete note" "delete the note by regex"
+		;;
+	esac
+}
+
+
+
+function main_menu()
+{
+	cmd_head="$DIALOG --title 'title' --menu 'xx' $DIALOG_HEIGHT $DIALOG_WIDTH $CHILD_HEIGHT"
+	list="'d' 'see the difference--->' 'r' 'recover the file--->' 'c' 'commit files--->' 'v' 'use vi edit the file--->' 'n' 'delete the note by regex--->'"
+	sel='d'
+
+	while true;do
+	 	cmd="$cmd_head $sel $list 2>rs.out"
+	 	eval $cmd
+		ret=$?
+		
+		case "$ret" in
+		0)
+			sel=$(cat rs.out)
+			do_task "$sel";;
+		1|255)
+			break;;
+		2)
+			sel=$(cat rs.out|sed -r 's/(\w).*/\1/')
+			show_help;;
+		esac
+	done
+}
+
+main_menu
+
+
+
+function showFiles()
+{
+	printf "************************************************************************************\n"
+	for ((i=0; i<${#FILES[*]}; i++));do
+		printf "* %2d: %-77s*\n" $i ${FILES[$i]}
+	done
+	printf "************************************************************************************\n"
+}
+
+
+function xsvnMainMenu()
+{
+	printf "****************************************************************\n"
+	printf "*  %s%2d %-48s*\n" "there is " ${#FILES[*]} "FILES are changed"
+	printf "*  %-60s*\n" "please input follows to do your work"
+	printf "*  %-60s*\n" "d: see the difference"
+	printf "*  %-60s*\n" "r: recover the file"
+	printf "*  %-60s*\n" "c: commit the FILES"
+	printf "*  %-60s*\n" "v: use vi edit the file"
+	printf "*  %-60s*\n" "n: delete the note by regex"
+	printf "*  %-60s*\n" "q: exit xsvn"
+	printf "****************************************************************\n"
+}
+
+function xsvnShowDiff()
+{
+	local len index n
+
+	while [ 1 ];do
+
+		showFiles
+
+		len=${#FILES[*]}
+
+		read -p "please input select number,exit(q):" index
+
+		if [ "$index" = "" ];then
+			echo null is not allowed
+			continue
+		fi
+
+		if [ "$index" = "q" ];then
+			break
+		fi
+
+		n=$(expr $index : "^[0-9]\+$")
+		if [ $n -eq 0 ];then
+			echo please input a number 
+			continue
+		fi
+
+		if [ $index -lt 0 -o $index -ge $len ];then
+			echo the select number is out of range
+			continue
+		fi
+		svn diff ${FILES[$index]}
+		pause
+
+	done
+}
+
+function removeFileIndex()
+{
+	local i
+
+	for ((i=$1; i<${#FILES[*]}-1; i++));do
+		FILES[$i]=${FILES[$i+1]}
+	done
+	unset FILES[$i]
+}
+
+
+function xsvnRecoverFile()
+{
+	local len index n
+	while [ 1 ];do
+
+		showFiles
+
+		len=${#FILES[*]}
+
+		read -p "please input select number,exit(q):" index
+
+		if [ "$index" = "" ];then
+			echo null is not allowed
+			continue
+		fi	
+		if [ "$index" = "q" ];then
+			break
+		fi
+
+		n=$(expr $index : "^[0-9]\+$")
+		if [ $n -eq 0 ];then
+			echo please input a number 
+			continue
+		fi
+
+		if [ $index -lt 0 -o $index -ge $len ];then
+			echo the select number is out of range
+			continue
+		fi
+		svn revert ${FILES[$index]}
+		echo ${FILES[$index]} is reverted 
+		removeFileIndex $index
+		pause
+
+	done
+}
+
+
+
+function xsvnEditFileWithVi()
+{
+	local len index n
+	while [ 1 ];do
+
+		showFiles
+
+		len=${#FILES[*]}
+
+		read -p "please input select number,exit(q):" index
+		
+		if [ "$index" = "" ];then
+			echo null is not allowed
+			continue
+		fi	
+		if [ "$index" = "q" ];then
+			break
+		fi
+
+		n=$(expr $index : "^[0-9]\+$")
+		if [ $n -eq 0 ];then
+			echo please input a number 
+			continue
+		fi
+
+		if [ $index -lt 0 -o $index -ge $len ];then
+			echo the select number is out of range
+			continue
+		fi
+		vi ${FILES[$index]}
+
+	done
+}
+
+function xsvnCommitFiles()
+{
+	local len list m i n tar cfi
+	showFiles
+	len=${#FILES[*]}
+	read -p "please input commit FILES index(eg:1 2 3)" list 
+	if [ "$list" = "" ];then
+		echo null is not allowed
+		return
+	fi
+	i=0
+	for m in $list;do
+		n=$(expr $m : "^[0-9]\+$")
+		if [ $n -eq 0 ];then
+			echo invalid input not num
+			return
+		elif [ $m -lt 0 -o $m -ge $len ];then
+			echo invalid input out range
+			return
+		fi
+
+		cfi[i]=$m
+		((i++))
+	done
+
+	tar=""
+	for ((i=0; i<${#cfi[*]}; i++));do
+		tar="$tar${FILES[${cfi[$i]}]} "
+	done
+
+	read -p "please input commit note:" note
+	echo svn ci -m \"$note\" $tar
+	eval "svn ci -m \"$note\" $tar"
+}
+
+
+
+function xsvnDeleteNotes()
+{
+	local len list i dnfi m n notereg
+	showFiles
+	len=${#FILES[*]}
+	read -p "please input delete note file index(eg:1 2 3):" list
+	if [ "$list" = "" ];then
+		echo null is not allowed
+		return
+	fi
+	i=0
+	for m in $list;do
+
+		n=$(expr $m : "^[0-9]\+$")
+		if [ $n -eq 0 ];then
+			echo please input a number 
+			return
+		elif [ $m -lt 0 -o $m -ge $len ];then
+			echo the select number is out of range
+			return
+		fi
+
+		dnfi[i]=$m
+		((i++))
+	done
+
+	read -p "please input the regex of you will delete note:" notereg
+	
+	for ((i=0; i<${#dnfi[*]}; i++));do
+		sed -i '/'$notereg'/d' ${FILES[${dnfi[$i]}]}
+		echo sed -i '/'$notereg'/d' ${FILES[${dnfi[$i]}]}
+		echo have deleted the note like:$notereg in file:${FILES[${dnfi[$i]}]}
+	done
+}
+
+
+function xsvnSelectOper()
+{
+	local op
+	read -p "please input oper type:" op
+	if [ "$op" = "d" ];then
+		xsvnShowDiff
+	elif [ "$op" = "r" ];then
+		xsvnRecoverFile
+	elif [ "$op" = "c" ];then
+		xsvnCommitFiles
+	elif [ "$op" = "n" ];then
+		xsvnDeleteNotes
+	elif [ "$op" = "v" ];then
+		xsvnEditFileWithVi
+	elif [ "$op" = "q" ];then
+		exit
+	else
+		echo "invalid input" 
+	fi
+}
+
+function xsvnMain()
+{
+	local rs s i var 
+	rs=$(svn st|grep ^M)
+	s=`echo $rs|awk '{split($0,tmp,"M ")} END {for(i in tmp) print tmp[i]}'`
+	i=0
+	for var in $s;do
+		FILES[i]=$var
+		let i++
+	done
+
+	while [ 1 ];do
+		xsvnMainMenu
+		xsvnSelectOper
+	done
+}
+
+
+function xsvnLogSelectVersion()
+{
+	local ver n
+	read -p	"please input the comp version,exit(q):" ver
+
+	if [ "$ver" = "" -o "$ver" = "head" ];then
+		echo "head"
+		return
+	fi
+
+	if [ "$ver" = "q" ];then
+		echo "q"
+		return
+	fi
+
+	n=$(expr $ver : "^[0-9]\+$")
+	if [ $n -eq 0 ];then
+		echo "q" 
+		return
+	fi
+	echo $ver
+}
+
+
+function xsvnLogShowDiff()
+{
+	local len index n ver1 ver2
+
+	ver1=${1-"head"}
+	echo current svn version is $ver1
+	showFiles
+	ver2=$(xsvnLogSelectVersion)
+	if [ "$ver2" = "q" ];then
+		return
+	fi
+	echo you select the version:$ver2 to compare
+	while [ 1 ];do
+
+		showFiles
+		echo current svn version is $ver1
+		echo diff svn version is $ver2
+
+		len=${#FILES[*]}
+
+		read -p "please input select number,exit(q):" index
+
+		if [ "$index" = "" ];then
+			echo null is not allowed
+			continue
+		fi
+
+		if [ "$index" = "q" ];then
+			break
+		fi
+
+		n=$(expr $index : "^[0-9]\+$")
+		if [ $n -eq 0 ];then
+			echo please input a number 
+			continue
+		fi
+
+		if [ $index -lt 0 -o $index -ge $len ];then
+			echo the select number is out of range
+			continue
+		fi
+		echo svn diff -r $ver1:$ver2 ${FILES[$index]}
+		eval "svn diff -r $ver1:$ver2 ${FILES[$index]}"
+		pause
+
+	done
+}
+
+
+
+function xsvnLogMain()
+{
+	local ver rs ts i
+	ver=${1-"head"} 
+	rs=$(svn log -r $ver -v) 
+	ts=${rs#* M }  
+	rs=$(echo $ts|sed 's#\(.*/[^ ]*\).*#\1#'|sed 's/ M / /g') 
+	i=0 
+	for ts in $rs;do 
+	   FILES[i]=$(echo $ts|sed 's#/branches/#~/work/#') 
+		    let i++  
+	done 
+	xsvnLogShowDiff $ver
+}
+
+
+function main()
+{
+	if [ "$1" = "-log" ];then
+		xsvnLogMain $2
+	else
+		xsvnMain
+	fi
+}
+
+#main $@

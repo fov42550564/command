@@ -1,0 +1,50 @@
+#!/bin/bash
+
+function a()
+{
+	while read line;do
+	#	echo $line
+		echo $line|awk -F: '{print $NF}'
+	done
+}
+
+#cat xcat|a
+
+
+##if there have a param,the param is a file name, we use the file as input, so we should band the file to stdin
+#if [ $# -gt 0 ];then
+#	exec 5<&0 0<$1
+#fi
+#
+#while read line;do
+#	echo $line
+#done
+##this line is to unband the file to stdin
+#if [ $# -gt 0 ];then
+#	exec 0<&5
+#	exec 5<&-
+#fi
+##exec 0<&-
+#read fang
+#echo $fang
+
+
+
+
+#we use the param as output, so we should band the file to stdout and we should create fd5 to recover the pipe
+if [ $# -gt 0 ];then
+	exec 5>&1 1>$1
+fi
+
+echo fangyunjiang
+#this line is to unband the file to stdout
+
+if [ $# -gt 0 ];then
+	exec 1>&5
+	exec 5>&-
+fi
+
+echo fangyunjiang
+
+
+

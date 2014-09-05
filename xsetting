@@ -1,0 +1,226 @@
+#!/bin/bash
+#############################################
+# author:fang
+# version : v1.0
+# name  : xsetting.sh
+# dispcripe: Settings 
+# CopyRight@fangyunjiang[42550564@qq.com]
+#############################################
+source ~/command/common
+
+function set_system_rm()
+{
+	__skip_sudo
+	[ -L /usr/bin/rm ] && $_SUDO_ $_RM_ -f /usr/bin/rm
+	[ -f /usr/bin/rm ] && $_SUDO_ $_RM_ -f /usr/bin/rm
+	$_SUDO_ ln -s /bin/srm /usr/bin/rm
+	ls -l /usr/bin/rm
+}
+
+function set_recycle_rm()
+{
+	__skip_sudo
+	[ -L /usr/bin/rm ] && $_SUDO_ $_RM_ -f /usr/bin/rm
+	[ -f /usr/bin/rm ] && $_SUDO_ $_RM_ -f /usr/bin/rm
+	$_SUDO_ ln -s ~/command/xrm /usr/bin/rm
+	ls -l /usr/bin/rm
+}
+
+function set_rm()
+{
+	local rm_type
+
+	rm_type=$(__get_setting "rm")
+	if [ $_opsite_oper -eq 1 ];then
+		if [ "$rm_type" = "system" ];then
+			__set_setting "rm:recycle"
+			set_recycle_rm
+		else
+			__set_setting "rm:system"
+			set_system_rm
+		fi
+	else
+		if [ "$rm_type" = "system" ];then
+			set_system_rm
+		else
+			set_recycle_rm
+		fi
+	fi
+}
+
+function set_bsd_sed()
+{
+	__skip_sudo
+	[ -L /usr/bin/sed ] && $_SUDO_ $_RM_ -f /usr/bin/sed
+	[ -f /usr/bin/sed ] && $_SUDO_ $_RM_ -f /usr/bin/sed
+	$_SUDO_ ln -s /usr/bin/bsd-sed /usr/bin/sed
+	ls -l /usr/bin/sed
+}
+
+
+function set_gnu_sed()
+{
+	__skip_sudo
+	[ -L /usr/bin/sed ] && $_SUDO_ $_RM_ -f /usr/bin/sed
+	[ -f /usr/bin/sed ] && $_SUDO_ $_RM_ -f /usr/bin/sed
+	$_SUDO_ ln -s /usr/local/bin/ssed /usr/bin/sed
+	ls -l /usr/bin/sed
+}
+
+function set_sed()
+{
+	local sed_type
+
+	sed_type=$(__get_setting "sed")
+	if [ $_opsite_oper -eq 1 ];then
+		if [ "$sed_type" = "bsd" ];then
+			__set_setting "sed:gnu"
+			set_gnu_sed
+		else
+			__set_setting "sed:bsd"
+			set_bsd_sed
+		fi
+	else
+		if [ "$sed_type" = "bsd" ];then
+			set_bsd_sed
+		else
+			set_gnu_sed
+		fi
+	fi
+}
+
+function set_node32()
+{
+	__skip_sudo
+	[ -L /usr/bin/node ] && $_SUDO_ $_RM_ -f /usr/bin/node
+	[ -f /usr/bin/node ] && $_SUDO_ $_RM_ -f /usr/bin/node
+	$_SUDO_ ln -s /usr/local/bin/node32 /usr/bin/node
+	ls -l /usr/bin/node
+
+	[ -L /usr/bin/node-waf ] && $_SUDO_ $_RM_ -f /usr/bin/node-waf
+	[ -f /usr/bin/node-waf ] && $_SUDO_ $_RM_ -f /usr/bin/node-waf
+	$_SUDO_ ln -s /usr/local/bin/node-waf32 /usr/bin/node-waf
+	ls -l /usr/bin/node-waf
+}
+
+function set_node64()
+{
+	__skip_sudo
+	[ -L /usr/bin/node ] && $_SUDO_ $_RM_ -f /usr/bin/node
+	[ -f /usr/bin/node ] && $_SUDO_ $_RM_ -f /usr/bin/node
+	$_SUDO_ ln -s /usr/local/bin/node64 /usr/bin/node
+	ls -l /usr/bin/node
+
+	[ -L /usr/bin/node-waf ] && $_SUDO_ $_RM_ -f /usr/bin/node-waf
+	[ -f /usr/bin/node-waf ] && $_SUDO_ $_RM_ -f /usr/bin/node-waf
+	$_SUDO_ ln -s /usr/local/bin/node-waf64 /usr/bin/node-waf
+	ls -l /usr/bin/node-waf
+}
+
+function set_node()
+{
+	local node_type
+
+	node_type=$(__get_setting "node")
+	if [ $_opsite_oper -eq 1 ];then
+		if [ "$node_type" = "32" ];then
+			__set_setting "node:64"	
+			set_node64
+		else
+			__set_setting "node:32"	
+			set_node32
+		fi
+	else
+		if [ "$node_type" = "32" ];then
+			set_node32
+		else
+			set_node64
+		fi
+	fi
+}
+
+function set_nodelib()
+{
+	local type path
+	path=~/c/Documents\ and\ Settings/Administrator/.node-gyp/0.8.22/ia32/
+
+	type=$(__get_setting "nodelib")
+	if [ $_opsite_oper -eq 1 ];then
+		if [ "$type" = "nodejs" ];then
+			echo "nodelib to appjs"
+			__set_setting "nodelib:appjs"
+			cp "$path/node-appjs.lib" "$path/node.lib"
+		else
+			echo "nodelib to nodejs"
+			__set_setting "nodelib:nodejs"
+			cp "$path/node-nodejs.lib" "$path/node.lib"
+		fi
+	else
+		if [ "$type" = "nodejs" ];then
+			echo "nodelib to nodejs"
+			cp "$path/node-nodejs.lib" "$path/node.lib"
+		else
+			echo "nodelib to appjs"
+			cp "$path/node-appjs.lib" "$path/node.lib"
+		fi
+	fi
+}
+
+
+function show_settings()
+{
+	echo "settings as follows:"
+	cat $_setting_file_
+}
+
+function eval_settings()
+{
+	set_rm
+	__mac && set_sed
+	__mac && set_node
+	__mac || set_nodelib
+}
+
+function opsite_setting()
+{
+	case "$1" in
+		"rm")set_rm;;
+		"sed")__mac && set_sed;;
+		"node")__mac && set_node;;
+		"nodelib")__mac|| set_nodelib;;
+	esac
+}
+
+function show_help()
+{
+	local -a list
+	list="help"
+	list=("${list[@]}" "Usage:xsetting [OPTIONS]")
+	list=("${list[@]}" "  -s [name:val] :set_settting name to val")
+	list=("${list[@]}" "      rm:system|recycle ")
+	list=("${list[@]}" "      nodelib:nodejs|appjs")
+	list=("${list[@]}" "  -l :show settings")
+	list=("${list[@]}" "  -e :eval settings")
+	list=("${list[@]}" "  -u :[name]set single setting opsite")
+	list=("${list[@]}" "  -h :show help ")
+	__msgbox "${list[@]}"
+}
+
+_opsite_oper=0
+function main()
+{
+	while getopts :s:u:le opt;do
+		case $opt in
+			s)__set_setting "$OPTARG";;
+			l)show_settings;;
+			e)eval_settings;;
+			u)_opsite_oper=1;opsite_setting "$OPTARG";;
+			*)show_help;exit;;
+		esac
+	done
+}
+
+main "$@"
+
+
+

@@ -1,0 +1,271 @@
+#!/bin/bash
+#############################################
+# author:fang
+# version : v1.0
+# name  : xfind
+# dispcripe: expand of find
+# CopyRight@fangyunjiang[42550564@qq.com]
+#############################################
+source ~/command/common
+
+_name="*"
+_dir="."
+_ignorcase=""
+_iname=""
+_str=""
+_new_str=""
+_rename_str=""
+_vim_command=""
+_dest_dir=""
+_command=""
+_oper_right=0
+_list_style=0
+_oper=0
+
+function show_find()
+{
+	if [ -z "$_str" ];then
+		find "$_dir" -type f -"$_iname"name "$_name" 2>/dev/null
+	else
+		find "$_dir" -type f -"$_iname"name "$_name"|xargs egrep --color -n $_ignorcase "$_str" 2>/dev/null
+	fi
+}
+
+function show_find_file()
+{
+	if [ -z "$_str" ];then
+		find "$_dir" -type f -"$_iname"name "$_name" 2>/dev/null
+	else
+		find "$_dir" -type f -"$_iname"name "$_name"|xargs egrep --color -l $_ignorcase "$_str" 2>/dev/null
+	fi
+}
+
+function find_replace()
+{
+	local -a file len i
+
+	[ -z "$_str" ] && __error "string can not be null" && return
+	file=($(find "$_dir" -type f -"$_iname"name "$_name"|xargs egrep  -l $_ignorcase "$_str"))
+
+	len=${#file[@]}
+	[ $len -eq 0 ] && __error "have no $_str to be replace" && return
+
+	for ((i=0; i<len; i++));do
+		$_SED_ -i 's#\<'"$_str"'\>#'"$_new_str"'#g;' ${file[i]} 
+		echo have replace $_str with $_new_str in ${file[i]}
+	done
+}
+
+function find_exec()
+{
+	if [ -z "$_str" ];then
+		_list_=($(find "$_dir" -type f -"$_iname"name "$_name"))
+	else
+		_list_=($(find "$_dir" -type f -"$_iname"name "$_name"|xargs egrep  -l $_ignorcase "$_str"))
+	fi
+
+	if [ ${#_list_[@]} -eq 0 ];then
+		return
+	elif [ ${#_list_[@]} -eq 1 ];then
+		_list_style=0
+	elif [ ${#_list_[@]} -gt 1 ];then
+		if [ $_list_style -eq 0 ];then
+			echo "there are more than one result, please set list_style"
+			return
+		fi
+	fi
+
+	case $_list_style in
+		0) __exec_target "$_command" "${_list_[@]}";;
+		1) __radiobox "$_command" "no" "exec" "select bellow files to exec command";;
+		2) __checkbox "$_command" "" "yes" "exec" "select bellow files to exec command";;
+		3) __checkbox "" "$_command" "yes" "exec" "select bellow files to exec command";;
+	esac
+}
+
+function _rename()
+{
+	local new_name
+	__input_box "input new filename" "q"
+	new_name=$_result_
+	[ "$new_name" = "q" ] && return
+	mv "$1" "$new_name"
+}
+
+function find_rename()
+{
+	local old_s new_s
+	if [ "$_rename_str" = "" ] ;then
+		if [ -z "$_str" ];then
+			_list_=($(find "$_dir" -type f -"$_iname"name "$_name"))
+		else
+			_list_=($(find "$_dir" -type f -"$_iname"name "$_name"|xargs egrep  -l $_ignorcase "$_str"))
+		fi
+		__radiobox "_rename $_TARGET_" "yes" "rename" "select bellow files to rename"
+	else
+		old_s=${_rename_str%%:*}
+		new_s=${_rename_str##*:}
+		if [ "$old_s" = "$new_s" ];then
+			return
+		fi
+		if [ -z "$_str" ];then
+			find "$_dir" -type f -"$_iname"name "$_name"|awk '{oldname=$1;sub(/'$old_s'/,"'$new_s'");print oldname, $1}'|xargs -t -n2 mv
+		else
+			find "$_dir" -type f -"$_iname"name "$_name"|xargs egrep -l $_ignorcase "$_str"|awk '{oldname=$1;sub(/'$old_s'/,"'$new_s'");print oldname, $1}'|xargs -t -n2 mv
+		fi
+	fi
+}
+
+function find_auto_indent()
+{
+	local i
+	if [ -z "$_str" ];then
+		_list_=($(find "$_dir" -type f -"$_iname"name "$_name"))
+	else
+		_list_=($(find "$_dir" -type f -"$_iname"name "$_name"|xargs egrep  -l $_ignorcase "$_str"))
+	fi
+	
+	len=${#_list_[@]}
+	[ $len -eq 0 ] && __error "have not find file" && return
+
+	case $_list_style in
+		0) 
+			for ((i=0; i<len; i++));do
+				vim -e -s "${_list_[i]}" -c "normal gg=GZZ"
+				echo have set auto indent in ${_list_[i]}
+			done
+			;;
+		1)
+			__radiobox "eval vim -e -s \"$_TARGET_\" -c \"normal gg=GZZ\"" "yes" "auto indent" "select bellow files to set auto indent"
+			;;
+		?)
+			__checkbox "" "eval vim -e -s \"$_TARGET_\" -c \"normal gg=GZZ\"" "yes" "auto indent" "select bellow files to set auto indent"
+			;;
+	esac
+}
+
+function find_vim()
+{
+	local i
+	if [ -z "$_str" ];then
+		_list_=($(find "$_dir" -type f -"$_iname"name "$_name"))
+	else
+		_list_=($(find "$_dir" -type f -"$_iname"name "$_name"|xargs egrep  -l $_ignorcase "$_str"))
+	fi
+	
+	len=${#_list_[@]}
+	[ $len -eq 0 ] && __error "have not find file" && return
+
+	for ((i=0; i<len; i++));do
+		#echo vim "${_list_[i]}" -e -s "$_vim_command"
+		eval vim "${_list_[i]}" -e -s "$_vim_command"
+		echo have do command in ${_list_[i]}
+	done
+}
+
+function find_to_clipboard()
+{
+	local list
+	if [ -z "$_str" ];then
+
+		eval `find "$_dir" -type f -"$_iname"name "$_name" 2>/dev/null|awk -v FS=";;;;" '{print "list["NR-1"]=\""$1"\""}'`
+	else
+		eval `find "$_dir" -type f -"$_iname"name "$_name"|xargs egrep --color -l $_ignorcase "$_str" 2>/dev/null | awk -v FS=";;;;" '{print "list["NR-1"]=\""$1"\""}'`
+	fi
+	if __mac ;then
+		echo -n `__get_full_path "${list[0]}"`|pbcopy
+	else
+		echo -n `__get_full_path "${list[0]}"` > /dev/clipboard
+	fi
+}
+
+function find_copy_to()
+{
+	local i path name
+	if [ -z "$_str" ];then
+		_list_=($(find "$_dir" -type f -"$_iname"name "$_name"))
+	else
+		_list_=($(find "$_dir" -type f -"$_iname"name "$_name"|xargs egrep  -l $_ignorcase "$_str"))
+	fi
+	
+	len=${#_list_[@]}
+	[ $len -eq 0 ] && __error "have not find file" && return
+	! [ -d "$_dest_dir" ] && __error "dest dir is not exist" && return
+
+	for ((i=0; i<len; i++));do
+		path=$(dirname "${_list_[i]}")
+		path=${path##*..}
+		[ "$path" = "." ]&&path=""
+		name=$(basename "${_list_[i]}")
+		mkdir -p "${_dest_dir}/${path}"
+		cp -f "${_list_[i]}" "${_dest_dir}/${path}"
+		echo "have do copy ${_list_[i]} to ${_dest_dir}"
+	done
+}
+
+function show_help()
+{
+	local -a list
+	list="help"
+	list=("${list[@]}" "Usage :xfind [OPTIONS]")
+	list=("${list[@]}" "  -t [str] :the to find str,can be regex")
+	list=("${list[@]}" "  -n [name] :set name as x.c ")
+	list=("${list[@]}" "  -d [dir] :set dir as ./ ")
+	list=("${list[@]}" "  -s [new_str]:repalce str with new_str")
+	list=("${list[@]}" "  -e [command]:do command(_TARGET_) is the find file")
+	list=("${list[@]}" "  -r [rename_str]:[c:cpp]|[]")
+	list=("${list[@]}" "  -l [_list_style]:set list_style[0:not show list,1:radiobox,2:checkbox mult command,3:checkbox single command] ")
+	list=("${list[@]}" "  -I [_TARGET_]: set _TARGET_, default is ~~ ")
+	list=("${list[@]}" "  -v [vim_command]:do vim command")
+	list=("${list[@]}" "  -p [dest_dir]:copy find files to dest_dir and make dirs")
+	list=("${list[@]}" "  -a :set auto indent by vim")
+	list=("${list[@]}" "  -c :put the *first* found file to clipboard")
+	list=("${list[@]}" "  -i :set ignorcase ")
+	list=("${list[@]}" "  -f :show file only ")
+	list=("${list[@]}" "  -w :show with window")
+	list=("${list[@]}" "  -h :show help ")
+	__msgbox "${list[@]}"
+}
+
+function main()
+{
+	while getopts :t:d:n:s:e:r:l:I:v:p:caifwh opt;do
+		_oper_right=1
+		case $opt in
+			t)_str="$OPTARG";;
+			d)_dir="$OPTARG";;
+			n)_name="$OPTARG";;
+			i)_ignorcase="-i";_iname="i";;
+			f)_oper=1;;
+			w)_WINDOW_=1;;
+			s)_oper=2;_new_str="$OPTARG";;
+			e)_oper=3;_command="$OPTARG";;
+			r)_oper=4;_rename_str="$OPTARG";;
+			a)_oper=5;;
+			c)_oper=6;;
+			v)_oper=7;_vim_command="$OPTARG";;
+			p)_oper=8;_dest_dir="$OPTARG";;
+			l)_list_style="$OPTARG";;
+			I)_TARGET_="$OPTARG";;
+			h)show_help;exit;;
+			*)show_help;exit;;
+		esac
+	done
+
+	[ $_oper_right -eq 0 ] && show_help && exit
+
+	case $_oper in
+		0)show_find;;
+		1)show_find_file;;
+		2)find_replace;;
+		3)find_exec;;
+		4)find_rename;;
+		5)find_auto_indent;;
+		6)find_to_clipboard;;
+		7)find_vim;;
+		8)find_copy_to;;
+	esac
+}
+
+main "$@"
+

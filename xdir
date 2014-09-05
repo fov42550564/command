@@ -1,0 +1,168 @@
+#!/bin/bash
+#############################################
+# author:fang
+# version : v1.0
+# name  : xdir
+# dispcripe: do command in dir recusilve
+# CopyRight@fangyunjiang[42550564@qq.com]
+#############################################
+
+source ~/command/common
+
+_DEBUG_LEVEL_=2
+
+declare -a _ignore_paths
+declare -a _ignore_file_types
+declare -a _ignore_full_paths
+
+_full_root_path=""
+_ignore_mode="11"
+_oper=0
+_ignorefile=./.xdirignore
+
+function xdirGetIgnores()
+{
+	if ! [ -f "$_ignorefile" ];then
+		__warning "have no ignore file"
+		return
+	fi
+	_ignore_paths=($(cat "$_ignorefile"|sed '/=file=/,/=path=/d'))
+	_ignore_file_types=($(cat "$_ignorefile"|sed '/=path=/,$d;1d'))
+}
+
+
+function xdirGetFullIgnorePath()
+{
+	local i var
+	i=0
+	for var in "${_ignore_paths[@]}";do
+		_ignore_full_paths[i]=$(__get_full_path "$var")
+		((i++))
+	done
+}
+
+function xdirIgnorePath()
+{
+	local p var ret
+	p="$1"
+	ret=$_FALSE_
+	if [ "$_full_root_path" = "$p" ];then
+		return $_FALSE_
+	fi
+	for var in "${_ignore_full_paths[@]}";do
+		if [ "$var" = "$p" ];then
+			ret=$_TRUE_
+		fi
+	done
+	if [ "$_ignore_mode" = "10" -o "$_ignore_mode" = "00" ];then
+		[ "$ret" = "$_TRUE_" ]&&ret=$_FALSE_||ret=$_TRUE_
+	fi
+	return $ret
+}
+
+function xdirIgnoreFile()
+{
+	local type var ret
+	type=${1##*.}
+	ret=$_FALSE_
+	for var in "${_ignore_file_types[@]}";do
+		if [ "$var" = "$type" ];then
+			ret=$_TRUE_
+		fi
+	done
+	if [ "$_ignore_mode" = "01" -o "$_ignore_mode" = "00" ];then
+		[ "$ret" = "$_TRUE_" ]&&ret=$_FALSE_||ret=$_TRUE_
+	fi
+	return $ret
+}
+function xdirDoRecursiveCommand()
+{
+	local dir sub_dirs dir_command file_command
+
+	dir=$1; dir_command=$2; file_command=$3
+	xdirIgnorePath "$dir" && return
+
+	! [ -z "$dir_command" ] && __exec_target "$dir_command" "$dir" && __debug "complete dir:$dir"
+
+	sub_dirs=($(ls "$dir"))
+	for var in "${sub_dirs[@]}";do
+		if [ -d "$dir/$var" ];then
+			xdirDoRecursiveCommand "$dir/$var" "$dir_command" "$file_command"
+		else
+			xdirIgnoreFile "$var" && continue
+			! [ -z "$file_command" ] && __exec_target "$file_command" "$dir/$var" && __debug "complete file:$dir/$var"
+		fi
+	done
+}
+
+function xdirCopyFiles()
+{
+	local dir sub_dirs dest
+
+	dir="$1";dest="$2"
+	xdirIgnorePath "$dir" && __warning "ignore $dir"&& return
+
+	echo "enter $dir"
+	sub_dirs=($(ls "$dir"))
+	for var in "${sub_dirs[@]}";do
+		if [ -d "$dir/$var" ];then
+			mkdir -p "$dest/$var"
+			xdirCopyFiles "$dir/$var" "$dest/$var"
+		else
+			xdirIgnoreFile "$var" && __warning "ignore $dir/$var" && continue
+			cp "$dir/$var" "$dest/$var"
+			__debug "copy $var to $dest/$var"
+		fi
+	done
+}
+
+function show_help()
+{
+	local -a list
+	list="help"
+	list=("${list[@]}" "Usage:xdir [OPTIONS]")
+	list=("${list[@]}" "  -p [dir]:set root dir,if not set will be \".\"")
+	list=("${list[@]}" "  -d [dir_command]:set command for dir")
+	list=("${list[@]}" "  -f [file_command]:set command for file")
+	list=("${list[@]}" "  -c [dest_path]:copy files to dest_path")
+	list=("${list[@]}" "  -m [ignore_mode]:set mn as 00 01 10 11,[11]both ignore[default]")
+	list=("${list[@]}" "                   m for file, n for path")
+	list=("${list[@]}" "  -h :show help ")
+	__msgbox "${list[@]}"
+}
+
+function main()
+{
+	local full_root_path root_path dir_command file_command rp root dest_path
+	while getopts :p:d:f:c:m:h opt;do
+		case $opt in
+			p)root_path="$OPTARG";;
+			d)dir_command="$OPTARG";;
+			f)file_command="$OPTARG";;
+			c)_oper=1;dest_path="$OPTARG";;
+			m)_ignore_mode="$OPTARG";;
+			*)show_help;exit;;
+		esac
+	done
+
+	[ -z "$root_path" ]&&root_path="."
+	if ! [ -d "$root_path" ];then
+		__error "root path is not exist"
+		exit
+	fi
+	[ -z "$root_path" ]&&root_path="."
+
+	_full_root_path=$(__get_full_path "$root_path")
+	xdirGetIgnores
+	xdirGetFullIgnorePath
+
+	case $_oper in
+		0)xdirDoRecursiveCommand "${_full_root_path}" "${dir_command}" "${file_command}";;
+		1)mkdir -p "$dest_path"; xdirCopyFiles "${_full_root_path}" "${dest_path}";;
+	esac
+}
+
+main "$@"
+
+
+

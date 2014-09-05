@@ -1,0 +1,44 @@
+#!/bin/bash
+
+apps="gawk ssed findutils coreutils"
+BREW_INSTALL_PATH=/usr/local/Cellar
+
+function xbrewCheckAppInstalled()
+{
+	local app
+	app=$BREW_INSTALL_PATH/$1
+	[ -d $app ] && return 0
+	return 1
+}
+
+
+function xbrewInstallApps()
+{
+	local var
+	for  var in $apps;do
+		xbrewCheckAppInstalled || sudo brew install $var
+	done
+}
+
+function xbrewLinkCommand()
+{
+	sudo rm -f /usr/bin/$1
+	sudo ln -s /usr/local/bin/$2 /usr/bin/$1
+}
+
+function xbrewLinkCommands()
+{
+	xbrewLinkCommand awk gawk
+	xbrewLinkCommand sed ssed 
+	xbrewLinkCommand find gfind
+}
+
+
+function main()
+{
+	xbrewInstallApps	
+	xbrewLinkCommands
+}
+
+
+main

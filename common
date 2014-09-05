@@ -1,0 +1,1597 @@
+#!/bin/bash
+#############################################
+# author:fang
+# version : v1.0
+# name  : common
+# CopyRight@fangyunjiang[42550564@qq.com]
+#
+# dispcripe: this is a common function declare for bash shell
+# global function declare like __func
+# static function declare like _func__
+#############################################
+function _declare_colors__()
+{
+########################################
+#Usage: [local function]_declare_colors__
+#	printf $REDxx$NONE
+#	echo -e $REDxx$NONE
+########################################
+	NONE="\033[m"
+	RED="\033[0;32;31m"
+	LIGHT_RED="\033[1;31m"
+	GREEN="\033[0;32;32m"
+	LIGHT_GREEN="\033[1;32m"
+	BLUE="\033[0;32;34m"
+	LIGHT_BLUE="\033[1;34m"
+	DARY_GRAY="\033[1;30m"
+	CYAN="\033[0;36m"
+	LIGHT_CYAN="\033[1;36m"
+	PURPLE="\033[0;35m"
+	LIGHT_PURPLE="\033[1;35m"
+	BROWN="\033[0;33m"
+	YELLOW="\033[1;33m"
+	LIGHT_GRAY="\033[0;37m"
+	WHITE="\033[1;37m"
+
+	_TITLE_COLOR_="$PURPLE"
+	_BORDER_COLOR_="$GREEN"
+	_INDEX_COLOR_="$RED"
+	_STRING_COLOR_="$BLUE"
+	_ERROR_COLOR_="$RED"
+	_WARNING_COLOR_="$PURPLE"
+	_DEBUG_COLOR_="$GREEN"
+	_INPUTBOX_COLOR_="$BLUE"
+	_INPUT_COLOR_="$PURPLE"
+}
+function _declare_global_variables__()
+{
+########################################
+#Usage: [local function] _declare_global_variables__
+#Global Variables
+#global variable in command like _var_
+#global Variable in app like _var
+########################################
+
+	_declare_colors__
+
+	_debug_file_=/tmp/.debug_file
+	_result_file_=/tmp/.result_file
+	_dialog_file_=/tmp/.dialog_file
+	_setting_file_=~/.setting_file
+	_DIALOG_=~/command/lxdialog
+	_PASSWORD_=fangyunjiang
+
+	[ -z "$_DIALOG_HEIGHT_" ]&&_DIALOG_HEIGHT_=30
+	[ -z "$_DIALOG_WIDTH_" ]&&_DIALOG_WIDTH_=80
+	_CHILD_HEIGHT_=20
+	_MSGBOX_HEIGHT_=10
+	_MSGBOX_WIDTH_=30
+	_INPUTBOX_HEIGHT_=$_MSGBOX_HEIGHT_
+	_INPUTBOX_WIDTH_=$_MSGBOX_WIDTH_
+
+	_SED_=/usr/bin/sed
+	_RM_=/bin/srm
+
+	__mac && _SUDO_=sudo || _SUDO_=""
+
+	_TRUE_=0
+	_FALSE_=255
+
+	_flag_=(OFF ON)
+
+	declare -a _list_
+	declare -a _flags_
+
+	declare -i _argc_
+	declare -a _argv_
+	_opt_=""
+	_result_=""
+
+	[ -z "$_HTAG_" ]&&_HTAG_="-"
+	[ -z "$_VTAG_" ]&&_VTAG_="|"
+	[ -z "$_CTAG_" ]&&_CTAG_="+"
+	[ -z "$_WINDOW_" ]&&_WINDOW_=0
+	[ -z "$_TARGET" ]&&_TARGET_="~~"
+	[ -z "$_DEBUG_LEVEL_" ]&&_DEBUG_LEVEL_=1
+
+	export dp="~" #this is a special variable for path
+	export df="1.txt" #this is a special variable for file
+}
+function __mac()
+{
+########################################
+#Usage:__mac
+#	  check if is mac system
+########################################
+	[ "$_OS_" = "mac" ]&&return $_TRUE_||return $_FALSE_
+}
+function __cygwin()
+{
+########################################
+#Usage:__cygwin
+#	  check if is cygwin system
+########################################
+	[ "$_OS_" = "cygwin" ]&&return $_TRUE_||return $_FALSE_
+}
+function __debug()
+{
+########################################
+#Usage:__debug info
+########################################
+	if ((_DEBUG_LEVEL_>= 2));then
+		if [ "$_WINDOW_" = "1" ];then
+			$_DIALOG_ --title "debug" --msgbox "$@" $_MSGBOX_HEIGHT_ $_MSGBOX_WIDTH_
+		else
+			echo -e $_DEBUG_COLOR_"debug:$@"$NONE
+		fi
+	fi
+}
+function __warning()
+{
+########################################
+#Usage:__warning info
+########################################
+	if ((_DEBUG_LEVEL_>= 1));then
+		if [ "$_WINDOW_" = "1" ];then
+			$_DIALOG_ --title "warning" --msgbox "$@" $_MSGBOX_HEIGHT_ $_MSGBOX_WIDTH_
+		else
+			echo -e $_WARNING_COLOR_"warning:$@"$NONE
+		fi
+	fi
+}
+function __error()
+{
+########################################
+#Usage:__error info
+########################################
+	if ((_DEBUG_LEVEL_>= 0));then
+		if [ "$_WINDOW_" = "1" ];then
+			$_DIALOG_ --title "error" --msgbox "$@" $_MSGBOX_HEIGHT_ $_MSGBOX_WIDTH_
+		else
+			echo -e $_ERROR_COLOR_"error:$@"$NONE
+		fi
+	fi
+}
+function __join_path()
+{
+########################################
+#Usage:__join_path path1 ...  pathn
+########################################
+	local path n
+	n=$#
+	path=$1
+	shift
+	for ((i=1; i<n; i++));do
+		path=${path%%/}
+		path="$path/$1"
+		shift
+	done
+	echo "$path"
+}
+function __relative_path()
+{
+########################################
+#Usage:__relative_path path1 path2 [out]relative_path [out]root
+#	  relative_path is path2 relative to path1
+#	  root is path1 and path2 's same path
+########################################
+	local path1 path2
+	path1=$(__get_full_path "$1")
+	path2=$(__get_full_path "$2")
+	eval $(echo|awk 'BEGIN{len1=split("'"$path1"'",arr1,"/");len2=split("'"$path2"'",arr2,"/"); for(i=1;i<=len1;i++){ if(arr1[i]==arr2[i]){ root=(root""arr1[i]"/"); }else{ break; } } r1=len1-(i-1); r2=len2-(i-1); for(j=0;j<r1;j++) rp=(rp"../"); for(j=0;j<r2;j++) rp=(rp""arr2[i+j]"/"); printf("'$3='%s;", rp); printf("'$4='%s;", root); }')
+}
+function __change_to_winpath()
+{
+########################################
+#Usage:__change_to_winpath path
+#	only use in cygwin
+########################################
+	local drive path
+	path="$1"
+	if [ "${path:0:10}" = "/cygdrive/" ];then
+		drive=${path:10:1}
+		echo "$drive:/${path:12}"
+		return
+	fi
+	if [ "${path:0:1}" = "/" ];then
+		echo "D:/linux$path"
+		return
+	fi
+	if [ "${path:0:1}" = "~" ];then
+		echo "D:/linux/home/Administrator${path:1}"
+	fi
+}
+function __pause()
+{
+########################################
+#Usage:__pause
+########################################
+	read -n 1 -p "Press any key to continue...    "; [[ -z $REPLY ]] && echo -n || echo -e '\b\b\b\b    '
+	return $_TRUE_
+}
+function __toupper()
+{
+########################################
+#Usage:__toupper "$@"
+########################################
+	echo "$@"|tr a-z A-Z
+}
+function __toupper()
+{
+########################################
+#Usage:__tolower "$@"
+########################################
+	echo "$@"|tr A-Z a-z
+}
+function __match()
+{
+########################################
+#Usage:__match "^123$"
+#	   check $?==0
+########################################
+	local rs
+	rs=$(echo $1|$_SED_ -r -n '/'$2'/p')
+	[ -z "$rs" ] && return $_FALSE_ || return $_TRUE_
+}
+function __match_num()
+{
+########################################
+#Usage:__match_num "123"
+#	   check $?==0
+########################################
+    __match "$1" "^[[:space:]]*[0-9]+[[:space:]]*$"
+	return $?
+}
+function __match_line()
+{
+########################################
+#Usage:__match_line str file
+#	   check $?==0
+########################################
+	local rs
+	rs=$($_SED_ -r -n '/'"$1"'/p'  "$2" 2>/dev/null)
+	[ -z "$rs" ] && return $_FALSE_ || return $_TRUE_
+}
+function __get_line()
+{
+########################################
+#Usage:__get_line str file
+#	return the whole line
+########################################
+	$_SED_ -r -n '/'"$1"'/p'  "$2" 2>/dev/null
+}
+function __repeat()
+{
+########################################
+#Usage:__repeat command
+########################################
+	local i max
+
+	max=$1;shift
+	for ((i=0;i<max;i++));do
+		eval "$@"
+	done
+}
+function __check_opts()
+{
+########################################
+#Usage:__check_opts -h --help
+#	 success return $_TRUE_
+#	 else return $_FALSE_
+########################################
+	local flag var i
+	for ((i=0; i<$_argc_; i++));do
+		flag=0
+		for var in "$@";do
+			[ "$var" = "${_argv_[i]}" ]&&flag=1&&break
+			[ "$var" = "${_argv_[i]}:" ]&&flag=2&&break
+			[ "$var" = "${_argv_[i]%%=*}=" ]&&flag=1&&_opt_=${_argv_[i]##*=}&&break
+		done
+		if [ $flag -eq 1 ];then
+			unset _argv_[$i]
+			return $_TRUE_
+		fi
+		if [ $flag -eq 2  ];then
+			_opt_=${_argv_[i+1]}
+			unset _argv_[$i]
+			unset _argv_[i+1]
+			return $_TRUE_
+		fi
+	done
+	return $_FALSE_
+}
+function __add_opts()
+{
+########################################
+#Usage:__add_opts "${arr[@]}"
+########################################
+	local len i j
+	len=$#
+	for ((i=0,j=0; i<len; j++));do
+		if [ "${_argv_[j]}" = "" ];then
+			_argv_[j]="$1"
+			shift
+			((i++))
+		fi
+	done
+}
+function __ask()
+{
+########################################
+#Usage:__ask info
+#	 check $?==0
+########################################
+	local ans
+
+	echo -n '$@[y/n]:'
+	read ans
+	case "$ans" in
+		y*|Y*)return $_TRUE_;;
+		*)return $_FALSE_;;
+	esac
+}
+function __sudo()
+{
+########################################
+#Usage:__sudo
+#	 check $?==0
+########################################
+	local ans i
+
+	i=0
+	echo -n "Password:"
+	read -s ans
+	while ! [ "$ans" = "$_PASSWORD_" ];do
+		if [ "$ans" = "q" -o "$ans" = "quit" -o "$ans" = "exit" ];then
+			echo
+			return $_FALSE_
+		fi
+		echo "Sorry, try again."
+		if ((i++>=2));then
+			echo "sudo: 3 incorrect password attempts"
+			echo
+			return $_FALSE_
+		fi
+		echo -n "Password:"
+		read -s ans
+	done
+	echo
+	return $_TRUE_
+}
+function __skip_sudo()
+{
+########################################
+#Usage:__skip_sudo
+#	run this function pre sudo command
+#	e.g: __skip_sudo
+#		sudo command
+########################################
+	if __mac ;then
+		expect -c "
+			spawn sudo echo;
+			expect {
+				\"Password:\" {send \""$_PASSWORD_"\r\"}
+			}
+			interact
+			" 2>/dev/null 1>&2
+	fi
+}
+function __set_array()
+{
+########################################
+#Usage:__set_array arrname command
+########################################
+	local arrname command arrinfo
+	arrname="$1"
+	shift
+	command="$@"
+	arrinfo=`$command 2>/dev/null|awk 'BEGIN{ORS=";"}{print "'$arrname'["NR-1"]=\""$0"\""}'`
+	eval "$arrinfo"
+}
+function __add_array()
+{
+########################################
+#Usage:__add_array arrname1 arrname2
+#	add arrname2 to arrname1
+#	see diff with __append_array
+#	will fill null element
+########################################
+	local arrname1 arrname2 len2 i j
+	arrname1="$1"
+	arrname2="$2"
+
+	eval len2=\${#$arrname2[@]}
+	for((i=0, j=0; i<len2; i++));do
+		eval val="\${$arrname1[j++]}"
+		if [ -n "$val" ];then
+			((i--))
+			continue
+		fi
+		eval $arrname1[$((j-1))]=\${$arrname2[$i]}
+	done
+}
+function __append_array()
+{
+########################################
+#Usage:__append_array arrname1 arrname2
+#	append arrname2 to arrname1
+#   just append, remain null element
+########################################
+	local arrname1 arrname2 len1 len2 i
+	arrname1="$1"
+	arrname2="$2"
+
+	eval len1=\${#$arrname1[@]}
+	eval len2=\${#$arrname2[@]}
+	for((i=0; i<len1; i++));do
+		eval val="\${$arrname1[i]}"
+		[ -z "$val" ]&&((len1++))
+	done
+	for((i=0; i<len2; i++));do
+		eval $arrname1[i+len1]=\${$arrname2[$i]}
+	done
+}
+function __sub_array()
+{
+########################################
+#Usage:__sub_array arrname1 arrname2
+########################################
+	local arrname1 arrname2 len1 len2 val1 val2 i j
+	arrname1="$1"
+	arrname2="$2"
+
+	eval len1=\${#$arrname1[@]}
+	eval len2=\${#$arrname2[@]}
+	for((i=0; i<len1; i++));do
+		for((j=0; j<len2; j++));do
+			eval val1=\${$arrname1[i]}
+			eval val2=\${$arrname2[j]}
+			[ "$val1" = "$val2" ] && eval unset $arrname1[i]&&break
+		done
+	done
+}
+function __print_array()
+{
+########################################
+#Usage:__print_array arrname
+########################################
+	local  arrname len val i
+	arrname=$1
+
+	eval len=\${#$arrname[@]}
+	echo $len
+	echo -n [
+	for((i=0; i<len; i++));do
+		eval val="\${$arrname[i]}"
+		[ -z "$val" ]&&((len++))&&echo -n null||echo -n "$val"
+		((i!=len-1))&&echo -n " "
+	done
+	echo ]
+}
+function __swap_two_files()
+{
+########################################
+#Usage:__swap_two_files file1 file2
+########################################
+	[ $# -ne 2 ] && return
+	if [ -a "$1" -a -a "$2" ];then
+		mv "$1" "._tmp_file"
+		mv "$2" "$1"
+		mv "._tmp_file" "$2"
+	fi
+}
+function __backup_file()
+{
+########################################
+#Usage:__backup_file file
+########################################
+	local path file
+	path=$(dirname "$1")
+	file=$(basename "$1")
+	if [ -a "$1" ];then
+		file="$(date '+%Y-%m-%d-%H-%M-%S-')$file"
+		if [ "$path" = "/" ];then
+			mv "$1" "$path$file"
+		else
+			mv "$1" "$path/$file"
+		fi
+	fi	
+}
+function __get_full_path()
+{
+########################################
+#Usage:__get_unique_file file
+#	return "" if not exist
+########################################
+	local path file flag
+
+	if ! [ -a "$1" ];then
+		return
+	fi
+	
+	if [ -f "$1" ];then
+		path=$(dirname "$1")
+		file=$(basename "$1")
+	else
+		path="$1"
+	fi
+
+	path=$(cd "$path" && pwd)
+	if [ "$path" = "/" ];then
+		echo "$path$file"
+	else
+		if [ -z "$file" ];then
+			echo "$path"
+		else
+			echo "$path/$file"
+		fi
+	fi
+}
+
+function __extend_cd()
+{
+########################################
+#Usage: __extend_cd [path|--|-c|-n]
+########################################
+	local x2 the_new_dir adir index
+	local -i cnt
+
+	if [[ $1 ==  "--" ]]; then
+		dirs -v
+		return $_TRUE_
+	elif [[ $1 == "-c" ]];then
+		dirs -c
+		return $_TRUE_
+	fi
+
+	the_new_dir=$1
+	[[ -z $1 ]] && the_new_dir=$HOME
+
+	[ -f "$the_new_dir" ]&&df=$(basename "$the_new_dir")&&the_new_dir=$(dirname "$the_new_dir")
+
+	if [[ "${the_new_dir:0:1}" == "-" ]]; then
+		
+		# Extract dir N from dirs
+		index=${the_new_dir:1}
+		[[ -z $index ]] && index=1
+		adir=$(dirs +$index)
+		[[ -z $adir ]] && return 1
+		the_new_dir=$adir
+	fi
+
+	#
+	# '~' has to be substituted by ${HOME}
+	[[ ${the_new_dir:0:1} == '~' ]] && the_new_dir="${HOME}${the_new_dir:1}"
+
+	#
+	# Now change to the new dir and add to the top of the stack
+	pushd "${the_new_dir}" > /dev/null
+	[[ $? -ne 0 ]] && return 1
+	the_new_dir=$(pwd)
+
+	#
+	# Trim down everything beyond 11th entry
+	popd -n +11 2>/dev/null 1>/dev/null
+
+	#
+	# Remove any other occurence of this dir, skipping the top of the stack
+	for ((cnt=1; cnt <= 10; cnt++)); do
+		x2=$(dirs +${cnt} 2>/dev/null)
+		[[ $? -ne 0 ]] && return $_TRUE_
+		[[ ${x2:0:1} == '~' ]] && x2="${HOME}${x2:1}"
+		if [[ "${x2}" == "${the_new_dir}" ]]; then
+			popd -n +$cnt 2>/dev/null 1>/dev/null
+			cnt=cnt-1
+		fi
+	done
+
+	return $_TRUE_
+}
+function __folder_cd() 
+{
+########################################
+#Usage:__folder_cd
+# 		cd to finder's front's window's path
+########################################
+	local path
+	if __mac ;then
+	   path="`osascript -e 'tell application "Finder" to set myname to POSIX path of (target of window 1 as alias)' 2>/dev/null`"
+	   if [ -n "$path" ]; then
+		  cd "$path"
+	   else
+		  echo "no finder window finded"
+	   fi
+   fi
+}
+function __clear()
+{
+########################################
+#Usage:__clear
+########################################
+	local i
+	for ((i=0; i<1000; i++));do
+		echo
+	done
+	clear
+}
+function __read_file()
+{
+########################################
+#Usage:__read_file file start_line[=1] end_line[=$]
+#	  read file line by line can used by pipe
+########################################
+	local file start_line end_line line
+
+	[ -z "$1" ] && return || file=$1
+	[ -z "$2" ] && start_line=1 || start_line=$2
+	[ -z "$3" ] && end_line=$ || end_line=$3
+
+	sed -n $start_line','$end_line'p' "$file"|while read line;do echo "$line";done
+}
+function __set_dest_path() 
+{
+########################################
+#Usage:__set_dest_path -h
+#	  dp is the system viriable
+########################################
+	local param ret len tline line line2 line3 file tmp_file _dp
+	param="$1"
+	file=~/.dest_path
+	tmp_file=~/.dest_tmp_path
+
+	tline=$(wc -l $file|awk '{print $1}')
+	if [ "$param" = "" ];then
+		dp=$(sed -n '1p' $file)
+	elif [ "$param" = "-h" ];then
+		echo "Usage:dt[--][-n[d:cd|o:open|m:move|c:clean|l:ls]]"
+	elif [ "$param" = "-d" ];then
+		cd $(sed -n '1p' $file)
+	elif [ "$param" = "-l" ];then
+		_dp=$(sed -n '1p' $file)
+		ls -l $_dp
+	elif [ "$param" = "-c" ];then
+		read -p "[y|n]" ret
+		[ "$ret" = "y" ]&&echo -n > $file
+	elif [ "$param" = "--" ];then
+		sed = $file|sed 'N;s/\n/ : /'
+	elif [ "${param:0:1}" = "-" ];then
+		ret=$(echo "$param"|sed -r -n '/^-[0-9]+[d|c|o|l|m]?$/p'|sed -r 's/^-([0-9]+[d|c|o]?)/\1/')
+		len=${#ret}
+		if [ $len -gt 0 ];then
+			if [ "${ret:$len-1}" = "d" ];then 
+				line=${ret:0:$len-1}
+				_dp=$(sed -n $line'p' $file)
+				cd $_dp
+			elif [ "${ret:$len-1}" = "l" ];then 
+				line=${ret:0:$len-1}
+				_dp=$(sed -n $line'p' $file)
+				ls -l $_dp
+			elif [ "${ret:$len-1}" = "c" ];then 
+				line=${ret:0:$len-1}
+				echo "remove $(sed -n $line'p' $file) success"
+				sed -i  $line'd' $file
+				return
+			elif [ "${ret:$len-1}" = "o" ];then 
+				line=${ret:0:$len-1}
+				_dp=$(sed -n $line'p' $file)
+				open $_dp
+				return
+			elif [ "${ret:$len-1}" = "m" ];then 
+				line=${ret:0:$len-1}
+				if [ $line -gt 1 ];then
+					if [ $line -le $tline ];then
+						let line2=line*2
+						let line3=line-1
+						sed -i ':a N;'$line'!ba;p' $file
+						sed -i $line2'd;1,'$line3'd' $file
+					fi
+				fi
+			else
+				line=$ret
+				dp=$(sed -n $line'p' $file)
+				echo $dp
+			fi
+		fi
+	else
+		if [ -d "$param" ];then 
+			param=$(__get_full_path "$param")
+			if ! [ -z "$param" ];then
+				echo "$param" >> $file
+				awk '{if(!seen[$0]++){print $0;}}' $file > $tmp_file
+				mv $tmp_file $file
+				echo "set $param success"
+				return
+			fi
+		fi
+		echo "set dest path failed"
+	fi
+}
+function __new_line()
+{
+########################################
+#Usage:__new_line
+########################################
+	printf "\n"
+}
+function __echo_line()
+{
+########################################
+#Usage:__echo_line width is_start is_end
+########################################
+	local width is_start is_end len n
+
+	[ -z "$1" ] && width=$_DIALOG_WIDTH_ || width=$1
+	[ -z "$2" ] && is_start="yes" || is_start="$2"
+	[ -z "$3" ] && is_end="yes" || is_end="$3"
+
+	n=0
+	echo -e -n "$_BORDER_COLOR_"
+	[ "$is_start" = "yes" ] && echo -n "$_CTAG_"||echo -n "$_HTAG_"
+	while ((n++<width-2));do
+		echo -n "$_HTAG_"
+	done
+
+	if [ "$is_end" = "yes" ];then
+		echo -e "$_CTAG_$NONE"
+	else
+		echo -e -n "$_HTAG_$NONE"
+	fi
+
+}
+function __echo_title()
+{
+########################################
+#Usage:__echo_title title width
+########################################
+	local title len flen flen1
+
+	title="$1"
+	[ -z "$2" ] && width=$_DIALOG_WIDTH_ || width=$2
+
+	((len=width-${#title}))
+	((flen=len/2))
+	((flen1=flen+(len&1)))
+
+	__echo_line "$flen" "yes" "no"
+	echo -e -n "$_TITLE_COLOR_"
+	echo -n $title
+	echo -e -n "$NONE"
+	__echo_line "$flen1" "no" "yes"
+}
+function __echo_center()
+{
+########################################
+#Usage:__echo_center str width color
+########################################
+	local str len flen flen1 color
+
+	str="$1"
+	[ -z "$2" ] && width=${#str} || width=$2
+	color="$3"
+
+
+	((len=width-${#str}))
+	((flen=len/2))
+	((flen1=flen+(len&1)))
+
+	[ -n "$color" ] && printf "$color"
+	printf %-"$flen"s
+	printf "%s" "$str"
+	printf %-"$flen1"s
+	[ -n "$color" ] && printf $NONE
+}
+function __echo_string()
+{
+########################################
+#Usage:__echo_string info width
+#		width must large than single str len
+########################################
+    local str len char_len width in_width ch is_head tmp_str head_str body_str head_len body_len
+
+	[ -z "$1" ] && str=" "|| str="$1"
+	[ -z "$2" ] && width=$_DIALOG_WIDTH_ || width=$2
+	((in_width=$width-3))
+
+	len=0
+	is_head=0
+    while ((${#str}>0));do
+		ch="${str:$len:1}"	
+        if [ "$ch " = "  " -o "$ch " = "/ " ];then
+            char_len=0;
+		else
+            ((char_len++))
+        fi   
+		[ "$ch" = "" ] && char_len=0
+        ((len++))
+        if ((len==in_width));then
+            [ "${str:$len:1}" = " " ]|| ((len-=char_len));
+			if [ $is_head -eq 0 ];then
+				tmp_str=${str:0:$len}
+				head_str="${tmp_str%%:*}:"
+				body_str=${tmp_str#*:}
+				[ "$head_str" = "$tmp_str:" ] && head_str=""
+				head_len=${#head_str}
+
+				((body_len=$in_width-$head_len))
+				printf "$_BORDER_COLOR_$_VTAG_ $_INDEX_COLOR_%s$_STRING_COLOR_%-"$body_len"s$_BORDER_COLOR_$_VTAG_$NONE\n" "$head_str" "$body_str"
+				is_head=1
+			else
+				printf "$_BORDER_COLOR_$_VTAG_$_STRING_COLOR_ %-"$in_width"s$_BORDER_COLOR_$_VTAG_$NONE\n" "${str:0:$len}"
+			fi
+            str=${str:$len};
+            len=0;
+		fi
+	done
+}
+function __echo_string_indent()
+{
+########################################
+#Usage:__echo_string_indent info width
+#		width must large than single str len
+#		it will indent two and more space to one
+########################################
+	local -a list
+	local str width in_width i n len
+
+	list=($1)
+	len=${#list[@]}
+	[ -z "$2" ] && width=$_DIALOG_WIDTH_ || width=$2
+	((in_width=$width-3))
+
+	if [ $len -eq 0 ];then
+		printf "$_BORDER_COLOR_$_VTAG_$_STRING_COLOR_ %-"$in_width"s$_BORDER_COLOR_$_VTAG_$NONE\n" "$str"
+		return
+	fi
+
+	i=0
+	while [ $i -lt $len ];do
+		str=""
+		n=0
+		while (( $i<$len && $n+${#list[i]}<$in_width ));do
+			str="$str ${list[i]}"
+			((n+=${#list[i]}+1))
+			((i++))
+		done
+		printf "$_BORDER_COLOR_$_VTAG_$_STRING_COLOR_ %-"$in_width"s$_BORDER_COLOR_$_VTAG_$NONE\n" "$str"
+	done
+}
+function __echo_discription()
+{
+########################################
+#Usage:__echo_discription info width
+########################################
+	local str width
+	str=$1
+	[ -z "$2" ] && width=$_DIALOG_WIDTH_ || width=$2
+
+	__echo_string "[Usage]:$str" "$width"
+}
+function _wait_process__()
+{
+########################################
+#Usage:[local function]_wait_process__ speed &
+########################################
+	local speed
+
+	speed=$1
+	while [ 1 ];do
+		echo -n .
+		trap 'break' 12
+		sleep $speed
+	done
+	echo .
+}
+function __show_progressbar()
+{
+########################################
+#Usage:__show_progressbar speed command param
+########################################
+	local callback speed pid
+
+	speed=$1;shift
+	callback=$1;shift
+
+	_wait_process__ $speed &
+	pid=$!
+	trap 'kill -12 $pid 2>/dev/null;wait;exit' INT
+	$callback "$@"
+	kill -12 $pid
+	wait
+}
+function _show_list__()
+{
+########################################
+#Usage:[local function]_show_list__ title disp
+#	   must set value for _list_
+########################################
+	local title disp
+
+	title=$1
+	disp=$2
+
+	__echo_title "$title"
+	__echo_discription "$disp"
+	__echo_line
+	for ((i=0; i<${#_list_[@]}; i++));do
+		__echo_string "$i: ${_list_[$i]}"
+	done
+	__echo_line
+}
+function __exec_target()
+{
+########################################
+#Usage:__exec_target callback target
+#	if have _TARGET_ in callback, replace by target
+#	else do callback target
+########################################
+	local callback target
+
+	callback="$1"
+	shift
+
+	if [ "${callback:0:14}" = "__exec_command" ];then
+		target="$@"
+		if [ "${callback%%*$_TARGET_*}" = "" ];then
+			${callback/$_TARGET_/$target}
+		else
+			$callback $target
+		fi
+	else
+		target="\"$@\""
+		if [ "${callback%%*$_TARGET_*}" = "" ];then
+			eval "${callback/$_TARGET_/$target}"
+		else
+			eval "$callback $target"
+		fi
+	fi
+}
+function __exec_command()
+{
+	########################################
+	#Usage:__exec_command callback
+	#note: when you want your command result show in window
+	#you should use __exec_command before command
+	########################################
+	local callback
+
+	callback="$@"
+
+	if [ "$_WINDOW_" = "0" ];then
+		$callback
+	else
+		$callback 1>$_result_file_ 2>$_debug_file_
+		echo >>$_result_file_
+		echo >>$_result_file_
+		echo -n "[error]:">>$_result_file_
+		cat $_debug_file_>>$_result_file_
+		echo >>$_result_file_
+		echo >>$_result_file_
+		$_DIALOG_ --title "command result" --textbox $_result_file_ $_DIALOG_HEIGHT_ $_DIALOG_WIDTH_
+	fi
+}
+function _radiobox_console__()
+{
+	########################################
+	#Usage:[local function]_radiobox_console__ callback [_TARGET_] is_update="yes" title disp
+	########################################
+	local callback len index n is_update title disp
+
+	callback=$1
+	is_update=$2
+	title=$3
+	disp=$4
+
+	len=${#_list_[@]}
+	if [ $len -eq 0 ];then
+		__error "list is null, can't get list in this case"
+		return
+	fi
+
+	while [ 1 ];do
+
+		len=${#_list_[@]}
+		if [ $len -eq 0 ];then
+			_msgbox_console__ "complete" "have done all"
+			return
+		fi
+		_show_list__ "$title" "$disp"
+
+		__input_box "please input need $title index ,"$_INDEX_COLOR_"exit(q)"
+		index="$_result_"
+
+		if [ "$index" = "" ];then
+			__error "null is not allowed"
+			continue
+		fi
+
+		if [ "$index" = "q" ];then
+			break
+		fi
+
+		__match_num "$index"
+		n=$?
+		if [ $n -ne 0 ];then
+			__error "must input a number"
+			continue
+		fi
+
+		if [ $index -lt 0 -o $index -ge $len ];then
+			__error "the select number is out of range"
+			continue
+		fi
+
+		__exec_target "$callback" "${_list_[$index]}"
+		if [ "$is_update" == "yes" ];then
+			_remove_list_index__ "$index"
+		fi
+		__pause
+
+	done
+}
+function _radiobox_window__()
+{
+	########################################
+	#Usage:[local function] _radiobox_window__ callback is_update="yes" title disp
+	########################################
+	local title callback disp ret ids list len is_update
+
+	callback=$1
+	is_update=$2
+	title=$4
+	disp=$5
+
+	unset _flags_
+	_flags_[0]=1
+
+	len=${#_list_[@]}
+	if [ $len -eq 0 ];then
+		__error "list is null, can't get list in this case"
+		return
+	fi
+
+	while true;do
+		len=${#_list_[@]}
+		if [ $len -eq 0 ];then
+			_msgbox_window__ "complete" "have done all"
+			return
+		fi
+		i=0
+		list=
+		for x in "${_list_[@]}";do
+			list="$list $i \"$x\" ${_flag_[${_flags_[$i]}]} "
+			((i++))
+		done
+		eval $_DIALOG_ --title "\"$title\"" --radiolist "\"$disp\"" $_DIALOG_HEIGHT_ $_DIALOG_WIDTH_ $_CHILD_HEIGHT_ $list 2>$_dialog_file_
+		ret=$?
+
+		case "$ret" in
+			0)
+				ids=$(cat $_dialog_file_)
+				__exec_target "$callback" "${_list_[$ids]}"
+				if [ "$is_update" == "yes" ];then
+					_remove_list_index__ "$ids"
+				fi
+				unset _flags_
+				_flags_[$ids]=1
+				;;
+			1|255)
+				break;;
+		esac
+	done
+}
+function __radiobox()
+{
+	########################################
+	#Usage: __radiobox is_update="yes" callback [title disp]
+	#note: when you want your command result show in window
+	#you should use __exec_command before command
+	########################################
+	local callback is_update title disp
+
+	callback=$1
+	is_update=$2
+	[ -z "$3" ] && title=$1 ||title=$3
+	[ -z "$4" ] && disp=$1 ||disp=$4
+
+	if [ "$_WINDOW_" = "1" ];then
+		_radiobox_window__ "$callback" "$is_update" "$title" "$disp"
+	else
+		_radiobox_console__ "$callback" "$is_update" "$title" "$disp"
+	fi
+
+}
+function _remove_list_index__()
+{
+	########################################
+	#Usage:[local function]_remove_list_index__ ${remove_list[@]}
+	#	   affect for _list_
+	########################################
+	local del_a tmp_a
+	del_a=("$@")
+	for ((i=0; i<${#del_a[@]}; i++));do
+		unset _list_[${del_a[$i]}]
+	done
+	tmp_a=("${_list_[@]}")
+	_list_=("${tmp_a[@]}")
+}
+function _checkbox_console__()
+{
+	########################################
+	#Usage:[local function] _checkbox_console__ callback callback_single is_update-"yes"
+	########################################
+	local callback callback_single is_update len list m i n tar rfi tmp tmp1 title disp begin end p rfi_len
+
+	callback=$1
+	callback_single=$2
+	is_update=$3
+	title=$4
+	disp=$5
+
+	len=${#_list_[@]}
+	if [ $len -eq 0 ];then
+		__error "list is null, can't get list in this case"
+		return
+	fi
+
+	_show_list__ "$title" "$disp"
+
+	__input_box "please input need $title index"$_INDEX_COLOR_"([-]1 2 3|1-3 5-7|all)"
+	list="$_result_"
+	if [ "$list" = "" ];then
+		__error "null is not allowed"
+		return
+	fi
+	if [ "$list" = "q" ];then
+		return
+	fi
+
+	__match "$list" "^[[:space:]]*-[[:space:]]*.*$"
+	n=$?
+
+	if [ $n -eq 0 ];then
+		list=$(echo $list|$_SED_ 's/^[[:space:]]*-//')
+	fi
+
+	if [ "$list" = "all" ];then
+		for ((i=0; i<$len; i++));do
+			rfi[i]=$i
+		done
+	else
+		tmp=""
+		for m in $list;do
+			__match "$m" ".*-.*"
+			p=$?
+			if [ $p -eq 0 ];then
+				begin=$(echo $m|$_SED_ 's/-.*//')
+				end=$(echo $m|$_SED_ 's/.*-//')
+				__match_num "$begin"
+				p=$?
+				if [ $p -ne 0 ];then
+					__error "invalid input not number"
+					return
+				fi
+				__match_num "$end"
+				p=$?
+				if [ $p -ne 0 ];then
+					__error "invalid input not number"
+					return
+				fi
+				for ((i=$begin; i<=$end; i++));do
+					tmp="$tmp $i"	
+				done
+			else
+				tmp="$tmp $m"	
+			fi
+		done
+		list=$tmp
+		if [ $n -eq 0 ];then
+			for ((i=0; i<$len; i++));do
+				tmp[i]=$i
+			done
+			i=0
+			for m in $list;do
+				tmp1[i]=$m
+				((i++))
+			done
+			for ((i=0; i<${#tmp1[@]}; i++));do
+				m=${tmp1[$i]}
+				__match_num "$m"
+				n=$?
+				if [ $n -ne 0 ];then
+					__error "invalid input not number"
+					return
+				elif [ $m -lt 0 -o $m -ge $len ];then
+					__error "invalid input out range"
+					return
+				fi
+				unset tmp[$m]
+			done
+			i=0
+			for m in ${tmp[@]};do
+				rfi[i]=$m
+				((i++))
+			done
+		else
+			i=0
+			for m in $list;do
+				__match_num "$m"
+				n=$?
+				if [ $n -ne 0 ];then
+					__error "invalid input not number"
+					return
+				elif [ $m -lt 0 -o $m -ge $len ];then
+					__error "invalid input out range"
+					return
+				fi
+
+				rfi[i]=$m
+				((i++))
+			done
+		fi
+	fi
+
+	rfi=($(printf "%s\n" "${rfi[@]}"|sort -u))
+	rfi_len=${#rfi[@]}
+	for ((i=0; i<rfi_len; i++));do
+		if ! [ -z "$callback_single" ];then
+			__exec_target "$callback_single" "${_list_[${rfi[$i]}]}"
+		fi
+	done	
+
+	if ! [ -z "$callback" ];then
+		tar=""
+		for ((i=0; i<rfi_len-1; i++));do
+			tar="$tar${_list_[${rfi[$i]}]} "
+		done	
+		tar="$tar${_list_[${rfi[$i]}]}"
+		__exec_target "$callback" "$tar"
+	fi
+
+	if [ "$is_update" == "yes" ];then
+		_remove_list_index__ "${rfi[@]}"
+	fi
+}
+function _checkbox_window__()
+{
+	########################################
+	#Usage:[local function] _checkbox_window__ callback callback_single is_update-"yes" title dispcription
+	########################################
+	local title callback callback_single disp list ret ids tar is_update len
+
+	callback=$1
+	callback_single=$2
+	is_update=$3
+	title="$4"
+	disp="$5"
+
+	len=${#_list_[@]}
+	if [ $len -eq 0 ];then
+		__error "list is null, can't get list in this case"
+		return
+	fi
+
+	i=0
+	list=
+	for x in "${_list_[@]}";do
+		list="$list $i \"$x\" OFF "
+		((i++))
+	done
+
+	eval $_DIALOG_ --title "\"$title\"" --checklist "\"$disp\"" $_DIALOG_HEIGHT_ $_DIALOG_WIDTH_ $_CHILD_HEIGHT_ $list 2>$_dialog_file_
+	ret=$?
+
+	case "$ret" in
+		0)
+			ids=($(cat $_dialog_file_))
+			tar=""
+			for ((i=0; i<${#ids[@]}; i++));do
+				tar="$tar${_list_[${ids[$i]}]} "
+				if ! [ -z "$callback_single" ];then
+					__exec_target "$callback_single" "${_list_[${ids[$i]}]}"
+				fi
+			done	
+
+			if [ "$is_update" == "yes" ];then
+				_remove_list_index__ "${ids[@]}"
+			fi
+
+			if ! [ -z "$callback" ];then
+				__exec_target "$callback" "$tar"
+			fi
+			;;
+		1|255)
+			;;
+	esac
+}
+function __checkbox()
+{
+	########################################
+	#Usage: __checkbox callback callback_single is_update-"yes" title dispcription
+	#note: when you want your command result show in window
+	#you should use __exec_command before command
+	########################################
+	local title callback callback_single disp is_update
+
+	callback=$1
+	callback_single=$2
+	is_update=$3
+	[ -z "$4" ] && title=$1 ||title=$4
+	[ -z "$5" ] && disp=$1 ||disp=$5
+
+	if [ "$_WINDOW_" = "1" ];then
+		_checkbox_window__ "$callback" "$callback_single" "$is_update" "$title" "$disp"
+	else
+		_checkbox_console__ "$callback" "$callback_single" "$is_update" "$title" "$disp"
+	fi
+}
+function _do_menu_task__()
+{
+	########################################
+	#Usage:[local function] _do_menu_task__ op disp [tag command item ...]
+	########################################
+	local command op
+
+	op=$1
+	shift;shift
+
+	command="case \$op in"
+	while [ $# -ge 3 ];do
+		command="$command $1)$2;;"
+		shift; shift; shift
+	done
+	command="$command q)break;;*)echo invalid input;;esac"
+
+	eval $command
+}
+function _show_menu_items_console__()
+{
+	########################################
+	#Usage:[local function]_show_menu_items_console__ disp [tag command item ...]
+	########################################
+	local disp
+	disp=$1
+	shift
+
+	__echo_title "menu"
+	__echo_string "$disp"
+	__echo_string "please input follows to do your work"
+	__echo_line
+	while [ $# -ge 3 ];do
+		__echo_string "[$1]: $3"
+		shift; shift; shift
+	done
+	__echo_string "[q]: exit"
+	__echo_line
+}
+function _show_menu_console__()
+{
+	########################################
+	#Usage:[local function]_show_menu_console__ disp [tag command item ...]
+	########################################
+	local op command
+	while [ 1 ];do
+		_show_menu_items_console__ "$@"
+		__input_box "please input oper type"
+		op="$_result_"
+		_do_menu_task__ "$op" "$@"
+	done
+}
+function _show_menu_items_window__()
+{
+	########################################
+	#Usage:[local function]_show_menu_items_window__ disp [tag command item ...]
+	########################################
+	local sel cmd_head cmd_tail list cmd ret disp
+
+	cmd_head="$_DIALOG_ --title 'lxsvn' --menu "
+	cmd_tail=" $_DIALOG_HEIGHT_ $_DIALOG_WIDTH_ $_CHILD_HEIGHT_"
+
+	disp=$1
+	shift
+	sel=$1
+
+	while [ $# -ge 3 ];do
+		list="$list '$1' '$3'"
+		shift;shift;shift
+	done
+
+	cmd="$cmd_head '$disp' $cmd_tail $sel $list 2>$_dialog_file_"
+	eval $cmd
+	ret=$?
+
+	return $ret
+}
+function _show_menu_window__()
+{
+	########################################
+	#Usage:[local function] _show_menu_window__ disp [tag command item ...]
+	########################################
+	local ret op
+	while [ 1 ];do
+		_show_menu_items_window__ "$@"
+		ret=$?
+
+		case "$ret" in
+			0)
+				op=$(cat $_dialog_file_)
+				_do_menu_task__ "$op" "$@"
+				;;
+			1|255)
+				break;;
+			2)
+				show_help;;
+		esac
+	done
+}
+function __show_menu()
+{
+	########################################
+	#Usage:__show_menu disp [tag command item ...]
+	########################################
+	if [ "$_WINDOW_" = "1" ];then
+		_show_menu_window__ "$@"
+	else
+		_show_menu_console__ "$@"
+	fi
+}
+function _input_box_console__()
+{
+	########################################
+	#Usage:[local function]_input_box_console__ info [result save in global _result_]
+	########################################
+	local info val
+
+	info=$1
+	val=$2
+	if [ -n "$val" ];then
+		echo -e -n $_INPUTBOX_COLOR_"$info[default:$val]"
+	else
+		echo -e -n $_INPUTBOX_COLOR_"$info"
+	fi
+	echo -e -n $_INPUT_COLOR_
+	read -p ":" _result_
+	if [ "$_result_" = "" ];then
+		_result_=$val
+	fi
+	echo -e -n $NONE
+}
+function _input_box_window__()
+{
+	########################################
+	#Usage:[local function]_input_box_window__ info [result save in global _result_]
+	########################################
+	local info val
+
+	info=$1
+	val=$2
+	$_DIALOG_ --title "inputbox" --inputbox "$info" $_INPUTBOX_HEIGHT_ $_INPUTBOX_WIDTH_ "$val" 2>$_dialog_file_
+	ret=$?
+	case $ret in
+		0)
+			_result_=$(cat $_dialog_file_);;
+		*)
+			_result_="q";;
+	esac
+}
+function __input_box()
+{
+	########################################
+	#Usage:__input_box info [result save in global _result_]
+	########################################
+	if [ "$_WINDOW_" = "1" ];then
+		_input_box_window__ "$@"
+	else
+		_input_box_console__ "$@"
+	fi
+}
+function _msgbox_console__()
+{
+	########################################
+	#Usage:[local function]_msgbox_console__ title info
+	########################################
+	local title
+	title=$1
+	shift
+
+	__echo_title "$title"
+	while [ $# -ge 1 ];do
+		__echo_string "$1"
+		shift
+	done
+	__echo_line
+}
+function _msgbox_window__()
+{
+	########################################
+	#Usage:[local function]_msgbox_window__ title info
+	########################################
+	local title
+	title=$1
+	shift
+
+	echo -n > $_result_file_
+	while [ $# -ge 1 ];do
+		echo "$1" >>$_result_file_
+		shift
+	done
+	$_DIALOG_ --title "$title" --textbox $_result_file_ $_DIALOG_HEIGHT_ $_DIALOG_WIDTH_
+}
+function __msgbox()
+{
+	########################################
+	#Usage:__msgbox title info 
+	########################################
+	if [ "$_WINDOW_" = "1" ];then
+		_msgbox_window__ "$@"
+	else
+		_msgbox_console__ "$@"
+	fi
+}
+function __set_setting()
+{
+	########################################
+	#Usage: __set_settting name:val
+	########################################
+	local setting name search
+
+	settings="$1"
+	name=${settings%%:*}
+	search=$($_SED_ -n '/'"$name"':/p' "$_setting_file_")
+	if [ "$search" = "" ];then
+		echo "$settings" >> "$_setting_file_"
+	elif ! [ "$search" = "$settings" ];then
+		$_SED_ -i 's#'"$search"'#'"$settings"'#' "$_setting_file_"
+	fi
+}
+function __get_setting()
+{
+	########################################
+	#Usage: __get_settting name
+	########################################
+	local search name
+	name="$1"
+	search=$($_SED_ -n '/'"$name"':/p' "$_setting_file_")
+	if ! [ "$search" = "" ];then
+		echo ${search##*:}
+	fi
+}
+function __gcc_build()
+{
+	########################################
+	#Usage: __gcc_build
+	########################################
+	if __mac ;then
+		gcc -dynamiclib -undefined suppress -flat_namespace $1.c -o lib$1.dylib -m32
+	else
+		gcc -o $1 $1.c
+	fi
+}
+function __init()
+{
+	########################################
+	#Usage:__init
+	########################################
+	_declare_global_variables__
+
+	if __mac ;then
+		if ! [ -f /usr/bin/bsd-sed ];then
+			__skip_sudo
+			$_SUDO_ mv /usr/bin/sed /usr/bin/bsd-sed
+		fi
+		_SED_=/usr/local/bin/ssed
+	else
+		_SED_=/usr/bin/sed
+	fi
+
+	if ! [ -f /bin/srm ];then 
+		__skip_sudo
+		_SUDO_ mv /bin/rm /bin/srm
+	fi
+	_RM_=/bin/srm
+
+	if ! [ -f $_setting_file_ ];then
+		echo "rm:system" > $_setting_file_
+	fi 
+}
+__init
+

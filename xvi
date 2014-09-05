@@ -1,0 +1,8 @@
+#!/bin/bash
+
+source common
+
+name=$1
+_list_=($(find -name "*$name*"))
+__radiobox "vi"
+

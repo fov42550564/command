@@ -1,0 +1,23 @@
+#!/bin/bash
+
+source ~/command/common
+ip="10.254.33.105"
+password=longmaster
+_oper=0
+		#	\"*#\" {send \" cd /server/pcs3\r killall pcs\r ./run_pcs.sh\r \"}
+			#\"*#\" {send \" cd /server\r fang=(\`ls\`)\r n=\$\a{#fang\[@\]}\r echo \$\a{fang\[n-1\]}\r\"}
+
+function pcs_restart()
+{
+	expect -c "
+		spawn ssh root@$ip;
+		expect {
+			\"*password:\" {send \"$password\r\"; exp_continue}
+			\"*#\" {send \" cd /server\r fang=(\`ls\`)\r  echo \$\a{fang\[\$\a{#fang\[@\]}-1\]}\r\"}
+		}
+		interact
+	"
+}
+
+pcs_restart
+

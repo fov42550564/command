@@ -1,0 +1,40 @@
+#!/bin/bash
+
+declare -a STACK
+
+################################################################## 
+#   stack functions 
+################################################################## 
+function push_stack() 
+{ 
+    i=${#STACK[*]} 
+    STACK[$i]="$1" 
+} 
+ 
+function pop_stack() 
+{ 
+    let i=${#STACK[*]}-1 
+    unset STACK[$i] 
+} 
+ 
+function top_stack() 
+{ 
+    let i=${#STACK[*]}-1 
+    echo ${STACK[$i]} 
+} 
+ 
+################################################################## 
+################################################################## 
+
+function main()
+{
+	push_stack 1
+	push_stack 2
+	push_stack 3
+	echo ${STACK[*]}
+	echo $(top_stack)
+	pop_stack
+	echo ${STACK[*]}
+}
+
+main

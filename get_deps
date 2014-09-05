@@ -1,0 +1,23 @@
+#!/bin/bash
+
+	
+CFLAGS=$*
+DEPS_FILE=deprules.mk
+HOME_PATH=$(pwd)
+INCLUDE_PATH=$HOME_PATH/include
+SRC_PATH=$HOME_PATH/src
+BUILD_PATH=$HOME_PATH/build
+
+[ ! -d $SRC_PATH ]&&exit
+
+SRC_SUB_PATHS=$(ls -AxR $SRC_PATH|grep ":"|grep -v "\.svn"|tr -d ':')
+
+echo -n>$DEPS_FILE
+for dir in $SRC_SUB_PATHS;do
+	gcc -MM $dir/*.c -I$INCLUDE_PATH $CFLAGS>> $DEPS_FILE
+	echo $dir/*.c complete
+done
+
+sed 's;^\(.\+\)\.o;'$BUILD_PATH'/\1.obj;' -i $DEPS_FILE
+sed 's;/cygdrive/\(.\);\1:;g' -i $DEPS_FILE
+

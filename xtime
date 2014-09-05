@@ -1,0 +1,46 @@
+#!/bin/bash
+#############################################
+# author:fang
+# version : v1.0
+# name  : xtime
+# dispcripe: use baidu_time set local time
+# CopyRight@fangyunjiang[42550564@qq.com]
+#############################################
+
+source ~/command/common
+
+function set_beijing_time()
+{
+	local tmp_file time_secs start_time end_time offset_time
+
+	tmp_file=._tmp_file_
+	start_time=$(date '+%s')
+	wget -O $tmp_file -q "http://open.baidu.com/special/time/"
+	#iconv -f GB2312 -t UTF-8 .phone_tmp >.phone_tmp_u
+
+	time_secs=$($_SED_ '/window.baidu_time([0-9]\+);/!d;s/^.*(\([0-9]\+\)).*/\1/' $tmp_file)
+
+	end_time=$(date '+%s')
+	((offset_time=end_time-start_time))
+	((time_secs=time_secs/1000+offset_time))
+
+	expect -c "
+			spawn $_SUDO_ date -s @$time_secs
+			expect {
+				\"Password:\" {send \"fangyunjiang\r\"}
+			}
+			interact
+		" 2>/dev/null 1>&2
+	
+	$_RM_ -f $tmp_file
+}
+
+function main()
+{
+	__show_progressbar 0.1 set_beijing_time
+	echo "have set time to baidu time:"
+	date '+%F %T'
+}
+
+
+main "$@"

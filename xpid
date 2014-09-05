@@ -1,0 +1,85 @@
+#!/bin/bash
+
+#
+#note:$! is the pid of the last enter backstage
+#and $$ is the pid of main process 
+#so we use send a signal to stop backstage progress
+#
+
+function child_process()
+{
+	while true;do
+		echo -n .
+		trap 'break' 12
+		sleep 0.01
+	done
+}
+
+function child_process_1()
+{
+	while true;do
+		echo +++++++++++++ 
+		trap 'break' 12
+		sleep 1
+	done
+}
+
+function child_process_2()
+{
+	while true;do
+		echo ------------- 
+		trap 'break' 12
+		sleep 1
+	done
+}
+
+
+function child_process_3()
+{
+	i=0
+	while ((i<20));do
+		echo +++++++++++++ 
+		trap 'break' 12
+		trap 'echo "fang"&&break' 3 
+		sleep 1
+		((i++))
+	done
+}
+
+
+function test_1()
+{
+	child_process_1 &
+	pid_1=$!
+	child_process_2 &
+	pid_2=$!
+	sleep 3
+	kill -12 $pid_1
+	sleep 3
+	kill -12 $pid_2
+	wait
+	echo done
+}
+
+function test_2()
+{
+	child_process &
+	pid=$!
+	sleep 3
+	kill -12 $pid
+	wait
+	echo done
+}
+
+
+function test_3()
+{
+	child_process_3 &
+	pid=$!
+	sleep 10
+	kill -12 $pid
+	wait
+	echo done
+}
+
+test_3

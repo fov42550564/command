@@ -1,0 +1,85 @@
+#!/bin/bash
+
+source ~/command/common
+ip="115.29.42.43"
+password=fangfang
+_local_git=/Users/mac/node/aliyun/puzzle
+_oper=0
+_localfile=""
+_localdir=""
+
+function xali_enter()
+{
+	expect -c "
+		spawn ssh root@$ip;
+		expect {
+			\"*password:\" {send \"$password\r\"}
+		}
+		interact
+	"
+}
+
+function xali_sendfile()
+{
+	[ -z "$_localfile" ]&&return
+	expect -c "
+		spawn scp "$_localfile" root@$ip:/root/tmp
+		expect {
+			\"*password:\" {send \"$password\r\"}
+		}
+		interact
+	"
+}
+
+function xali_senddir()
+{
+	[ -z "$_localdir" ]&&return
+	expect -c "
+		spawn scp -r "$_localdir" root@$ip:/root/tmp;
+		expect {
+			\"*password:\" {send \"$password\r\"}
+		}
+		interact
+	"
+}
+
+function xali_push()
+{
+	cd "$_local_git"
+	git push -u origin master:local
+}
+
+function show_help()
+{
+	local -a list
+	list="xxali"
+	list=("${list[@]}" "Usage :xali [-r|-f|-p|-h]")
+	list=("${list[@]}" "xali:login ssh")
+	list=("${list[@]}" "xali -f [localfile]:send file to aliyun tmp dir")
+	list=("${list[@]}" "xali -r [local dir]:send dir to aliyun tmp dir")
+	list=("${list[@]}" "xali -p :push git file to aliyun")
+	list=("${list[@]}" "xali -h:show help")
+	__msgbox "${list[@]}"
+}
+
+
+function main()
+{
+	while getopts :f:r:ph opt;do
+		case $opt in
+			f)_oper=1;_localfile="$OPTARG";;
+			r)_oper=2;_localdir="$OPTARG";;
+			p)_oper=3;;
+			*)show_help;exit;;
+		esac
+	done
+
+	case $_oper in
+		0)xali_enter;;
+		1)xali_sendfile;;
+		2)xali_senddir;;
+		3)xali_push;;
+	esac
+}
+
+main "$@"

@@ -1,0 +1,58 @@
+#!/bin/bash
+
+
+FILES=($(ls -A))
+DIALOG=~/command/lxdialog
+BOX_HEIGHT=21
+BOX_WIDTH=50 
+MENU_HEIGHT=11
+
+
+function cat_file()
+{
+	$DIALOG --title "$1" --textbox "$1" $BOX_HEIGHT $BOX_WIDTH
+}
+
+function show_help()
+{
+	echo this is a help>rs.out
+	$DIALOG --title 'help' --textbox 'rs.out' $BOX_HEIGHT $BOX_WIDTH
+}
+
+
+function main_menu()
+{
+	if [ ${#FILES[*]} == 0 ];then
+		exit
+	fi
+	sel=${FILES[0]}
+
+	list_head="$DIALOG --title 'cat file' --menu 'cat file' $BOX_HEIGHT $BOX_WIDTH $MENU_HEIGHT "
+	list_tail=
+	for x in ${FILES[*]};do
+		list_tail="$list_tail '$x' '$x'"
+	done
+	list_tail="$list_tail 2>rs.out"
+
+	while true
+	do
+		list="$list_head '$sel' $list_tail"
+		eval $list
+		ret=$?
+
+		case "$ret" in
+		0)
+			sel=$(cat rs.out)
+			cat_file "$sel" ;;
+		2)
+			show_help ;;
+
+		1|255)
+			break;
+		esac
+	done		
+	rm -f rs.out
+}
+
+
+main_menu

@@ -1,0 +1,57 @@
+ #!/usr/bin/env sh
+
+  git clone https://github.com/appjs/appjs.git
+  export NVERSION="0.8.22";
+  export CEFVERSION="1.1180.724";
+  export N32BASE=`pwd`/appjs/node-32/${NVERSION}
+  export PATH="${N32BASE}/bin:${PATH}"
+  export NODE_URL="http://nodejs.org/dist/v${NVERSION}/node-v${NVERSION}-darwin-x86.tar.gz"
+  export NODE_TAR_FILE="node-v${NVERSION}-darwin-x86.tar.gz"
+  export CEF_BINARY="cef_binary_${CEFVERSION}_win32_ia32.tar.gz"
+  export CEF_BINARY_URL="https://github.com/downloads/appjs/appjs/cef_binary_${CEFVERSION}_win32_ia32.tar.gz"
+
+  cd appjs
+  mkdir -p node-32/src
+
+  cd node-32/src
+
+  if [ -a "${NODE_TAR_FILE}" ]; 
+  then
+    echo "\nFile ${NODE_TAR_FILE} exists.\n"
+    rm -rf "node-v${NVERSION}-darwin-x86" # if it exists
+  else  
+    wget "${NODE_URL}"
+  	tar -zxf $NODE_TAR_FILE
+  fi
+
+  cd node-v${NVERSION}-darwin-x86
+  export PATH="node-v${NVERSION}-darwin-x86/bin:${PATH}"
+  echo "\nCopying node binary...\n"
+
+  mkdir -p ../../../data/mac/node-bin
+  cp bin/node ../../../data/mac/node-bin/
+
+#npm install -g node-gyp
+# mkdir node_modules
+  npm install mime
+
+  cd ../../../
+  mkdir -p deps
+  echo mkdir -p deps
+  cd deps
+
+  if ! [ -f cef ];then
+	  if [ -a "cef_binary_${CEFVERSION}_darwin_ia32.tar.gz" ]; then
+		echo "\nFile cef_binary_${CEFVERSION}_darwin_ia32.tar.gz exists.\n"
+	  else  
+		wget --no-check-certificate "${CEF_BINARY_URL}"
+	  fi
+
+	  tar -xzf cef_binary_${CEFVERSION}_darwin_ia32.tar.gz
+	  ln -s cef_binary_${CEFVERSION}_darwin_ia32 cef
+  fi
+
+  cd ../
+  pwd
+  node-gyp configure
+  node-gyp build

@@ -1,0 +1,127 @@
+#/bin/bash 
+#
+#this tool is to expand macro for js
+#the common macro define like this:#define MAX 100
+#use it like this:x=2*MAX;
+#the function macro define like this:#define SUM(a,b) ((a)+(b))
+#use it like this:x=${SUM(1,2)};
+#
+#note:the function macro can't nested
+#
+#author fangyunjiang
+#date:2011-12-15
+#
+FILE=$1.js
+cp $1 $FILE
+
+
+function match() 
+{ 
+    local rs 
+    rs=$(echo $1|sed -r -n '/'$2'/p') 
+    [ -z "$rs" ] && echo 0 || echo 1 
+} 
+
+function connect_two_line()
+{
+	sed -i -e:a -e '/\\$/N;s/\\\n//;ta' $FILE
+}
+
+function do_with_common_macro()
+{
+	local LINE ORIGIN TARGET
+	LINE="$1"
+
+	ORIGIN=$(echo $LINE|sed -r 's/#define[[:space:]]+([_0-9a-zA-Z]+)[[:space:]]+(.*)/\1/')
+	TARGET=$(echo $LINE|sed -r 's/#define[[:space:]]+([_0-9a-zA-Z]+)[[:space:]]+(.*)/\2/')
+
+	echo do_with_common macro $ORIGIN
+	echo origin_exp : $ORIGIN
+	echo target_exp : $TARGET
+	
+ 	sed -i 's#'"$ORIGIN"'#'"$TARGET"'#g' $FILE
+}
+
+
+function do_with_function_macro()
+{
+	local OLINE NLINE NAME OPARAMS NPARAMS OEXP NEXP tmp i
+	OLINE="$1"
+	
+	NAME=$(echo $OLINE|sed -r 's/#define[[:space:]]+([_0-9a-zA-Z]+)[[:space:]]*.*/\1/')
+	OEXP=$(echo $OLINE|sed -r 's/#define[[:space:]]+[_0-9a-zA-Z]+[[:space:]]*\(([^()]*)\)[[:space:]]+(.*)/\2/')	
+	tmp=$(echo $OLINE|sed -r 's/#define[[:space:]]+[_0-9a-zA-Z]+[[:space:]]*\(([^()]*)\).*/\1/')	
+	eval $(echo $tmp|awk '{split($0,t,",")} END {for(i in t) print "OPARAMS["i"]="t[i]}')
+
+	echo do_with_function_macro : $NAME
+
+	echo old_exp : $OEXP
+	echo old_params : ${OPARAMS[*]}
+	echo
+	echo
+
+	while [ 1 ];do
+
+		NLINE=$(sed -n '/\${'"$NAME"'/{p;q}' $FILE)
+		if [ -z "$NLINE" ];then
+			break
+		fi
+
+		NEXP=$(echo $NLINE|sed -r 's/.*(\$\{'"$NAME"'[^}]*\}).*/\1/')
+		echo new_exp : $NEXP
+		
+		tmp=$(echo $NEXP|sed -r 's/.*'"$NAME"'[[:space:]]*\((.*)\)[[:space:]]*\}/\1/'|sed -r 's/\(/@\[/g;s/\)/@\]/g')
+		eval $(echo $tmp|awk '{split($0,t,",")} END {for(i in t) print "NPARAMS["i"]="t[i]}')
+		
+		echo new_params : ${NPARAMS[*]}
+		if (( ${#OPARAMS[*]} != ${#NPARAMS[*]} ));then
+			echo error:macro params num error
+			exit
+		fi
+		
+		tmp="$OEXP"
+		for ((i=1;i<=${#NPARAMS[*]};i++));do
+			tmp=$(echo $tmp|sed -r 's/'"${OPARAMS[$i]}"'/'"${NPARAMS[$i]}"'/g')
+		done
+		tmp=$(echo $tmp|sed -r 's/@\[/\(/g;s/@\]/\)/g')
+		echo replace_exp : $tmp
+		sed -i 's#'"$NEXP"'#'"$tmp"'#g' $FILE
+
+		echo
+		echo
+	done
+}
+
+
+function parse_all()
+{
+	while [ 1 ];do
+	
+		LINE=$(sed -n '/#define/{p;q}' $FILE)
+		if [ -z "$LINE" ];then
+			break
+		fi
+		sed -i '0,/#define/{/#define/d}' $FILE
+	
+		n=$(match "$LINE" "#define[[:space:]]+[_0-9a-zA-Z]+\(.*\)")
+	    if [ $n -eq 0 ];then
+			do_with_common_macro "$LINE"
+		else
+			do_with_function_macro "$LINE"
+	    fi 
+	
+	done
+}
+
+function main()
+{
+	connect_two_line
+	parse_all
+	sed -i '/^[[:space:]]*$/d' $FILE
+	echo //////////////////////outfile//////////////////////////////////
+	cat $FILE
+}
+
+main
+
+

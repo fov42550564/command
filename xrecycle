@@ -1,0 +1,260 @@
+#!/bin/bash
+#############################################
+# author:fang
+# version : v1.0
+# name  : xrecyvle
+# dispcripe: this is a recycled for command
+# CopyRight@fangyunjiang[42550564@qq.com]
+#############################################
+
+source ~/command/common
+
+function get_files()
+{
+	local len file
+	file="$1"
+	eval "$(awk -v FS="$_FS" '{print "_files["NR-1"]=\""$1"\" _deltime["NR-1"]="$2}' $file)"
+	len=${#_files[@]}
+	for((i=0; i<len; i++));do
+		_files[i]="${_files[i]} $(date '+%F %T' -d @${_deltime[i]})"
+	done
+
+}
+
+function do_recycle()
+{
+	local cur_time date_time time_secs recycle_name recycle_path ret
+
+	cur_time=$(date '+%Y-%m-%d-%H-%M-%S %s')
+	date_time=${cur_time:0:19}
+	time_secs=${cur_time:20}
+	recycle_name=$(basename "$1")
+	recycle_path=$(dirname "$1")
+	recycle_path=$(__get_full_path "$recycle_path")
+
+	if [ "$recycle_name" = "." -o "$recycle_name" = ".." -o -z "$recycle_path" ];then
+		__error "recycle file $1 not exist" 
+		return 
+	fi
+	__debug "mv $recycle_path/$recycle_name $recycle_path/.$date_time-$recycle_name._bak_"
+	mv "$recycle_path/$recycle_name" "$recycle_path/.$date_time-$recycle_name._bak_"
+	ret=$?
+	__debug "$recycle_path/$recycle_name $time_secs"
+	if [ $ret -eq 0 ];then
+		echo "$recycle_path/$recycle_name""$_FS""$time_secs""$_FS""$2">>$_recycle_record_file
+	fi
+	__debug "recycle $recycle_path/$recycle_name success"
+}
+
+
+function deal_command()
+{
+	local command src dest
+	command="$1";src="$2";dest="$3"
+
+	[ "${dest:${#dest}-1:1}" = "/" ]&&dest="$dest/$src"
+	[ -a "$dest" ]&&do_recycle "$dest" "$command"
+	eval $command $src $dest
+}
+
+
+function recover_single()
+{
+	local rec_name rec_path recycle_name del_time del_sec del_file
+
+	del_file="$(echo "$@"|$_SED_ 's/^\(.*\)[[:space:]]\{1,\}[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}.*/\1/')"
+	del_time="$(echo "$@"|$_SED_ 's/^.*\([0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}\)/\1/')"
+
+	rec_name=$(basename "$del_file")
+	rec_path=$(dirname "$del_file")
+	del_sec=$(date '+%s' -d "$del_time")
+
+	[ "$rec_path" = "/" ] && rec_path=""
+	recycle_name=$rec_path/.$(date '+%Y-%m-%d-%H-%M-%S' -d "$del_time")-$rec_name._bak_
+	if [ -f "$recycle_name" -o -d "$recycle_name" ];then
+		if [ -f "$rec_path/$rec_name" -o -d "$rec_path/$rec_name" ];then	
+			read -p "$rec_path/$rec_name have exist,cover it or not(y/n):" yesno
+			if [ "$yesno" != "y" ];then
+				return
+			fi
+		fi
+		__debug mv $recycle_name $rec_path/$rec_name
+		mv "$recycle_name" "$rec_path/$rec_name"
+		__debug recover $rec_path/$rec_name success
+	else
+		__error $rec_path/$rec_name file not exist 
+	fi
+	$_SED_ -i 's#^'"$del_file$_FS$del_sec"'$##;/^$/d' $_recycle_record_file
+}
+
+function clean_single()
+{
+	local recycle_path recycle_name del_file del_time del_sec
+
+	del_file="$(echo "$@"|$_SED_ 's/^\(.*\)[[:space:]]\{1,\}[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}.*/\1/')"
+	del_time="$(echo "$@"|$_SED_ 's/^.*\([0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}\)/\1/')"
+	
+	recycle_path=$(dirname "$del_file")
+	del_sec=$(date '+%s' -d "$del_time")
+
+	[ "$recycle_path" = "/" ] && recycle_path=""
+	recycle_name=$recycle_path/.$(date '+%Y-%m-%d-%H-%M-%S' -d "$del_time")-$(basename "$del_file")._bak_
+	if [ -f "$recycle_name" -o -d "$recycle_name" ];then
+		$_RM_ -fr "$recycle_name"
+		__debug clean $del_file success
+	else
+		__debug file $del_file not exist 
+	fi
+	$_SED_ -i 's#^'"$del_file$_FS$del_sec"'$##;/^$/d' $_recycle_record_file
+}
+
+function recover_mult()
+{
+	unset _list_
+	_list_=("${_files[@]}")
+	__checkbox "" "recover_single $_TARGET_" "yes" "recover" "recover the deleted files"
+}
+
+function recover_all()
+{
+	local i
+	for ((i=0; i<${#_files[@]}; i++));do
+		recover_single "${_files[$i]}"
+	done
+}
+
+function recover()
+{
+	get_files "$1"
+	if [ "$_ALL" = "1" ];then
+		recover_all
+	else
+		recover_mult
+	fi
+}
+
+function clean_mult()
+{
+	unset _list_
+	_list_=("${_files[@]}")
+	__checkbox "" "clean_single $_TARGET_" "yes" "clean" "clean the deleted files"
+}
+
+function clean_all()
+{
+	local i
+	for ((i=0; i<${#_files[@]}; i++));do
+		clean_single "${_files[$i]}"
+	done
+}
+
+function clean()
+{
+	get_files "$1"
+	if [ "$_ALL" = "1" ];then
+		clean_all
+	else
+		clean_mult
+	fi
+}
+
+function do_process()
+{
+	local type
+	type="$1"
+	case "$type" in
+		recover)recover "$2";;
+		clean)clean "$2";;
+	esac
+}
+
+function process()
+{
+	local type dir dir_len path i n
+	type="$1"
+	for ((dir_len, i=0; i<$_argc_; i++));do
+		if ! [ -z "${_argv_[i]}" ];then
+			dir[dir_len]=${_argv_[i]}
+			((dir_len++))
+		fi
+	done
+	if ((dir_len==0));then
+		do_process "$type" "$_recycle_record_file"
+	else
+		n=0
+		echo -n > $_tmp_record_file
+		for ((i=0; i<dir_len; i++));do
+			if [ -f "${dir[i]}" -o -d "${dir[i]}" ];then
+				n=1
+				path=$(__get_full_path "${dir[i]}")
+				grep "^$path" $_recycle_record_file 1>>$_tmp_record_file
+			else
+				__warning "${dir[i]} is not exist, ignore it"
+			fi
+		done
+		((n==1))&& do_process "$type" "$_tmp_record_file"
+	fi
+}
+
+function deal_clean()
+{
+	process "clean"
+}
+
+function deal_recover()
+{
+	process "recover"
+}
+
+function show_usage()
+{
+	local -a list
+
+	list="help"
+	list=("${list[@]}" "Usage:recycle [-u][-c][-h][-a] files")
+	list=("${list[@]}" "--clean(-c) [dir]:forever remove files")
+	list=("${list[@]}" "--undo(-u) [dir]:undo delete files")
+	list=("${list[@]}" "--help(-h):show help")
+	list=("${list[@]}" "-----------")
+	list=("${list[@]}" "version:recycle v1.0")
+	list=("${list[@]}" "author:fangyunjiang")
+
+	__msgbox "${list[@]}"
+}
+
+function get_flags()
+{
+	__check_opts "--undo" "-u"  && _OPER=1
+	__check_opts "--clean" "-c"  && _OPER=2
+	__check_opts "--help" "-h"  && _OPER=3
+	__check_opts "--all" "-a"  && _ALL=1
+}
+
+
+
+#global viarables
+_recycle_record_file=~/.recycle_record_file_ex
+_tmp_record_file=~/.tmp_record_file
+_FS="|"
+declare -a _files
+declare -a _deltime
+_OPER=0
+_ALL=0
+
+
+function main()
+{
+	_argc_=$#
+	_argv_=("$@")
+
+	get_flags "$@"
+
+	case $_OPER in
+		0) deal_command "$1" "$2" "$3";;
+		1) deal_recover;;
+		2) deal_clean;;
+		3) show_usage;;
+	esac
+}
+
+main "$@"

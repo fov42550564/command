@@ -1,0 +1,39 @@
+#for opt1; do
+#	echo $opt1 
+#done
+#
+#
+#function fang()
+#{
+#	for opt; do
+#		echo $opt
+#	done
+#}
+#
+#fang 1 2 3
+#
+#
+#function getArgs()
+#{
+#    local arg
+#    local key="-"${1}
+#    local -a list=($2)
+#    for ((i=0; i<${#list[*]}; i++));do
+#        if [ "$key" == "${list[$i]}" ];then
+#            echo ${list[$i+1]}
+#			return;
+#        fi
+#    done
+#	echo "-0"
+#}
+#
+#
+#
+
+#后面跟:的代表有参数
+shift
+while getopts  ":abc:def:ghi" opt
+do
+  echo "$opt" $OPTIND $OPTARG 
+done
+echo $?

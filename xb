@@ -1,0 +1,138 @@
+#!/bin/bash
+
+source common
+
+function copy_armv6_libs()
+{
+	$_RM_ -fr $_DEST_PATH/armeabi-v7a/ 2>/dev/null
+	mkdir -p $_DEST_PATH/armeabi/
+	echo "copy $_SRC_PATH/armeabi/libwebrtc.so $_DEST_PATH/armeabi"
+	cp $_SRC_PATH/armeabi/libwebrtc.so $_DEST_PATH/armeabi/ 
+	echo "list $_DEST_PATH/armeabi:"
+	ls $_DEST_PATH/armeabi/
+}
+
+function copy_armv7_libs()
+{
+	$_RM_ -fr $_DEST_PATH/armeabi 2>/dev/null
+	mkdir -p $_DEST_PATH/armeabi-v7a/
+	echo "copy $_SRC_PATH/armeabi-v7a/libwebrtc.so $_DEST_PATH/armeabi-v7a"
+	cp $_SRC_PATH/armeabi-v7a/libwebrtc.so $_DEST_PATH/armeabi-v7a/ 
+	echo "list $_DEST_PATH/armeabi-v7a:"
+	ls $_DEST_PATH/armeabi-v7a/
+}
+
+function copy_libs()
+{
+	if [ "$_ver" = "armv7" ];then
+		copy_armv7_libs
+	else
+		copy_armv6_libs
+	fi
+}
+
+function get_old_version()
+{
+	local version
+	version=$(__get_setting "build_version")
+	if [ "$version" = "" ];then
+		echo armv6
+	else
+		echo $version
+	fi
+}
+
+function build_armv7()
+{
+	echo "build $_PROJECT on armv7.."
+	if [ "$(get_old_version)" = "armv6" ];then
+		echo "change Application.mk to armv7"
+		sed -i  '/APP_ABI/d' Application.mk
+		sed -i  '1i\APP_ABI := armeabi-v7a' Application.mk
+		__set_setting "build_version:armv7"
+	fi
+	ndk-build -j4
+}
+
+function build_armv6()
+{
+	echo "build $_PROJECT on armv6..."
+	if [ "$(get_old_version)" = "armv7" ];then
+		echo "change Application.mk to armv6"
+		sed -i  '/APP_ABI/d' Application.mk
+		sed -i  '1i\APP_ABI := armeabi' Application.mk
+		__set_setting "build_version:armv6"
+	fi
+	ndk-build -j4
+}
+
+function build()
+{
+	if [ "$_ver" = "armv7" ];then
+		build_armv7	
+	elif [ "$_ver" = "armv6" ];then
+		build_armv6	
+	fi
+	#copy_libs
+}
+
+function rebuild()
+{
+	ndk-build clean -j4
+	build
+}
+
+function show_settings()
+{
+	echo "dest path: $_DEST_PATH"
+	echo "build project: $_PROJECT"
+	echo "build version: $(get_old_version)"
+}
+
+function show_help()
+{
+	echo "Usage: install [-|r|v[version]|s|h]"
+	echo "  -r:rebuild"
+	echo "  -v: set version to armv7 or armv6"
+	echo "  -s: show old version"
+	echo "  -h:show help"
+}
+
+_PROJECT=TestWebrtc
+_SRC_PATH=../libs
+_DEST_PATH=~/android/workspace/$_PROJECT/libs
+
+_oper=0
+_ver=armv6
+_setting_ver=0
+
+function main()
+{
+	local old_ver
+	while getopts :v:rsh opt;do
+		case $opt in
+			r)_oper=1;;
+			v)_ver=$OPTARG;_setting_ver=1;;
+			s)_oper=2;;
+			*)show_help;exit;;
+		esac
+	done
+
+	[ $_setting_ver -eq 0 ]&&_ver=$(get_old_version)
+
+	case $_oper in
+		0)build;;
+		1)rebuild;;
+		2)show_settings;;
+	esac
+}
+
+main "$@"
+
+
+
+
+
+
+
+

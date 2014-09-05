@@ -1,0 +1,250 @@
+#!/bin/bash
+#############################################
+# author:fang
+# version : v1.0
+# name  : xjava
+# dispcripe: java operators
+# CopyRight@fangyunjiang[42550564@qq.com]
+#############################################
+source ~/command/common
+
+
+_class_name=""
+_package=""
+_android=0
+_jni=0
+_oper=0
+android_skd_jar=~/android/android-sdk-macosx/platforms/android-10/android.jar
+
+function xjavaCompressionJar()
+{
+	local author class_name class_path list
+
+	class_name=${1##*.}
+	[ -z "$2" ] && class_path="." || class_path=$2
+	[ -z "$3" ] && author="fangyunjiang" || author=$3
+
+	xjavaGetJniFlag $class_name.java
+
+	[ -d build ]&&$_RM_ -fr build
+	mkdir build
+
+	if [ $_jni -eq 1 ];then
+		gcc -dynamiclib -undefined suppress -flat_namespace jni/"$class_name"jni.c -o build/lib"$class_name"jni.dylib -I/System/Library/Frameworks/JavaVM.framework/Headers||return
+	fi
+	
+	if [ $_android -eq 0 ];then
+		javac -d build $class_name.java||return
+	else
+		javac -d build -bootclasspath $android_skd_jar $class_name.java||return
+	fi
+
+	echo "compile java to class complete ... "
+	cd build
+	echo "Manifest-Version: 1.0" > manifest.mf
+	echo "Created-By: $author" >> manifest.mf 
+	echo "Class-Path: $class_path" >> manifest.mf
+	echo "Main-Class: $class_name" >> manifest.mf
+	echo "create manifest.mf complete ... " 
+	list=`ls`
+	list=${list/manifest.mf/}
+	list="manifest.mf $list"
+	jar cvfm $class_name.jar $list
+	echo "create jar file complete ..."
+	mv $class_name.jar ../
+	cd ..
+}
+
+function xjavaCompileExecute()
+{
+	local class_name target_class
+
+	class_name=${1##*.}
+
+	xjavaGetJniFlag $class_name.java
+	xjavaGetPackage $class_name.java
+	[ -z "$_package" ]&&target_class=$1||target_class=$_package.$class_name
+	[ -d build ]&&$_RM_ -fr build
+	mkdir build
+
+	if [ $_jni -eq 1 ];then
+		gcc -dynamiclib -undefined suppress -flat_namespace jni/"$class_name"jni.c -o build/lib"$class_name"jni.dylib -I/System/Library/Frameworks/JavaVM.framework/Headers||return
+	fi
+
+	if [ $_android -eq 0 ];then
+		javac -d build $class_name.java||return
+		java -cp build -Djava.library.path=build $target_class
+	else
+		javac -d build -bootclasspath $android_skd_jar $class_name.java
+	fi
+}
+
+function xjavaExecuteJar()
+{
+	local class_name
+
+	class_name=${1##*.}
+	tar xvf ../$class_name.jar lib"$class_name"jni.dylib 1>/dev/null 2>&1
+	java -cp $class_name.jar -Djava.library.path=. $1
+	#$_RM_ lib"$class_name"jni.dylib 1>/dev/null 2>&1
+}
+
+function xjavaCreateClass()
+{
+	local class_name file_name package
+	
+	class_name=${1##*.}
+	package=${1%$class_name}
+	package=${package%.}
+	[ -z "$2" ] && file_name="$class_name.java" || file_name=$2
+
+	[ -f $class_name.java ] && exit
+
+	[ -n "$package" ] && echo "package $package;" >> $file_name
+		echo "">> $file_name
+		echo "">> $file_name
+		echo "public class $class_name {" >> $file_name
+		echo "">> $file_name
+	if [ $_jni -eq 1 ];then
+		echo "	public native void func();" >> $file_name
+		echo "">> $file_name
+		echo "	static {" >> $file_name
+		echo "		System.loadLibrary(\""$class_name"jni\");" >> $file_name
+		echo "	}" >> $file_name
+		echo "">> $file_name
+		echo "">> $file_name
+	fi
+	echo "	public static void main(String[] args) {">> $file_name
+	echo "		$class_name _$class_name = new $class_name(); ">> $file_name
+	echo "		System.out.println(\"hello world\");" >> $file_name
+	if [ $_jni -eq 1 ];then
+		echo "		_$class_name.func();" >> $file_name
+	fi
+	echo "	}" >> $file_name
+	echo "}" >> $file_name
+}
+
+function xjavaGetPackage()
+{
+	local file_name
+	file_name=$1
+
+	_package=$($_SED_ -n '/package.*\;/p' $file_name|$_SED_ 's/package//;s/;//;s/[[:space:]]//')
+
+}
+
+function xjavaGetJniFlag()
+{
+	local file_name ret
+	file_name=$1
+	ret=$($_SED_ -n '/native.*();/p' $file_name)
+	[ -z "$ret" ]&&_jni=0||_jni=1
+}
+
+function xjavaCreateJniNativeFile()
+{
+	local class_name header_file src_file target_class
+
+	class_name=${1##*.}
+	xjavaGetJniFlag $class_name.java
+	[ $_jni -eq 0 ]&&return
+	
+	header_file=jni/$class_name"jni.h"
+	src_file=jni/$class_name"jni.c"
+
+	xjavaGetPackage $class_name.java
+
+	[ -d jni ] || mkdir jni
+	[ -z "$_package" ]&&target_class=$1||target_class=$_package.$1
+
+	[ -d .tmp ]||mkdir .tmp
+	javac -d .tmp $class_name.java||return
+	javah -classpath .tmp -o $header_file -jni $target_class||return
+	$_RM_ -fr .tmp
+	
+	__backup_file "$src_file"	
+	echo "#include \""$class_name"jni.h\"" > $src_file
+	echo  >> $src_file
+	$_SED_ -n '/JNIEXPORT/,/);/p' $header_file|$_SED_ 'N;s/\n//'|$_SED_ 's/  (/(/;s/;/{\r\n}/;s/JNIEnv \*/JNIEnv *env/;s/jobject/jobject obj/' >> $src_file
+	echo  >> $src_file
+
+}
+
+function xjavaCreateJniNativeFileForEclipse()
+{
+	local cp header_file class_name
+	if ! [ -f .project ];then
+		echo "please cd project root path"
+		return
+	fi
+
+	mkdir -p jni
+	class_name=${1##*.}
+	cp="bin/classes"
+	header_file=jni/$class_name"jni.h"
+	src_file=jni/$class_name"jni.c"
+
+	javah -classpath "$cp" -o $header_file -jni $_class_name || return
+	
+	__backup_file "$src_file"	
+	echo "#include \""$class_name"jni.h\"" > $src_file
+	echo  >> $src_file
+	$_SED_ -n '/JNIEXPORT/,/);/p' $header_file|$_SED_ 'N;s/\n//'|$_SED_ 's/  (/(/;s/;/{\r\n}/;s/JNIEnv \*/JNIEnv *env/;s/jobject/jobject obj/' >> $src_file
+	echo  >> $src_file
+}
+
+
+function xjavaShowHelp()
+{
+	local -a list
+
+	list="help"
+	list=("${list[@]}" "Usage:xjava [-n class_name|-c|-p|-e|-r|-f|-s|-a|-j|-h]")
+	list=("${list[@]}" "-n class_name:set class_name")
+	list=("${list[@]}" "-c :create class[class_name must be package.class_name]")
+	list=("${list[@]}" "-p :compress jar")
+	list=("${list[@]}" "-e :execute jar[class_name must be package.class_name]")
+	list=("${list[@]}" "-r :complie and excute[not android]")
+	list=("${list[@]}" "-f :create jni header file and src file")
+	list=("${list[@]}" "-s :create jni header file and src file for eclipse[xjava -n package.Class -s]")
+	list=("${list[@]}" "-a :package with android")
+	list=("${list[@]}" "-j :has native jni functions,only with -c")
+	list=("${list[@]}" "-h :show help")
+	list=("${list[@]}" "")
+	list=("${list[@]}" "Author:fangyunjiang@longmaster.com.cn")
+	list=("${list[@]}" "Version:V1.0")
+
+	__msgbox "${list[@]}"
+}
+
+function main()
+{
+	while getopts :n:cperfsajh opt;do
+		case $opt in
+			n)_class_name="$OPTARG";;
+			c)_oper=0;;
+			p)_oper=1;;
+			e)_oper=2;;
+			r)_oper=3;;
+			f)_oper=4;;
+			s)_oper=5;;
+			a)_android=1;;
+			j)_jni=1;;
+			h)xjavaShowHelp;exit;;
+			?)xjavaShowHelp;exit;;
+		esac
+	done
+
+	case $_oper
+	in
+		0)xjavaCreateClass $_class_name;;
+		1)xjavaCompressionJar $_class_name;;
+		2)xjavaExecuteJar $_class_name;;
+		3)xjavaCompileExecute $_class_name;;
+		4)xjavaCreateJniNativeFile $_class_name;;
+		5)xjavaCreateJniNativeFileForEclipse $_class_name;;
+	esac
+}
+
+main "$@"
+

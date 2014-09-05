@@ -1,0 +1,80 @@
+#!/bin/bash
+#############################################
+# author:fang
+# version : v1.0
+# name  : xnw
+# dispcripe: expand for node-webkit
+# CopyRight@fangyunjiang[42550564@qq.com]
+#############################################
+source ~/command/common
+
+_jquery_file="/Users/mac/work/stone/trunk/sources/mediaeditor/mp4editor_node/test/js/opengl/thirdparty/jquery-1.9.1.js"
+_name="*"
+_path="."
+_html_file="index.html"
+_oper=0
+
+function create_package_file(){
+	echo "{\"main\":\"$_html_file\", \"name\":\"test\"}" > "package.json"
+}
+
+function create_html_and_package_file()
+{
+	if ! [ -a "$_html_file" ];then
+		echo "<html>" > "$_html_file"
+		echo "<head>" >> "$_html_file"
+		echo "<title>test</title>" >> "$_html_file"
+		echo "<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">" >> "$_html_file"
+		echo "<script src=\"$_jquery_file\"></script>" >> "$_html_file"
+		echo "<script>" >> "$_html_file"
+		echo "\$(function(){" >> "$_html_file"
+		echo "});" >> "$_html_file"
+		echo "</script>" >> "$_html_file"
+		echo "</head>" >> "$_html_file"
+		echo "<body>" >> "$_html_file"
+		echo "</body>" >> "$_html_file"
+		echo "</html>" >> "$_html_file"
+	else
+		echo "index file have exist"
+	fi
+	create_package_file
+}
+
+function show_help()
+{
+	local -a list
+	list="help"
+	list=("${list[@]}" "Usage :xnw [OPTIONS]")
+	list=("${list[@]}" "  -d [path] :set dest path")
+	list=("${list[@]}" "  -n :new html file and package file")
+	list=("${list[@]}" "  -p :new package file")
+	list=("${list[@]}" "  -k [file]:new package file with a html name")
+	list=("${list[@]}" "  -h :show help ")
+	__msgbox "${list[@]}"
+}
+
+function main()
+{
+	local oper_right=0
+	while getopts :d:k:nph opt;do
+		oper_right=1
+		case $opt in
+			d)_path="$OPTARG";;
+			n)_oper=0;;
+			p)_oper=1;;
+			k)_oper=1;_html_file="$OPTARG";;
+			h)show_help;exit;;
+			*)show_help;exit;;
+		esac
+	done
+
+	[ $oper_right -eq 0 ] && show_help && exit
+
+	case $_oper in
+		0)create_html_and_package_file;;
+		1)create_package_file;;
+	esac
+}
+
+main "$@"
+

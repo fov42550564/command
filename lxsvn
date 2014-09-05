@@ -1,0 +1,317 @@
+#!/bin/bash
+######################################
+#name:lxsvn                          #
+#disp:surpppot linux dialog          #
+#author:fang                         #
+#date:2011-12-22                     #
+#version 1.0                         #
+#copyright:2011-2012 fang            # 
+######################################
+
+
+declare -a FILES
+declare -a FLAGS
+FLAG=(OFF ON)
+DIALOG=~/command/lxdialog
+BACKUP_DIR="~/command/svnbackup/"
+DIALOG_HEIGHT=30
+DIALOG_WIDTH=80
+CHILD_HEIGHT=20
+MSGBOX_HEIGHT=10
+MSGBOX_WIDTH=30
+INPUTBOX_HEIGHT=10
+INPUTBOX_WIDTH=$DIALOG_WIDTH
+
+
+
+function show_help()
+{
+	echo this is a help tip >rs.out
+	echo you can use this tool to do followings: >>rs.out
+	echo see the difference with server files >>rs.out
+	echo recover the file to server files >>rs.out
+	echo commit your modified files to server >>rs.out
+	echo use vi edit the file >>rs.out
+    echo delete the note by regex >>rs.out
+	$DIALOG --title "help" --textbox rs.out $DIALOG_HEIGHT $DIALOG_WIDTH
+}
+
+
+
+#
+#FUNCTION_NAME:show_files
+#PARAMETERS:type,callback,title,disp
+#----------type:check radio
+#----------callback:the function do with rs
+#----------callback:return value 0(last select) 1(break) 2(nothing do) 
+#----------title:title
+#----------disp:discription
+#
+function show_files()
+{	
+	local type title callback disp sel list ret rs x ids rt
+
+	type="$1"
+	callback="$2"
+	title="$3"
+	disp="$4"
+
+	unset FLAGS
+	if [ "$type" == "radio" ];then
+		FLAGS[0]=1
+	fi
+
+	while true;do
+		i=0
+		list=
+	for x in ${FILES[*]};do
+		list="$list '$i' '$x' ${FLAG[${FLAGS[$i]}]} "
+		((i++))
+	done
+
+	if [ "$type" == "radio" ];then
+ 		$DIALOG --title "$title" --radiolist "$disp" $DIALOG_HEIGHT $DIALOG_WIDTH $CHILD_HEIGHT $list 2>rs.out
+	else
+ 		$DIALOG --title "$title" --checklist "$disp" $DIALOG_HEIGHT $DIALOG_WIDTH $CHILD_HEIGHT $list 2>rs.out
+	fi
+
+	ret=$?
+	rs=$(cat rs.out|sed 's/\x27//g;s/"//g')
+
+	case "$ret" in
+	0)
+			ids=
+			for x in $rs;do
+				ids="$ids $x"
+			done
+			if [ ! -z "$ids" ];then
+				$callback "$ids"
+				rt=$?
+				unset FLAGS
+				if [ "$rt" == "1" ];then
+					break
+				elif [ "$rt" == "0" ];then
+					for x in $rs;do
+						FLAGS[$x]=1
+					done
+				fi
+			fi
+			;;
+		1|255)
+			break;;
+		esac
+	done
+}
+
+
+function show_diff()
+{
+	echo >rs.out
+	svn diff ${FILES[$1]} 1>>rs.out
+	$DIALOG --title "result" --textbox rs.out $DIALOG_HEIGHT $DIALOG_WIDTH
+	return 0
+}
+
+
+function remove_files()
+{
+	local del_a tmp_a 
+    del_a=($*) 
+    for ((i=0; i<${#del_a[*]}; i++));do 
+       unset FILES[${del_a[$i]}] 
+    done 
+    tmp_a=(${FILES[*]}) 
+    FILES=(${tmp_a[*]}) 
+}
+
+function backup_files()
+{
+	local file 
+    file=$BACKUP_DIR$(date '+%Y-%m-%d-%H-%M-%S')-$(echo $1|sed 's#/#-#g') 
+    echo eval cp $1 $file >>rs.out
+}
+
+function recover_file()
+{
+	local x tar  
+	echo result as follows:>rs.out
+	for x in $1;do
+		tar="$tar ${FILES[$x]}"
+		backup_files ${FILES[$x]}
+	done
+	remove_files "$1"
+	echo svn revert $tar >>rs.out 
+	svn revert $tar 1>>rs.out 
+	echo sucess>>rs.out
+	$DIALOG --title "result" --textbox rs.out $DIALOG_HEIGHT $DIALOG_WIDTH
+	return 2
+}
+
+function commit_file()
+{
+	local x tar note ret
+	for x in $1;do
+		tar="$tar ${FILES[$x]}"
+	done
+	$DIALOG --title "inputbox" --inputbox "please input commit info" $INPUTBOX_HEIGHT $INPUTBOX_WIDTH "fix some bugs" 2>rs.out
+	ret=$?
+	note=$(cat rs.out)
+
+	if [ -z "$note" ];then
+		note="fix some bugs"
+	fi
+	echo result as follow:>rs.out
+	case "$ret" in
+	0)
+		remove_files "$1"
+		echo svn ci -m \"$note\" $tar>>rs.out
+		eval "svn ci -m \"$note\" $tar 1>>rs.out"
+		echo sucess>>rs.out
+		$DIALOG --title "result" --textbox rs.out $DIALOG_HEIGHT $DIALOG_WIDTH
+		return 1
+		;;
+	esac
+	return 2
+}
+
+function edit_file()
+{
+	vi ${FILES[$1]}	
+	return 0
+}
+
+function delete_note()
+{
+	local x tar note ret
+
+	$DIALOG --title "inputbox" --inputbox "please input the regex of you will delete note" $INPUTBOX_HEIGHT $INPUTBOX_WIDTH "\\[star-net\\]\\[fang\\]" 2>rs.out
+	ret=$?
+	note=$(cat rs.out)
+
+	if [ -z "$note" ];then
+		note="\\[star-net\\]\\[fang\\]"
+	fi
+	case "$ret" in
+	0)
+		echo result as follow:>rs.out
+		for x in $1;do
+			sed -i '/'$note'.*);/d;/'$note'/,/);/d' ${FILES[$x]}
+			echo sed -i '/'$note'.*);/d;/'$note'/,/);/d' ${FILES[$x]}>>rs.out	
+		done
+		echo sucess>>rs.out
+		$DIALOG --title "result" --textbox rs.out $DIALOG_HEIGHT $DIALOG_WIDTH
+		return 1
+		;;
+	esac
+	return 2
+}
+
+function show_author()
+{
+	echo name:lxsvn >rs.out
+	echo disp:surpppot linux dialog >>rs.out
+	echo author:fang >>rs.out
+	echo date:2011-12-22 >>rs.out
+	echo version: 1.0 >>rs.out
+	echo copyright:2011-2012 fang >>rs.out
+	$DIALOG --title "version" --textbox rs.out $DIALOG_HEIGHT $DIALOG_WIDTH
+}
+
+
+function do_task()
+{
+	case "$1" in
+	"d")
+		show_files "radio" "show_diff" "show the difference" "show the difference with server files"
+		;;
+	"r")
+		show_files "check" "recover_file" "recover the file" "recover the file to server files"
+		;;
+	"c")
+		show_files "check" "commit_file" "commit files" "commit your modified files to server"
+		;;
+	"v")
+		show_files "radio" "edit_file" "edit file" "edit file with vim"
+		;;
+	"n")
+		show_files "check" "delete_note" "delete note" "delete the note by regex"
+		;;
+	"ver")
+		show_author
+		;;	
+	esac
+}
+
+
+
+function main_menu()
+{
+	local sel cmd_head cmd_tail list cmd ret disp
+	cmd_head="$DIALOG --title 'lxsvn' --menu "
+	cmd_tail=" $DIALOG_HEIGHT $DIALOG_WIDTH $CHILD_HEIGHT"
+	list="'d' 'see the difference--->' 'r' 'recover the file--->' 'c' 'commit files--->' 'v' 'use vi edit the file--->' 'n' 'delete the note by regex--->' 'seperate' '----' 'ver' 'version--->'"
+	sel='d'
+
+	while true;do
+
+		if [ ${#FILES[*]} -eq 0 ];then
+			echo there is no file>rs.out
+			$DIALOG --title "info" --textbox rs.out $MSGBOX_HEIGHT $MSGBOX_WIDTH
+			break
+		fi
+		disp="there are/is ${#FILES[*]} file(s) to operate"
+
+	 	cmd="$cmd_head '$disp' $cmd_tail $sel $list 2>rs.out"
+	 	eval $cmd
+		ret=$?
+		
+		case "$ret" in
+		0)
+			sel=$(cat rs.out)
+			do_task "$sel"
+			;;
+		1|255)
+			break;;
+		2)
+			sel=$(cat rs.out|sed -r 's/(\w).*/\1/')
+			show_help;;
+		esac
+	done
+	rm -f rs.out
+}
+
+function wait_process()
+{
+	echo initial process may cost a few seconds
+	while true;do
+		echo -n .
+		trap 'break' 12
+		sleep 0.1
+	done
+}
+
+
+function main()
+{
+	local rs s i var pid
+	wait_process &
+	pid=$!
+
+    rs=$(svn st|grep ^M|sed 's/^M//') 
+    s=`echo $rs|awk '{split($0,tmp)} END {for(i in tmp) print tmp[i]}'`
+    i=0  
+    unset FILES 
+    for var in $s;do 
+        FILES[i]=$var 
+        let i++  
+    done 
+	
+	kill -12 $pid
+	wait
+ 
+	main_menu
+}
+
+main
+
+

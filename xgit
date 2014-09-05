@@ -1,0 +1,224 @@
+#!/bin/bash
+#############################################
+# author:fang
+# version : v1.0
+# name  : xgit
+# dispcripe: the set of git 
+# CopyRight@fangyunjiang[42550564@qq.com]
+#############################################
+source ~/command/common
+
+declare -a _files
+declare -a _versions
+_backup_path="~/command/gitbackup/"
+
+_dest_dir=""
+_filter=""
+_logfile=""
+_oper=0
+
+function git_single_command()
+{
+	local command title disp is_update
+
+	command=$1
+	is_update=$2
+	title=$3
+	disp=$4
+
+	unset _list_
+	_list_=("${_files[@]}")
+	__radiobox "$command" "$is_update" "$title" "$disp"
+}
+
+function git_mult_command()
+{
+	local command single_command is_update title disp
+	command=$1
+	single_command=$2
+	is_update=$3
+	title=$4
+	disp=$5
+
+	unset _list_
+	_list_=("${_files[@]}")
+	__checkbox "$command" "$single_command" "$is_update" "$title" "$disp"
+}
+
+
+function git_show_diff()
+{
+	git_single_command "git diff $_TARGET_" "no" "show diff" "select bellow _files to show the difference with git"
+}
+
+function git_add_files()
+{
+	git_mult_command "git add $_TARGET_" "" "no" "add files" "select bellow _files to add with git"
+}
+
+function git_backup_file()
+{
+	local file
+	file=$_backup_path$(date '+%Y-%m-%d-%H-%M-%S')-$(echo $1|sed 's#/#-#g')
+	#echo $file
+	cp $1 $file
+}
+
+function git_revert()
+{
+	git_mult_command "git checkout $_TARGET_" "" "yes" "recover" "select bellow _files to revert to git"
+	unset _files
+	_files=("${_list_[@]}")
+}
+
+function git_edit_vi()
+{
+	git_single_command "vi $_TARGET_" "no" "edit" "select bellow _files to edit with vim"
+}
+
+function git_show_version_diff()
+{
+	ver=$1
+	git_single_command "git diff $ver $ver^ $_TARGET_" "no" "diff" "select bellow _files to show diff with preversion"
+}
+
+function git_log_by_version()
+{
+	local ver
+	ver=$1
+    ver=${ver%% *}
+	if [ -z "$ver" ];then
+		return
+	fi
+	if [ -z "$_logfile" ];then
+		__show_progressbar 0.1 git_get_log_version_files "$ver"
+		git_show_version_diff $ver
+		unset _list_
+		_list_=("${_versions[@]}")
+	else
+		git diff $ver^ $ver $_logfile
+	fi
+}
+
+function git_show_logs()
+{
+	unset _list_
+	_list_=("${_versions[@]}")
+	__radiobox "git_log_by_version $_TARGET_" "$no" "logs" "select bellow versions to show details"
+}
+
+function git_get_modified_files()
+{
+	local rs s i var
+	rs=$(git status|grep "modified:"|sed 's/.*modified://')
+	s=`echo $rs|awk '{split($0,tmp)} END {for(i in tmp) print tmp[i]}'`
+	i=0
+	unset _files
+	for var in $s;do
+		_files[i]=$var
+		let i++
+	done
+}
+
+function git_get_log_version_files()
+{
+	local rs s i var version
+	version=$1
+	rs=$(git show --stat ${version}|grep "\| *[0-9]* [+-]"|sed 's/|.*$//')
+	s=`echo $rs|awk '{split($0,tmp)} END {for(i in tmp) print tmp[i]}'`
+	i=0
+	unset _files
+	for var in $s;do
+		_files[i]=$var
+		let i++
+	done
+}
+
+function git_get_log_versions()
+{
+	unset _versions
+	eval `git log --oneline ${_filter} ${_logfile}|awk -v FS=";;;;" '{print "_versions["NR-1"]=\""$1"\""}'`
+}
+
+function git_get_add_files()
+{
+	local hasadd
+	unset _files
+	hasadd=$(git st|sed -n '/# Untracked files:/p')
+	[ -z "$hasadd" ]&&return
+	_files=($(git st|sed '0,/# Untracked files:/d;$d;'|sed '1,2d;s/.//'))
+}
+
+function git_copy_change_to()
+{
+	[ -z "$_dest_dir" ]&&return
+	for var in "${_files[@]}";do
+		path=$(dirname "$var")
+		path=${path##*..}
+		[ "$path" = "." ]&&path=""
+		name=$(basename "${var}")
+		mkdir -p "${_dest_dir}/${path}"
+		cp -f "${var}" "${_dest_dir}/${path}"
+		echo "have do copy ${var} to ${_dest_dir}"
+	done
+}
+
+function show_help()
+{
+	local -a list
+	list="help"
+	list=("${list[@]}" "Usage :xgit [OPTIONS]")
+	list=("${list[@]}" "  -p [dest_dir]:copy change files to dest_dir and make dirs")
+	list=("${list[@]}" "  -l :show git log, user -f set filter")
+	list=("${list[@]}" "  -t [filter]: set filter")
+	list=("${list[@]}" "  -f [file]: set one log file")
+	list=("${list[@]}" "  -d :show git diff")
+	list=("${list[@]}" "  -a :add git file")
+	list=("${list[@]}" "  -r :revert git file")
+	list=("${list[@]}" "  -v :edit file with vim")
+	list=("${list[@]}" "  -h :show help ")
+	__msgbox "${list[@]}"
+}
+
+function main()
+{
+	local oper_right
+	oper_right=0
+
+	while getopts :p:darvlt:f:h opt;do
+		oper_right=1
+		case $opt in
+			p)_oper=0;_dest_dir="$OPTARG";;
+			d)_oper=1;;
+			r)_oper=2;;
+			v)_oper=3;;
+			a)_oper=4;;
+			l)_oper=5;;
+			t)_filter="$OPTARG";;
+			f)_logfile="$OPTARG";;
+			*)show_help;exit;;
+		esac
+	done
+
+	[ $oper_right -eq 0 ] && show_help && exit
+
+	if ((_oper==5));then
+		__show_progressbar 0.1 git_get_log_versions
+	elif ((_oper==4));then
+		__show_progressbar 0.1 git_get_add_files
+	else
+		__show_progressbar 0.1 git_get_modified_files
+	fi
+
+	case $_oper in
+		0)git_copy_change_to;;
+		1)git_show_diff;;
+		2)git_revert;;
+		3)git_edit_vi;;
+		4)git_add_files;;
+		5)git_show_logs;;
+	esac
+}
+
+main "$@"
+

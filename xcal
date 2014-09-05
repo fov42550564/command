@@ -1,0 +1,514 @@
+#!/bin/bash
+#############################################
+# author:fang
+# version : v1.0
+# name  : xcal
+# dispcripe: show calendar
+# month and day always start at 1
+# CopyRight@fangyunjiang[42550564@qq.com]
+#############################################
+source ~/command/common
+
+ITEM_WIDTH=0
+MONTH_BLANK_WIDTH=0
+WEEK_TITLE_COLOR=$RED
+YEAR_TITLE_COLOR=$RED
+MONTH_TITLE_COLOR=$BLUE
+TODAY_COLOR=$PURPLE
+use_cn=0
+lunar_on=0
+
+function is_leap_year()
+{
+	return $((!((!($1%4)&(!!($1%100)))|(!($1%400)))))
+}
+
+function get_week_day()
+{
+	local ret y m d
+	y=$1;m=$2;d=$3
+
+	if ((m<=2));then
+		((y--))
+		((m+=12))
+	fi
+	ret=$((($y/100/4-$y/100*2+$y%100+$y%100/4+13*($m+1)/5+$d-1)%7))
+	((ret<0))&&((ret+=7))
+	return $ret
+}
+
+function get_month_max_day()
+{
+	local max_days leap
+	is_leap_year $1 && leap=29 || leap=28
+	max_days=(0 31 $leap 31 30 31 30 31 31 30 31 30 31)
+	return ${max_days[$2]}
+}
+
+function correct_time()
+{
+	local y m d leap max_days md __ret_year __ret_mon __ret__day
+	y=$1;m=$2;d=$3;__ret_year=$4;__ret_mon=$5;__ret_day=$6
+	is_leap_year $y && leap=29 || leap=28
+	max_days=(0 31 $leap 31 30 31 30 31 31 30 31 30 31)
+	while ((d <= 0));do
+		((m--));
+		if ((m==0));then
+			m=12;
+			((y--))
+			is_leap_year $y && leap=29 || leap=28
+			max_days[2]=$leap
+		fi
+		((d+=max_days[m]));
+	done
+
+	md=${max_days[m]}
+	while ((d > md));do
+		((d-=md));
+		((m++));
+		if ((m==13));then
+			m=1;
+			((y++));
+			is_leap_year $y && leap=29 || leap=28
+			max_days[2]=$leap
+		fi
+	done
+
+	[ -n "$__ret_year" ] && eval $__ret_year=$y
+	[ -n "$__ret_mon" ] && eval $__ret_mon=$m
+	[ -n "$__ret_day" ] && eval $__ret_day=$d
+}
+
+function sub_of_year()
+{
+	local y m1 d1 m2 d2 __ret mm1 mm2 max_days leap dd
+	y=$1; m1=$2; d1=$3; m2=$4; d2=$5; __ret=$6
+	if ((m1 > m2));then
+		eval $__ret=-1
+		return
+	fi
+	if ((m1 == m2));then
+		if ((d1 > d2));then
+			eval $__ret=-1
+			return
+		fi
+	fi
+
+	is_leap_year $y && leap=29 || leap=28
+	max_days=(0 31 $leap 31 30 31 30 31 31 30 31 30 31)
+
+	mm1=$m1
+	((mm2=m2-1))
+	dd=0
+	for ((i=mm1; i<=mm2; i++));do
+		((dd+=max_days[i]))
+	done
+
+	((dd+=d2))
+	((dd-=d1))
+
+	eval $__ret=$dd
+}
+
+
+function get_lunar_date()
+{
+	local i  ly yy lm mm dd data leap_month zm zd day day1 lu_tag lu_data lmd  ld __ret_lu_year __ret_lu_mon __ret_lu_day __ret_lu_max
+	#********************************************************************************************************#
+	#										1901-2100间的农历数据											*#
+	#																										*#
+	#结构解析：例1901																						*#
+	#			十六进制：0x04AE53	|	二进制：0000 0100 1010 1110 0101 0011								*#
+	#			24-21	：0000						|	表示当年的闰月月份，如果为0，表示没有当年没有闰月	*#
+	#			20-8	：0100 1010 1110 0  		|	表示对应的月份的大小，如果有闰月，如闰2月			*#
+	#												|	则闰2月排在18位的3月，农历3月则排在17位的4月		*#
+	#			7-6		：10						|	表示春节所在的月份									*#
+	#			5-1		：1 0011					|	表示春节所在的号数									*#
+	#只取1999-2099一百年的数据，取1999年时为了计算2000春节以前的日期										*#
+	#********************************************************************************************************#
+	lu_data=(
+	0x04AE53 0x0A5748 0x5526BD 0x0D2650 0x0D9544 0x46AAB9 0x056A4D 0x09AD42 0x24AEB6 0x04AE4A  #*1901-1910 *#
+	0x6A4DBE 0x0A4D52 0x0D2546 0x5D52BA 0x0B544E 0x0D6A43 0x296D37 0x095B4B 0x749BC1 0x049754  #*1911-1920 *#
+	0x0A4B48 0x5B25BC 0x06A550 0x06D445 0x4ADAB8 0x02B64D 0x095742 0x2497B7 0x04974A 0x664B3E  #*1921-1930 *#
+	0x0D4A51 0x0EA546 0x56D4BA 0x05AD4E 0x02B644 0x393738 0x092E4B 0x7C96BF 0x0C9553 0x0D4A48  #*1931-1940 *#
+	0x6DA53B 0x0B554F 0x056A45 0x4AADB9 0x025D4D 0x092D42 0x2C95B6 0x0A954A 0x7B4ABD 0x06CA51  #*1941-1950 *# 
+	0x0B5546 0x555ABB 0x04DA4E 0x0A5B43 0x352BB8 0x052B4C 0x8A953F 0x0E9552 0x06AA48 0x7AD53C  #*1951-1960 *# 
+	0x0AB54F 0x04B645 0x4A5739 0x0A574D 0x052642 0x3E9335 0x0D9549 0x75AABE 0x056A51 0x096D46  #*1961-1970 *# 
+	0x54AEBB 0x04AD4F 0x0A4D43 0x4D26B7 0x0D254B 0x8D52BF 0x0B5452 0x0B6A47 0x696D3C 0x095B50  #*1971-1980 *#
+	0x049B45 0x4A4BB9 0x0A4B4D 0xAB25C2 0x06A554 0x06D449 0x6ADA3D 0x0AB651 0x093746 0x5497BB  #*1981-1990 *#
+	0x04974F 0x064B44 0x36A537 0x0EA54A 0x86B2BF 0x05AC53 0x0AB647 0x5936BC 0x092E50 0x0C9645  #*1991-2000 *#
+	0x4D4AB8 0x0D4A4C 0x0DA541 0x25AAB6 0x056A49 0x7AADBD 0x025D52 0x092D47 0x5C95BA 0x0A954E  #*2001-2010 *#
+	0x0B4A43 0x4B5537 0x0AD54A 0x955ABF 0x04BA53 0x0A5B48 0x652BBC 0x052B50 0x0A9345 0x474AB9  #*2011-2020 *#
+	0x06AA4C 0x0AD541 0x24DAB6 0x04B64A 0x69573D 0x0A4E51 0x0D2646 0x5E933A 0x0D534D 0x05AA43  #*2021-2030 *#
+	0x36B537 0x096D4B 0xB4AEBF 0x04AD53 0x0A4D48 0x6D25BC 0x0D254F 0x0D5244 0x5DAA38 0x0B5A4C  #*2031-2040 *#
+	0x056D41 0x24ADB6 0x049B4A 0x7A4BBE 0x0A4B51 0x0AA546 0x5B52BA 0x06D24E 0x0ADA42 0x355B37  #*2041-2050 *#
+	0x09374B 0x8497C1 0x049753 0x064B48 0x66A53C 0x0EA54F 0x06B244 0x4AB638 0x0AAE4C 0x092E42  #*2051-2060 *#
+	0x3C9735 0x0C9649 0x7D4ABD 0x0D4A51 0x0DA545 0x55AABA 0x056A4E 0x0A6D43 0x452EB7 0x052D4B  #*2061-2070 *#
+	0x8A95BF 0x0A9553 0x0B4A47 0x6B553B 0x0AD54F 0x055A45 0x4A5D38 0x0A5B4C 0x052B42 0x3A93B6  #*2071-2080 *#
+	0x069349 0x7729BD 0x06AA51 0x0AD546 0x54DABA 0x04B64E 0x0A5743 0x452738 0x0D264A 0x8E933E  #*2081-2090 *#
+	0x0D5252 0x0DAA47 0x66B53B 0x056D4F 0x04AE45 0x4A4EB9 0x0A4D4C 0x0D1541 0x2D92B5 0x0D5349) #*2091-2100 *#
+
+	data=${lu_data[$(($1-1901))]}
+	ly=$1; yy=$1; lm=1; mm=$2; dd=$3
+	__ret_lu_year=$7; __ret_lu_mon=$6; __ret_lu_day=$5; __ret_lu_max=$4
+	((leap_month=data >> 20))
+	((zm=(data>>5)&0x3))
+	((zd=data&0x1f))
+
+	sub_of_year $ly $zm $zd $mm $dd day
+
+	if ((day==-1));then
+		((ly--))
+		data=${lu_data[$((ly-1901))]}
+		((leap_month=data>>20))
+		((zm=(data>>5)&0x3))
+		((zd=data&0x1f))
+		sub_of_year $ly $zm $zd 12 31 day
+		sub_of_year $yy 1 1 $mm $dd day1
+		((day=day+day1+1))
+	fi
+	((ld=day+1))
+	for ((i=1;i<14;i++));do
+		((lu_tag=(data>>7)&(1<<(13-i))))
+		((lu_tag>0))&& lmd=30|| lmd=29
+		if  ((ld > lmd));then
+			((ld-=lmd))
+			((lm+=1))
+		else
+			((max=lmd))
+			break
+		fi
+	done
+
+	if ((leap_month > 0));then
+		if ((lm > leap_month));then
+			((lm--))
+		fi
+	fi
+
+	#echo lu: $ly $lm $ld $max
+
+	[ -n "$__ret_lu_year" ] && eval $__ret_lu_year=$ly
+	[ -n "$__ret_lu_mon" ] && eval $__ret_lu_mon=$lm
+	[ -n "$__ret_lu_day" ] && eval $__ret_lu_day=$ld
+	[ -n "$__ret_lu_max" ] && eval $__ret_lu_max=$max
+
+}
+
+function show_week_title()
+{
+	local weektitle i width
+	weektitle=(su mo tu we th fr sa)
+	[ $use_cn -eq 1 ] && weektitle=("日" "一" "二" "三" "四" "五" "六")
+	width=$ITEM_WIDTH
+	[ $use_cn -eq 1 ] && width=$((ITEM_WIDTH-1))
+	for ((i=0; i<7; i++));do
+		__echo_center ${weektitle[i]} $width $WEEK_TITLE_COLOR
+	done
+}
+
+function get_lunar_year_name()
+{
+	local lu_y jiazi tiangan dizhi tiangan_list dizhi_list shuxiang_list __ret_lu_year_name __ret_shuxiang
+
+	tiangan_list=("甲" "乙" "丙" "丁" "戊" "己" "庚" "辛" "壬" "癸")
+	dizhi_list=("子" "丑" "寅" "卯" "辰" "巳" "午" "未" "申" "酉" "戌" "亥")
+	shuxiang_list=("鼠" "牛" "虎" "兔" "龙" "蛇" "马" "羊" "猴" "鸡" "狗" "猪")
+
+	lu_y=$1;__ret_lu_year_name=$2;__ret_shuxiang=$3
+
+	((jiazi=($lu_y-4)%60))
+	((tiangan=$jiazi%10))
+	((dizhi=jiazi%12))
+	
+	[ -n "$__ret_lu_year_name" ] && eval $__ret_lu_year_name="${tiangan_list[tiangan]}${dizhi_list[dizhi]}"
+	[ -n "$__ret_shuxiang" ] && eval $__ret_shuxiang=${shuxiang_list[dizhi]}
+}
+
+function show_month_title()
+{
+	local montitle i width tmp tiangan dizhi shuxiang lu_max lu_day lu_mon lu_year _ret_ln _ret_sx
+
+	montitle=("null" "January" "February" "March" "April" "May" "June" "July" "August" "September" "October" "November" "December")
+	[ $use_cn -eq 1 ] && montitle=("null" "一月" "二月" "三月" "四月" "五月" "六月" "七月" "八月" "九月" "十月" "十一月" "十二月")
+
+	width=$((ITEM_WIDTH*7))
+	tmp=${montitle[$1]}
+	[ $use_cn -eq 1 ] && ((width-=${#tmp}))
+
+	if (($#==1));then
+		__echo_center ${montitle[$1]}  $width $MONTH_TITLE_COLOR
+	else
+		if ((lunar_on==1));then
+			get_lunar_date $1 $2 1 lu_max lu_day lu_mon lu_year
+			get_lunar_year_name $lu_year _ret_ln _ret_sx
+			__echo_center "$1[$_ret_ln:$_ret_sx]  ${montitle[$2]}"  $((width-3)) $MONTH_TITLE_COLOR
+		else
+			__echo_center "$1   ${montitle[$2]}"  $width $MONTH_TITLE_COLOR
+		fi
+	fi
+}
+
+function show_year_title()
+{
+	local montitle i width tmp tiangan dizhi shuxiang lu_max lu_day lu_mon lu_year _ret_ln _ret_sx
+
+	width=$((ITEM_WIDTH*7*3+MONTH_BLANK_WIDTH*3))
+	if ((lunar_on==1));then
+		get_lunar_date $1 7 1 lu_max lu_day lu_mon lu_year
+		get_lunar_year_name $lu_year _ret_ln _ret_sx
+		__echo_center "$1    $_ret_ln($_ret_sx)"  $((width-3)) $YEAR_TITLE_COLOR
+	else
+		__echo_center "$1"  $width $YEAR_TITLE_COLOR
+	fi
+	__new_line
+	__new_line
+}
+
+function show_month_blank()
+{
+	printf %-"$MONTH_BLANK_WIDTH"s
+}
+
+function show_month_cal()
+{
+	local i j wd md y m d lud_name lum_name lu_start dl ludl day lday lu_day lu_mon lu_max dcolor width _ret_y _ret_m _ret_d
+
+	y=$1;m=$2
+	[ -z "$3" ]&& d=0 || d=$3
+	[ ${#m} -eq 2 -a "${m:0:1}" = "0" ] && m=${m:1:1}
+	[ ${#d} -eq 2 -a "${d:0:1}" = "0" ] && d=${d:1:1}
+
+	if (($#==3)) ;then
+		correct_time $y $m $d _ret_y _ret_m _ret_d
+		y=$_ret_y;m=_ret_m;d=$_ret_d
+	fi
+
+	get_week_day $y $m 1; wd=$? 
+	get_month_max_day $y $m; md=$?; ((md+=wd))
+
+	lud_name=("null" "初一" "初二" "初三" "初四" "初五" "初六" "初七" "初八" "初九" "初十" "十一" "十二" "十三" "十四" "十五" "十六" "十七" "十八" "十九" "二十" "廿一" "廿二" "廿三" "廿四" "廿五" "廿六" "廿七" "廿八" "廿九" "三十")
+	lum_name=("null" "正月" "二月" "三月" "四月" "五月" "六月" "七月" "八月" "九月" "十月" "冬月" "腊月" "正月" "二月" "三月")
+
+	show_month_title $y $m; __new_line
+	show_week_title; __new_line
+
+	lu_start=0
+	[ $lunar_on -eq 1 ] && get_lunar_date $y $m 1 lu_max lu_day
+	for ((i=0; i<md; i++));do
+		if ((i >= wd));then
+			dl[i]=$((i-wd+1))
+			if ((lunar_on==1));then
+				if ((lu_start==1));then
+					ludl[i]=${lum_name[lu_mon]}
+					lu_start=0
+				else
+					ludl[i]=${lud_name[lu_day]}
+				fi
+				((lu_day++))
+				if ((lu_day>lu_max));then
+					get_lunar_date $y $m $((i-wd+2)) lu_max lu_day lu_mon
+					lu_start=1
+				fi
+			fi
+		fi
+	done
+	for ((i=0; i<6; i++));do
+		for ((j=0; j<7; j++));do
+			day=${dl[i*7+j]};
+			((d == day)) && dcolor=$TODAY_COLOR || dcolor=""
+			__echo_center "$day" "$ITEM_WIDTH" "$dcolor"
+		done
+		__new_line
+		if ((lunar_on==1));then
+			for ((j=0; j<7; j++));do
+				day=${dl[$((i*7+j))]};
+				((d == day)) && dcolor=$TODAY_COLOR || dcolor=""
+				lday=${ludl[i*7+j]}
+				[ -z "$lday" ]&&width=$ITEM_WIDTH||width=$((ITEM_WIDTH-2))
+				__echo_center "$lday" "$width" "$dcolor"
+			done
+			__new_line
+		fi
+	done
+}
+
+function show_3month_cal()
+{
+	local i j wd md dl0 dl1 dl2 ludl0 ludl1 ludl2 lud_name lum_name lu_start lu_day lu_mon lu_max lday width
+	lud_name=("null" "初一" "初二" "初三" "初四" "初五" "初六" "初七" "初八" "初九" "初十" "十一" "十二" "十三" "十四" "十五" "十六" "十七" "十八" "十九" "二十" "廿一" "廿二" "廿三" "廿四" "廿五" "廿六" "廿七" "廿八" "廿九" "三十")
+	lum_name=("null" "正月" "二月" "三月" "四月" "五月" "六月" "七月" "八月" "九月" "十月" "冬月" "腊月" "正月" "二月" "三月")
+
+	get_week_day $1 $2 1; wd[0]=$? 
+	get_week_day $1 $(($2+1)) 1; wd[1]=$? 
+	get_week_day $1 $(($2+2)) 1; wd[2]=$? 
+	get_month_max_day $1 $2; md[0]=$?; ((md[0]+=wd[0]))
+	get_month_max_day $1 $(($2+1)); md[1]=$?; ((md[1]+=wd[1]))
+	get_month_max_day $1 $(($2+2)); md[2]=$?; ((md[2]+=wd[2]))
+
+	show_month_title $2; show_month_blank
+	show_month_title $(($2+1)); show_month_blank
+	show_month_title $(($2+2)); __new_line
+
+	show_week_title; show_month_blank
+	show_week_title; show_month_blank
+	show_week_title; __new_line
+
+	lu_start=0
+	[ $lunar_on -eq 1 ] && get_lunar_date $1 $2 1 lu_max lu_day
+	for ((i=0; i<md[0]; i++));do
+		if ((i >= wd[0]));then
+			dl0[i]=$((i-wd[0]+1))
+			if ((lunar_on==1));then
+				if ((lu_start==1));then
+					ludl0[i]=${lum_name[lu_mon]}
+					lu_start=0
+				else
+					ludl0[i]=${lud_name[lu_day]}
+				fi
+				((lu_day++))
+				if ((lu_day>lu_max));then
+					get_lunar_date $1 $2 $((i-wd[0]+2)) lu_max lu_day lu_mon
+					lu_start=1
+				fi
+			fi
+		fi
+	done
+
+	lu_start=0
+	[ $lunar_on -eq 1 ] && get_lunar_date $1 $(($2+1)) 1 lu_max lu_day
+	for ((i=0; i<md[1]; i++));do
+		if ((i >= wd[1]));then
+			dl1[i]=$((i-wd[1]+1))
+			if ((lunar_on==1));then
+				if ((lu_start==1));then
+					ludl1[i]=${lum_name[lu_mon]}
+					lu_start=0
+				else
+					ludl1[i]=${lud_name[lu_day]}
+				fi
+				((lu_day++))
+				if ((lu_day>lu_max));then
+					get_lunar_date $1 $(($2+1)) $((i-wd[1]+2)) lu_max lu_day lu_mon
+					lu_start=1
+				fi
+			fi
+		fi
+	done
+
+	lu_start=0
+	[ $lunar_on -eq 1 ] && get_lunar_date $1 $(($2+2)) 1 lu_max lu_day
+	for ((i=0; i<md[2]; i++));do
+		if ((i >= wd[2]));then
+			dl2[i]=$((i-wd[2]+1))
+			if ((lunar_on==1));then
+				if ((lu_start==1));then
+					ludl2[i]=${lum_name[lu_mon]}
+					lu_start=0
+				else
+					ludl2[i]=${lud_name[lu_day]}
+				fi
+				((lu_day++))
+				if ((lu_day>lu_max));then
+					get_lunar_date $1 $(($2+2)) $((i-wd[2]+2)) lu_max lu_day lu_mon
+					lu_start=1
+				fi
+			fi
+		fi
+	done
+
+	for ((i=0; i<6; i++));do
+		for ((j=0; j<7; j++));do
+			__echo_center "${dl0[$((i*7+j))]}" "$ITEM_WIDTH"
+		done
+		show_month_blank
+		for ((j=0; j<7; j++));do
+			__echo_center "${dl1[$((i*7+j))]}" "$ITEM_WIDTH"
+		done
+		show_month_blank
+		for ((j=0; j<7; j++));do
+			__echo_center "${dl2[$((i*7+j))]}" "$ITEM_WIDTH"
+		done
+		__new_line
+
+		if ((lunar_on==1));then
+			for ((j=0; j<7; j++));do
+				lday=${ludl0[i*7+j]}
+				[ -z "$lday" ]&&width=$ITEM_WIDTH||width=$((ITEM_WIDTH-2))
+				__echo_center "$lday" "$width"
+			done
+
+			show_month_blank
+			for ((j=0; j<7; j++));do
+				lday=${ludl1[i*7+j]}
+				[ -z "$lday" ]&&width=$ITEM_WIDTH||width=$((ITEM_WIDTH-2))
+				__echo_center "$lday" "$width"
+			done
+
+			show_month_blank
+			for ((j=0; j<7; j++));do
+				lday=${ludl2[i*7+j]}
+				[ -z "$lday" ]&&width=$ITEM_WIDTH||width=$((ITEM_WIDTH-2))
+				__echo_center "$lday" "$width"
+			done
+
+		__new_line
+		fi
+	done
+}
+
+function show_year_cal()
+{
+	show_year_title "$1"
+	show_3month_cal "$1" 1 
+	show_3month_cal "$1" 4
+	show_3month_cal "$1" 7 
+	show_3month_cal "$1" 10
+}
+
+function show_all_cal()
+{
+	local y m d
+	(($#==0))&&y=-1||y=$1
+	if ((lunar_on==1 && $#!=0 && (y<1901||y>2100) ));then
+		__error "lunar year must between 1901-2100"
+		return
+	fi
+	case $# in
+		0)show_month_cal $(date '+%Y %m %d') ;;
+		1)show_year_cal $1;;
+		2)show_month_cal $1 $2;;
+		3)show_month_cal $1 $2 $3;;
+	esac
+}
+
+function get_flags()
+{
+	_argc_=$#
+	_argv_=("$@")
+	__check_opts "--chinese" "-c"  && use_cn=1
+	__check_opts "--lunar" "-l"  && lunar_on=1
+	((lunar_on==1))&&ITEM_WIDTH=5||ITEM_WIDTH=3
+	((lunar_on==1))&&((MONTH_BLANK_WIDTH=ITEM_WIDTH))||((MONTH_BLANK_WIDTH=ITEM_WIDTH*2))
+}
+
+function main()
+{
+	get_flags "$@"
+	show_all_cal ${_argv_[@]}
+}
+
+function test()
+{
+	echo get_lunar_date $1 $2 $3 max ri yue year
+	get_lunar_date $1 $2 $3 max ri yue year
+	echo max=$max 
+	echo year=$year
+	echo yue=$yue
+	echo ri=$ri
+}
+
+#test "$@"
+main "$@"
+
+

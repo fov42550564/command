@@ -1,0 +1,19 @@
+#!/bin/bash
+
+ip="10.254.33.105"
+password=longmaster
+dir="/server/pns/demo"
+
+function p2p_enter()
+{
+	expect -c "
+		spawn ssh root@$ip;
+		expect {
+			\"*password:\" {send \"$password\r\"; exp_continue}
+			\"*#\" {send \"cd $dir\rkillall accessServer\r./accessServer\r\";}
+		}
+		interact
+	"
+}
+
+p2p_enter

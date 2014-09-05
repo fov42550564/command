@@ -1,0 +1,72 @@
+#!/bin/bash
+
+DIALOG=~/command/lxdialog
+FILES=($(ls -A))
+FLAG=(OFF ON)
+BOX_HEIGHT=20
+BOX_WIDTH=50
+LIST_HEIGHT=7
+MIN_BOX_HEIGHT=6 
+
+
+function show_help()
+{
+	$DIALOG --title "help" --textbox ${FILES[$1]} $BOX_HEIGHT $BOX_WIDTH
+}
+
+function confirm_msg()
+{
+	rs="$1"
+	for x in $rs;do
+		tip="$tip ${FILES[$x]}"
+	done
+	if $DIALOG --title "tip" --yesno "confirm to delete:$tip" $MIN_BOX_HEIGHT $BOX_WIDTH;then
+		for x in $rs;do
+			echo delete ${FILES[$x]}
+		done
+	fi
+}
+
+
+
+function main()
+{
+	for ((i=0;i<${#FILES[*]};i++));do
+		FLAGS[$i]=0
+	done
+
+	while true
+	do
+		i=0
+		list=
+		for x in ${FILES[*]};do
+			list="$list '$i' '$x' ${FLAG[${FLAGS[$i]}]} "
+			((i++))
+		done
+
+		$DIALOG --title "title" --checklist "discription" $BOX_HEIGHT $BOX_WIDTH $LIST_HEIGHT $list 2>rs.out
+		ret=$?
+		rs=$(cat rs.out|sed 's/\x27//g;s/"//g')
+
+		case "$ret" in
+		0)
+			if [ ! -z "$rs" ];then
+				confirm_msg "$rs"
+			fi
+			break;;
+		1)
+			for ((i=0;i<${#FILES[*]};i++));do
+				FLAGS[$i]=0
+			done
+			sel=$(echo $rs|sed -r 's/^.*[[:blank:]]*([0-9]+)[[:blank:]]*$/\1/')
+			rs=$(echo $rs|sed -r 's/^(.*)[[:blank:]]*[0-9]+[[:blank:]]*$/\1/')
+			for x in $rs;do
+				FLAGS[$x]=1
+			done
+			show_help $sel;;
+		esac
+	done
+	rm -f rs.out
+}
+
+main

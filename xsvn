@@ -1,0 +1,356 @@
+#!/bin/bash
+#############################################
+# author:fang
+# version : v1.0
+# name  : xsvn
+# dispcripe: the set of command svn
+# CopyRight@fangyunjiang[42550564@qq.com]
+#############################################
+source ~/command/common
+
+declare -a _files
+declare -a _versions
+_backup_path="~/command/svnbackup/"
+
+_oper=0
+_vers=""
+_file=""
+_path=""
+_name=""
+
+
+function xsvnSingleCommand()
+{
+	local command title disp is_update
+	
+	command=$1
+	is_update=$2
+	title=$3
+	disp=$4
+
+	unset _list_
+	_list_=("${_files[@]}")
+	__radiobox "$command" "$is_update" "$title" "$disp"
+}
+
+function xsvnMultCommand()
+{
+	local command single_command is_update title disp
+	command=$1
+	single_command=$2
+	is_update=$3
+	title=$4
+	disp=$5
+
+	unset _list_
+	_list_=("${_files[@]}")
+	__checkbox "$command" "$single_command" "$is_update" "$title" "$disp"
+}
+
+function xsvnShowDiff()
+{
+	xsvnSingleCommand "__exec_command svn diff $_TARGET_" "no" "show diff" "select bellow _files to show the difference with svn"
+}
+
+function xsvnAddFile()
+{
+	local filter
+	__input_box	"please input the filter" ""
+	filter="$_result_"
+	echo $filter
+	__show_progressbar 0.1 xsvnGetUnversionedFiles "$filter"
+	xsvnMultCommand "__exec_command eval svn add $_TARGET_" "" "yes" "add" "select bellow _files to add subversions"
+	__show_progressbar 0.1 xsvnGetModifiedFiles
+}
+
+function xsvnBackupFile()
+{
+	local file
+	file=$_backup_path$(date '+%Y-%m-%d-%H-%M-%S')-$(echo $1|sed 's#/#-#g')
+	#echo $file
+    eval cp $1 $file
+}
+
+function xsvnRecoverFile()
+{
+	xsvnMultCommand "__exec_command eval svn revert $_TARGET_" "xsvnBackupFile $_TARGET_" "yes" "recover" "select bellow _files to recover to svn"
+	unset _files
+	_files=("${_list_[@]}")
+}
+
+function xsvnEditFileWithVi()
+{
+	xsvnSingleCommand "vi $_TARGET_" "no" "edit" "select bellow _files to edit with vim"
+}
+
+function xsvnCommitFiles()
+{
+	local note
+	read -p "please input commit note:" note
+	xsvnMultCommand "__exec_command eval svn commit -m \"$note\" $_TARGET_" "" "yes" "commit" "select bellow _files to commit"
+}
+
+function xsvnDeleteNotes()
+{
+	read -p "please input the regex of you will delete note:" notereg
+	if [ -z "$notereg" ];then
+		notereg="\\[longmaster\\]\\[fang\\]"
+    fi
+
+	xsvnMultCommand "" "sed -i '/$notereg.*);/d;/$notereg/,/);/d' $_TARGET_" "no" "delete note" "select bellow _files to delete your note"
+}
+
+function xsvnGetModifiedFiles()
+{
+	local rs s i var
+	#rs=$(svn st|grep "^[M|A|D]"|sed 's/^M//;s/^A//;s/^D//')
+	rs=$(svn st|grep "^M"|sed 's/^M//')
+	s=`echo $rs|awk '{split($0,tmp)} END {for(i in tmp) print tmp[i]}'`
+	i=0
+	unset _files
+	for var in $s;do
+		_files[i]=$var
+		let i++
+	done
+}
+
+function xsvnGetUnversionedFiles()
+{
+	local rs s i var filter
+
+	filter="$1"
+	rs=$(svn st|grep "^?"|sed 's/^?//'|grep "$filter")
+	s=`echo $rs|awk '{split($0,tmp)} END {for(i in tmp) print tmp[i]}'`
+	i=0
+	unset _files
+	for var in $s;do
+		_files[i]=$var
+		let i++
+	done
+}
+
+function xsvnMain()
+{
+	local -a list
+
+	__show_progressbar 0.1 xsvnGetModifiedFiles
+
+	list=("there is "${#_files[@]}" files are changed")
+	list=("${list[@]}" "d" "xsvnShowDiff" "see the difference")
+	list=("${list[@]}" "a" "xsvnAddFile" "add unversioned file")
+	list=("${list[@]}" "r" "xsvnRecoverFile" "recover the file")
+	list=("${list[@]}" "c" "xsvnCommitFiles" "commit the _files")
+	list=("${list[@]}" "v" "xsvnEditFileWithVi" "use vi edit the file")
+	list=("${list[@]}" "n" "xsvnDeleteNotes" "delete the note by regex")
+
+	__show_menu "${list[@]}"
+}
+
+function xsvnLogSelectVersion()
+{
+	local ver ver1 vert n
+	[ -z "$1" ] && ver1="head" || ver1=$1
+
+	if [ "$ver1" = "head" ];then
+		ver1=$(svn info|grep "Revision"|sed 's/[^0-9]*\([0-9]\+\).*/\1/')
+	fi
+
+	((vert=$ver1-1))
+	__input_box	"please input the comp version,exit(q)" "$vert"
+	ver=$_result_
+
+	if [ "$ver" = "head" ];then
+		_result_="head"
+		return
+	fi
+
+	if [ "$ver" = "" ];then
+		((ver=$ver1-1))
+		_result_=$ver
+		return
+	fi
+
+	if [ "$ver" = "q" ];then
+		_result_="q"
+		return
+	fi
+
+	__match_num "$ver"
+    n=$?
+	if [ $n -ne 0 ];then
+		_result_="q" 
+		return
+	fi
+	_result_=$ver
+}
+
+function xsvnLogShowDiff()
+{
+	local ver comp_ver
+
+	ver=$1
+	__exec_command svn log -r $ver -v
+	xsvnLogSelectVersion $ver
+	comp_ver=$_result_	
+	if [ "$comp_ver" = "q" ];then
+		return
+	fi
+	xsvnSingleCommand "__exec_command eval svn diff $_TARGET_ -r $comp_ver:$ver" "no" "log diff" "current version:$ver;compare version:$comp_ver"
+}
+
+function xsvnLogGetFiles()
+{
+	local ver rs var i
+
+	ver=$1
+   	#rs=$(svn log -r $ver -v|grep "/trunk"|sed 's#.*/trunk#~/work/phoneplus_app/trunk#') 
+   	rs=$(svn log -r $ver -v|grep "/trunk"|sed 's#.*/trunk#~/work/stone/trunk#') 
+
+	i=0 
+	unset _files
+	for var in $rs;do 
+	  	_files[i]=$var
+	    let i++  
+	done 
+}
+
+function xsvnLogByVersion()
+{
+	local ver
+	ver=$1
+	ver=${ver%%:*}
+	if [ -z "$ver" ];then
+		return
+	fi
+
+	__show_progressbar 0.1 xsvnLogGetFiles "$ver"
+	xsvnLogShowDiff $ver
+	unset _list_
+	_list_=("${_versions[@]}")
+}
+
+function xsvnGetVersions()
+{
+	local i note vers vergap name names var target
+
+	[ -z "$1" ] && target="." || target=$1
+	[ -z "$2" ] && vergap="0:head" || vergap=$2
+	name=$3
+
+	if [ -z "$name" ];then
+		vers=$(svn log $target -r $vergap|sed -r '/^r[0-9]+/!d'|sed -r 's/^r([0-9]+).*/\1/')
+	else
+		vers=$(svn log $target -r $vergap|sed -r '/^r[0-9]+ \| '$name'/!d'|sed -r 's/^r([0-9]+).*/\1/')
+		names=$name
+	fi
+
+	i=0		
+	unset _versions
+	for var in $vers;do
+		if [ -z "$name" ];then
+			names=$(svn log -r $var|grep "^r[0-9]\+"|sed -r 's/^r[0-9]+ \| ([^|]+) .*/\1/')
+		fi
+		note=$(svn log -r $var|grep -v "^-\+$"|sed -n '$p')
+		_versions[i]="$var:[$names]$note"
+		let i++
+	done
+}
+
+function xsvnLogMain()
+{
+	__show_progressbar 0.1 xsvnGetVersions "$_path" "$_vers" "$_name"
+
+	unset _list_
+	_list_=("${_versions[@]}")
+	__radiobox "xsvnLogByVersion $_TARGET_" "no" "_versions" "select bellow _versions to show log"
+	unset _list_
+	_list_=("${_files[@]}")
+}
+
+function xsvnFileShowDiff()
+{
+	local ver last_ver file
+	
+	ver=$1
+	ver=${ver%%:*}
+	file=$2
+ 	xsvnLogSelectVersion $ver
+	last_ver=$_result_
+	[ "$last_ver" = "q" ] && return
+
+	__exec_command svn diff $file -r $last_ver:$ver
+}
+
+function xsvnLogByFile()
+{
+	local file
+
+	file=$1
+	[ -z "$file" ] && return
+
+	__show_progressbar 0.1 xsvnGetVersions "$file" "$_vers" "$_name"
+
+	unset _list_
+	_list_=("${_versions[@]}")
+	__radiobox "xsvnFileShowDiff $_TARGET_ $file" "no" "_versions"  "select bellow _versions to show log"
+	unset _list_
+	_list_=("${_files[@]}")
+}
+
+function xsvnGetMatchFiles()
+{
+	_files=($(find "." -iname "$1"|grep -v '\.svn/'))
+}
+
+function xsvnLogByFileMain()
+{
+	__show_progressbar 0.1 xsvnGetMatchFiles "$_file"
+	xsvnSingleCommand "xsvnLogByFile $_TARGET_" "no" "_files" "select bellow _files to show svn log diff"
+}
+
+function xsvnShowHelp()
+{
+	local -a list
+
+	list="help"
+	list=("${list[@]}" "Usage:xsvn [-l|-f file|-d path|-n name|-r ver|-w|-h]")
+	list=("${list[@]}" "xsvn can do [svn diff|revert|commit|delete note|vi]")
+	list=("${list[@]}" "-l: show svn log")
+	list=("${list[@]}" "-f file:can be regex")
+	list=("${list[@]}" "-d path:svn current path/file")
+	list=("${list[@]}" "-n name:svn commmiter's name")
+	list=("${list[@]}" "-r ver:versions[1000|1000:1002] ")
+	list=("${list[@]}" "-w: show with lxdialog")
+	list=("${list[@]}" "-h: show help")
+	list=("${list[@]}" "")
+	list=("${list[@]}" "Author:fangyunjiang@longmaster.com.cn")
+	list=("${list[@]}" "Version:V3.0")
+
+	__msgbox "${list[@]}"
+}
+
+function main()
+{
+	while getopts :f:d:n:r:lawh opt;do
+		case $opt in
+			l)_oper=1;;
+			f)_oper=2;_file="$OPTARG";;
+			d)_path="$OPTARG";;
+			n)_name="$OPTARG";;
+			r)_vers="$OPTARG";;
+			w)_WINDOW_=1;;
+			h)xsvnShowHelp;exit;;
+			*)xsvnShowHelp;exit;;
+		esac
+	done
+
+	case $_oper
+	in
+		0)xsvnMain;;
+		1)xsvnLogMain;;
+		2)xsvnLogByFileMain;;
+	esac
+}
+
+main "$@"
+

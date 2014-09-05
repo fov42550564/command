@@ -1,0 +1,140 @@
+#!/bin/bash
+#############################################
+# author:fang
+# version : v1.0
+# name  : xfile
+# dispcripe: just for video setting
+# CopyRight@fangyunjiang[42550564@qq.com]
+#############################################
+
+source ~/command/common
+
+_cur_dir="."
+_tmp_file=_tmp_file_
+_src_prefix="jpg"
+_dst_prefix="jpg"
+_oper=0
+
+function swap_files_with_randow()
+{
+	local ts i files size file_no1 file_no2
+
+	files=(`ls "$_cur_dir"/*.$_src_prefix`)
+	size=${#files[@]}
+	ts=$(($1))
+
+	for ((i=0; i<ts; i++));do
+		file_no1=$(($RANDOM%$size))
+		file_no2=$(($RANDOM%$size))
+		while ((file_no1==file_no2));do
+			file_no2=$(($RANDOM%$size))
+		done
+		mv ${files[$file_no1]} $_tmp_file
+		mv ${files[$file_no2]} ${files[$file_no1]}
+		mv $_tmp_file ${files[$file_no2]}
+		echo "swap ${files[$file_no2]} ${files[$file_no1]} success"
+	done
+}
+
+function set_file_to_index()
+{
+	local begin_num moved_num file_num index path file files size
+
+	[ "$1" = "" ]&&begin_num=1||begin_num=$1
+	moved_num=0
+	file_num=0
+	files=(`ls "$_cur_dir"/*.$_src_prefix`)
+	size=${#files[@]}
+
+	for ((i=0; i<size; i++));do
+		((index=begin_num+moved_num))
+		path=$(dirname ${files[i]})
+		file=$(basename ${files[i]})
+		file_num=$((${file%%.*}))
+		if ((file_num<=index && file_num>0));then
+			echo "${files[i]} have exist"
+			continue
+		fi
+		((moved_num++))
+		if [ -f "$path/$index.$_src_prefix" ];then
+			echo "mv ${files[i]}  $path/$index.$_src_prefix failed"
+			((i--))
+		else
+			echo "mv ${files[i]}  $path/$index.$_src_prefix sucess"
+			mv "${files[i]}"  "$path/$index.$_src_prefix"
+		fi
+	done
+	echo "the last index is $((index-1))"
+}
+
+function add_files_to_index()
+{
+	local len start_num path oper
+	local -a add_files
+	start_num=1
+	[ "$1" = "" ]&&path="."||path="$1"
+	if ! [ -d "$path" ];then
+		echo "$path is not exist"
+		return
+	fi
+	if [ `__get_full_path  "$_cur_dir"` = `__get_full_path "$path"` ];then
+		oper=mv
+	else
+		oper=cp
+	fi
+
+	add_files=(`ls "$path"/*.$_src_prefix`)
+	len=${#add_files[@]}
+
+	for ((i=0; i<len; i++));do
+		while [ -f "$_cur_dir/$start_num.$_dst_prefix" ];do
+			((start_num++))
+		done
+		echo $oper "${add_files[i]}" "$_cur_dir/$start_num.$_dst_prefix"
+		$oper "${add_files[i]}" "$_cur_dir/$start_num.$_dst_prefix"
+	done
+	echo "the last index is $((start_num-1))"
+}
+
+function show_help()
+{
+	local -a list
+	list="help"
+	list=("${list[@]}" "Usage:xfile [OPTIONS]")
+	list=("${list[@]}" "  -s [src_prefix] :set src prefix[default:jpg]")
+	list=("${list[@]}" "  -d [dst_prefix] :set src prefix[default:jpg]")
+	list=("${list[@]}" "  -c [_cur_dir] :set current dir[default:.]")
+	list=("${list[@]}" "  -w [n]:swap files with randow n ts in cur_dir/src_prefix file")
+	list=("${list[@]}" "  -i [start_num]:set file to index from start_num in cur_dir/src_prefix file")
+	list=("${list[@]}" "  -a [from_dir]:add files in from_dir/src_prefix to cur_dir/dst_prefix")
+	list=("${list[@]}" "  -h :show help ")
+	__msgbox "${list[@]}"
+}
+
+function main()
+{
+	local ts start_num from_dir 
+	while getopts :s:d:w:i:a:c: opt;do
+		case $opt in
+			s)_src_prefix="$OPTARG";;
+			d)_dst_prefix="$OPTARG";;
+			c)_cur_dir="$OPTARG";;
+			w)_oper=0;ts="$OPTARG";;
+			i)_oper=1;start_num="$OPTARG";;
+			a)_oper=2;from_dir="$OPTARG";;
+			*)show_help;exit;;
+		esac
+	done
+
+	[ -z "_cur_dir" ]&&_cur_dir="."
+
+	case $_oper in
+		0) swap_files_with_randow $ts;;
+		1) set_file_to_index $start_num;;
+		2) add_files_to_index "$from_dir";;
+	esac
+}
+
+main "$@"
+
+

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+./mysignal.exe &
+pid=$!
+sleep 3
+kill -30 $pid
+wait
+echo done 

@@ -1,0 +1,75 @@
+#!/bin/bash
+#############################################
+# author:fang
+# version : v1.0
+# name  : xyuv
+# dispcripe: cat and split yuv file
+# CopyRight@fangyunjiang[42550564@qq.com]
+#############################################
+source ~/command/common
+
+_tmpfile="_1_tmpfile_1_"
+_infile=
+_outfile=
+_seconds=1000000
+_width=192
+_height=144
+_frames=15
+_oper=0
+
+function show_help()
+{
+	local -a list
+	list="help"
+	list=("${list[@]}" "Usage :xyuv [OPTIONS]")
+	list=("${list[@]}" "  -i [file] :input file")
+	list=("${list[@]}" "  -o [file] :output file, not set will cover input file")
+	list=("${list[@]}" "  -s [seconds] :seconds in newfile")
+	list=("${list[@]}" "  -w [width] :width in newfile")
+	list=("${list[@]}" "  -h [height] :height in newfile")
+	list=("${list[@]}" "  -f [frames] :frames in newfile")
+	list=("${list[@]}" "  -h :show help")
+	__msgbox "${list[@]}"
+}
+
+function do_split()
+{
+	local bytes
+	
+	bytes=$((_width*_height*3/2*_frames*_seconds))
+
+	split -b $bytes "$_infile" "$_tmpfile"
+	[ -z "$_outfile" ] && _outfile=$_infile
+	mv "$_tmpfile"aa $_outfile
+	rm -f "$_tmpfile"*
+}
+
+function main()
+{
+	while getopts :i:o:s:w:h:f:h opt;do
+		_oper_right=1
+		case $opt in
+			i)_infile="$OPTARG";;
+			o)_outfile="$OPTARG";;
+			s)_seconds="$OPTARG";;
+			w)_width="$OPTARG";;
+			h)_height="$OPTARG";;
+			f)_frames="$OPTARG";;
+			h)show_help;exit;;
+			*)show_help;exit;;
+		esac
+	done
+
+	[ $_oper_right -eq 0 ] && show_help && exit
+
+	if [ -z "$_infile" ];then
+		return
+	fi
+
+	case $_oper in
+		0)do_split;;
+	esac
+}
+
+main "$@"
+

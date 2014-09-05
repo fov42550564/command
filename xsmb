@@ -1,0 +1,54 @@
+#!/bin/bash
+
+source ~/command/common
+
+function smb_connect()
+{
+	dest_dir=/Volumes/home
+	src_dir="10.254.33.1/home"
+	username=fyj
+	password=fyj@33
+	mkdir -p $dest_dir
+	expect -c "
+		spawn mount -t smbfs //$username@$src_dir $dest_dir;
+		expect {
+			\"*assword*\" {send \"$password\r\"}
+		}
+		wait	
+	" 2>/dev/null 1>&2
+}
+
+function smb_unconnect()
+{
+	umount /Volumes/home
+}
+
+
+
+function show_help()
+{
+	local -a list
+	list="xsmb"
+	list=("${list[@]}" "Usage :xsmb [OPTIONS]")
+	list=("${list[@]}" "  -m :mount myhome to /Volumes/home")
+	list=("${list[@]}" "  -u :umount /Volumes/home ")
+	list=("${list[@]}" "  -h :show help ")
+	__msgbox "${list[@]}"
+}
+
+function main()
+{
+	while getopts :muh opt;do
+		case $opt in
+			m)echo start connect; __show_progressbar 0.1 smb_connect;;
+			u)echo start disconnect; __show_progressbar 0.1 smb_unconnect;;
+			*)show_help;exit;;
+		esac
+	done
+}
+
+main "$@"
+
+
+
+

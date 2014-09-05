@@ -1,0 +1,16 @@
+#!/bin/bash
+#note:if '\' in word you must use \\\\
+
+
+if [ ! -n "$1" ];then
+	return
+fi
+
+old=${1-""}
+new=${2-""}
+name=${3-"*"}
+path=${4-"./"}
+
+#sed -i 's#'"$old"'#'"$new"'#g;s#$#\r#' `grep -rl "$old" "$path"` #2>/dev/null
+echo sed -i 's#'"$old"'#'"$new"'#g;s#$#\r#' `find "$path" -name "$name" |xargs grep -l "$old"` #2>/dev/null
+sed -i 's#'"$old"'#'"$new"'#g;s#$#\r#' `find "$path" -name "$name" |xargs grep -l "$old"` #2>/dev/null

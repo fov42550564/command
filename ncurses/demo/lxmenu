@@ -1,0 +1,62 @@
+#!/bin/bash
+
+DIALOG=~/command/lxdialog
+
+function show_name()
+{
+	if $DIALOG --title "name" --inputbox "input your name:" 11 55 "annyomos" 2>rs.out;then
+		rs=$(cat rs.out)
+	fi
+	$DIALOG --title "your name" --infobox $rs 11 55 
+	sleep 2
+}
+
+function show_age()
+{
+	if $DIALOG --title "age" --inputbox "input your age:" 11 55 "15" 2>rs.out;then
+		rs=$(cat rs.out)
+	fi
+	$DIALOG --title "your age" --infobox $rs 11 55 
+	sleep 2
+}
+
+function show_class()
+{
+	if $DIALOG --title "class" --inputbox "input your class:" 11 55 "15" 2>rs.out;then
+		rs=$(cat rs.out)
+	fi
+	$DIALOG --title "your class" --infobox $rs 11 55 
+	sleep 2
+}
+
+function show_help()
+{
+	echo this is a help>rs.out
+	$DIALOG --title "info" --textbox rs.out 11 55 
+}
+
+
+while true
+do
+
+$DIALOG --title 'Main Menu'            --menu 'menu'           21 90 11            'show_class' 'show_name' 'name --->' 'show_age' 'age --->' 'show_class' 'class--->' 2>rs.out
+ret=$?
+selection=$(cat rs.out)
+echo $selection
+
+case "$ret" in
+0|3|4|5|6)
+	case "$ret" in
+	0)eval $selection ;;
+	3)eval $selection y ;;
+	4)eval $selection n ;;
+	5)eval $selection m ;;
+	6)eval $selection c ;;
+	esac ;;
+2)
+	show_help ;;
+255|1)
+	break ;;
+esac
+
+done

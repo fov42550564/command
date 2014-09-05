@@ -1,0 +1,136 @@
+#!/bin/bash
+
+declare -a files
+
+function match()
+{
+	local rs
+	rs=$(echo $1|sed -r -n '/'$2'/p')
+	[ -z "$rs" ] && echo 0 || echo 1
+}
+
+
+function showFiles()
+{
+	local i
+	printf "************************************************************************************\n"
+	for ((i=0; i<${#files[*]}; i++));do
+		printf "* %2d: %-77s*\n" $i ${files[$i]}
+	done
+	printf "************************************************************************************\n"
+}
+
+
+function checkPwdIsCanMake()
+{
+	local path rs
+	path=$(pwd)
+	rs=$(match $path "work\/[^/]+")
+	echo $rs
+}
+
+
+function showHelp()
+{
+
+	printf "************************************************************************************\n"
+	printf "* -s: %-77s*\n" "show the result"
+	printf "* -c: %-77s*\n" "clean profile"
+	printf "* -ch: %-76s*\n" "remote clean profile"
+	printf "* -m: %-77s*\n" "make profile"
+	printf "* -mh: %-76s*\n" "remote make profile"
+	printf "************************************************************************************\n"
+}
+
+
+
+function xmakeOper()
+{
+	local his sel
+	his=$(cat ~/command/xmake.ini)
+
+	if [ "$2" != "$his" ];then
+		read -p "this time make is diffrence from last time, make will clean, go on(yes/no):" sel
+		if [ "$sel" == "yes" ];then
+			echo $2>~/command/xmake.ini
+		else
+			return
+		fi
+	fi
+	if [ "$1" = "-c" ];then
+		make PROFILE=$2 clean
+	elif [ "$1" = "-ch" ];then
+		nohup make PROFILE=$2 clean>nohup.out & 
+	elif [ "$1" = "-m" ];then
+		make PROFILE=$2 
+	elif [ "$1" = "-mh" ];then
+		nohup make PROFILE=$2>nohup.out &
+	else
+		echo "wrong param!"
+	fi
+}
+
+
+
+
+function xmakeList()
+{
+	local len index n
+
+	files=($(ls targets 2>/dev/null|grep "GW"))
+
+	showFiles
+
+	len=${#files[*]}
+
+	read -p "please input select number,exit(q):" index
+
+	if [ "$index" = "" ];then
+		echo null is not allowed
+		return	
+	fi
+
+	if [ "$index" = "q" ];then
+		return	
+	fi
+
+	n=$(expr $index : "^[0-9]\+$")
+	if [ $n -eq 0 ];then
+		echo please input a number 
+		return	
+	fi
+
+	if [ $index -lt 0 -o $index -ge $len ];then
+		echo the select number is out of range
+		return	
+	fi
+	xmakeOper $1 ${files[$index]}
+}
+
+function xmakeMain()
+{
+	local isEnable
+	isEnable=$(checkPwdIsCanMake)
+	if [ "$isEnable" = "0" ];then
+		echo "path is error"
+		return
+	fi
+	
+	if [ -z "$1" -o "$1" = "-s" ];then
+		tail -n 50 nohup.out
+		return
+	fi	
+
+	if [ "$1" = "-c" -o "$1" = "-ch" -o "$1" = "-m" -o "$1" = "-mh" ];then
+		xmakeList $1
+	else
+		showHelp
+	fi
+}
+
+
+xmakeMain "$1"
+
+
+
+

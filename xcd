@@ -1,0 +1,110 @@
+#!/bin/bash
+#############################################
+# author:fang
+# name  : xcd.sh
+#############################################
+
+cd_log_file=~/.cd_log_file
+declare -a cd_logs
+alias_name=dd
+
+function show_char_line(){ local n ch; ch="$1"; n="$2"; for ((i=0; i<$n; i++));do printf "$ch"; done; printf "\n"; }
+
+
+function show_help()
+{
+    echo "***********************************************"
+    printf "* %-44s*\n" $alias_name" usage:"
+    printf "* %-44s*\n" $alias_name" -h/--help"
+    printf "* %-44s*\n" $alias_name" -c [number] [number]:clean history dirs"
+    printf "* %-44s*\n" $alias_name" -x:show list history dirs"
+    printf "* %-44s*\n" $alias_name" -l [number]:goto history dir"
+    printf "* %-44s*\n" $alias_name" dir"
+    echo "***********************************************"
+}
+
+
+function get_cd_logs()
+{
+    unset cd_logs
+    if [ -f $cd_log_file ];then
+        eval "$(awk '{print "cd_logs["NR-1"]=\""$1"\""}' $cd_log_file)"
+    fi 
+}
+
+
+function show_list()
+{
+    local i n
+    n=${#cd_logs[*]}
+    if [ $n -eq 0 ];then
+        echo history cd path is null
+        return
+    fi
+    echo "***********************************************"
+    for ((i=0; i<$n; i++));do
+        printf "* %d : %-40s*\n" $i ${cd_logs[$i]}
+    done
+    echo "***********************************************"
+    do_log_cd
+}
+
+function do_log_cd()
+{
+    local index
+    read -p "Input index number to cd(quit:q):" index
+    local n=$(expr $index : "^[0-9]*$")
+    if [ "$index" = "q" ];then
+        return
+    fi  
+    if [ $n -eq 0 ];then
+        return
+    fi  
+    if [ $index -lt 0 -o $index -gt ${#cd_logs[*]} ];then
+        return
+    fi  
+    cd ${cd_logs[$index]}
+}
+
+
+function goto_cd_log()
+{
+    local index n
+    index=$1
+    n=$(expr $index : "^[0-9]*$")
+    if [ $n -eq 0 ];then
+        return
+    fi  
+    get_cd_logs
+    if [ $index -lt 0 -o $index -gt ${#cd_logs[*]} ];then
+        return
+    fi  
+    cd ${cd_logs[$index]}
+}
+
+
+function main()
+{
+    if [ -z "$1" ];then
+        return 
+    elif [ "$1" == "--help" -o "$1" == "-h" ];then
+        show_help
+    elif [ "$1" == "-l" ];then
+        goto_cd_log $2
+    elif [ "$1" == "-c" ];then
+        rm -f $cd_log_file
+    elif [ "$1" == "-x" ];then
+        get_cd_logs
+        show_list
+    else
+        cd "$1"
+        ret=$?
+        if (($ret==0));then
+            pwd >> $cd_log_file
+        fi
+    fi
+}
+
+main $*
+
+

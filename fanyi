@@ -1,0 +1,30 @@
+#!/usr/local/bin/node
+var translate = require('node-translate');
+var GetOpt = require('node-getopt');
+
+function select_translate(opts)
+{
+	if (opts.argv.length > 0)
+	{
+		if (!opts.options.t)
+			opts.options.t = 1;
+		translate(opts.options.t, opts.argv, function(result){
+		});
+	}
+}
+
+// Getopt arguments options
+//   '=':   has argument
+//   '[=]': has argument but optional
+//   '+':   multiple option supported
+opt = new GetOpt([
+  ['t' , '=', 'baidu:1,youdao:2,google:4,yahoo:8'],
+  ['h' , 'help']
+])
+.bindHelp() 
+.parseSystem();
+
+//console.info(opt);
+
+select_translate(opt);
+

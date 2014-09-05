@@ -1,0 +1,5 @@
+DIALOG=~/command/lxdialog
+if $DIALOG --title "title" --inputbox "discription" 10 30 "default" 2>rs.out;then
+	rs=$(cat rs.out)
+	echo $rs
+fi
