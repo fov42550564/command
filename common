@@ -59,7 +59,7 @@ function _declare_global_variables__()
 	_dialog_file_=/tmp/.dialog_file
 	_setting_file_=~/.setting_file
 	_DIALOG_=~/command/lxdialog
-	_PASSWORD_=fangyunjiang
+	_PASSWORD_=SnowGeese
 
 	[ -z "$_DIALOG_HEIGHT_" ]&&_DIALOG_HEIGHT_=30
 	[ -z "$_DIALOG_WIDTH_" ]&&_DIALOG_WIDTH_=80
@@ -70,7 +70,7 @@ function _declare_global_variables__()
 	_INPUTBOX_WIDTH_=$_MSGBOX_WIDTH_
 
 	_SED_=/usr/bin/sed
-	_RM_=/bin/srm
+	_RM_=/bin/rm
 
 	__mac && _SUDO_=sudo || _SUDO_=""
 
@@ -370,7 +370,7 @@ function __skip_sudo()
 		expect -c "
 			spawn sudo echo;
 			expect {
-				\"Password:\" {send \""$_PASSWORD_"\r\"}
+				\"*assword*\" {send \""$_PASSWORD_"\r\"}
 			}
 			interact
 			" 2>/dev/null 1>&2
@@ -1574,20 +1574,12 @@ function __init()
 	_declare_global_variables__
 
 	if __mac ;then
-		if ! [ -f /usr/bin/bsd-sed ];then
-			__skip_sudo
-			$_SUDO_ mv /usr/bin/sed /usr/bin/bsd-sed
-		fi
-		_SED_=/usr/local/bin/ssed
+		_SED_=/usr/local/bin/sed
 	else
 		_SED_=/usr/bin/sed
 	fi
 
-	if ! [ -f /bin/srm ];then 
-		__skip_sudo
-		_SUDO_ mv /bin/rm /bin/srm
-	fi
-	_RM_=/bin/srm
+	_RM_=/bin/rm
 
 	if ! [ -f $_setting_file_ ];then
 		echo "rm:system" > $_setting_file_

@@ -1,0 +1,25 @@
+[user]
+	email = 42550564@qq.com
+	name = fov42550564
+[color]
+	ui = true
+[alias]
+	co = checkout
+	ci = commit -a
+	cm = commit
+	st = status
+	br = branch
+	di = diff
+	line = "log --pretty=oneline --since='two hours ago'"
+	one = log -p -1
+	lg = "log --date=short --graph --pretty=format:'%Cred%h%Creset:[%Cgreen%cn%Creset][%Cgreen%cd%Creset]:%C(bold blue)%s%Creset'"
+    cihd = "commit -C HEAD --amend"
+    cihead = "commit -C HEAD -a --amend"
+    uphead = "commit --amend -m"
+	rshead = "reset --hard HEAD"
+	rs = "reset --hard"
+    noadd = "rm -r --cached"
+    noaddall = "rm -r --cached ."
+[core]
+	pager = 
+	autocrlf = true

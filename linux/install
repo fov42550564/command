@@ -1,0 +1,68 @@
+#!/bin/bash
+#############################################
+# author:fang
+# version : v1.0
+# name  : install
+# dispcripe: install for linux bashrc and exvim
+# CopyRight@fangyunjiang[42550564@qq.com]
+#############################################
+source ~/command/common
+
+_src_path=~/command/linux
+_oper_right=0
+_oper=0
+_backdir=".linux_backup"
+
+function backup_single()
+{
+	local file
+	file="$1"
+	if [ -e ~/${file} ];then
+		if ! [ -L ~/${file} ];then
+			echo backup $file
+			mv ~/${file} ~/${_backdir}/${file}
+		fi
+	fi
+}
+
+
+function backup()
+{
+	cd ~
+	mkdir -p ${_backdir}
+	#bashrc
+	backup_single .bashrc
+	#exvim
+	backup_single .vim
+	backup_single .vimrc
+	backup_single .toolkit
+	#git
+	backup_single .gitconfig
+}
+
+function install_single()
+{
+	local src_file dst_file
+	src_file=$1;dst_file=$2
+	if ! [ -L ~/$dst_file ];then
+		echo install $dst_file
+		ln -s ${_src_path}/$src_file $dst_file
+	fi
+}
+
+function install()
+{
+	backup
+
+	#bashrc
+	install_single bash/.bashrc .bashrc
+	#exvim
+	install_single exvim/.vim .vim
+	install_single exvim/.vimrc .vimrc
+	install_single exvim/.toolkit .toolkit
+	#git
+	install_single git/.gitconfig .gitconfig
+}
+
+install
+

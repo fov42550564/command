@@ -1,7 +1,30 @@
 #!/bin/bash
 
-apps="gawk ssed findutils coreutils"
-BREW_INSTALL_PATH=/usr/local/Cellar
+source ~/command/common
+
+BREW_INSTALL_PATH="/usr/local/opt/"
+declare -a _apps
+declare -a _app_params
+
+function xbrewSetInstallApps()
+{
+	local i
+	i=0
+	_apps[i]="coreutils"
+	((i++))
+	
+	_apps[i]="gawk"
+	_app_params[i]="--with-default-names"
+	((i++))
+
+	_apps[i]="gnu-sed"
+	_app_params[i]="--with-default-names"
+	((i++))
+
+	_apps[i]="findutils"
+	_app_params[i]="--with-default-names"
+	((i++))
+}
 
 function xbrewCheckAppInstalled()
 {
@@ -14,31 +37,21 @@ function xbrewCheckAppInstalled()
 
 function xbrewInstallApps()
 {
-	local var
-	for  var in $apps;do
-		xbrewCheckAppInstalled || sudo brew install $var
+	local var cnt i
+	cnt=${#_apps[@]}
+	__skip_sudo
+	for  ((i=0;i<cnt;i++));do
+		xbrewCheckAppInstalled ${_apps[i]} || echo sudo brew install ${_apps[i]} ${_app_params[i]}
 	done
 }
 
-function xbrewLinkCommand()
-{
-	sudo rm -f /usr/bin/$1
-	sudo ln -s /usr/local/bin/$2 /usr/bin/$1
-}
-
-function xbrewLinkCommands()
-{
-	xbrewLinkCommand awk gawk
-	xbrewLinkCommand sed ssed 
-	xbrewLinkCommand find gfind
-}
 
 
 function main()
 {
+	xbrewSetInstallApps
 	xbrewInstallApps	
-	xbrewLinkCommands
 }
 
 
-main
+main "$@"
