@@ -10,6 +10,8 @@
 	st = status
 	br = branch
 	di = diff
+	pu = push origin master
+	pl = pull
 	line = "log --pretty=oneline --since='two hours ago'"
 	one = log -p -1
 	lg = "log --date=short --graph --pretty=format:'%Cred%h%Creset:[%Cgreen%cn%Creset][%Cgreen%cd%Creset]:%C(bold blue)%s%Creset'"
