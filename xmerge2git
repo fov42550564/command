@@ -1,0 +1,61 @@
+#!/bin/bash
+source ~/command/common
+
+_bemerged=""
+_bemergeto=""
+_tempbrach="tempbrach"
+
+function merge() 
+{
+    cd $_bemergeto
+    #将$_bemerged作为远程仓库，添加到$_bemergeto中，设置别名为other
+    git remote add other $_bemerged
+    #从$_bemerged仓库中抓取数据到本仓库
+    git fetch other
+    #将$_bemerged仓库抓去的master分支作为新分支checkout到本地，新分支名设定为$_bemerged
+    git checkout -b $_tempbrach other/master
+    #切换回$_bemergeto的master分支
+    git checkout master
+    #将$_bemerged合并入master分支
+    git merge $_tempbrach
+    #删除临时分支
+    git branch -D $_tempbrach
+}
+
+function show_help()
+{
+    local -a list
+    list="help"
+    list=("${list[@]}" "Usage :xmerge2git [OPTIONS]")
+    list=("${list[@]}" "  -d :dir to be merge to")
+    list=("${list[@]}" "  -s :dir to be merged")
+    list=("${list[@]}" "  -b :set tempbrach name")
+    list=("${list[@]}" "  -h :show help ")
+    __msgbox "${list[@]}"
+    exit
+}
+
+function main()
+{
+    local oper_right
+    while getopts :s:d:b:h opt;do
+        oper_right=1
+        case $opt in
+            s)_bemerged=$OPTARG;;
+            d)_bemergeto=$OPTARG;;
+            b)_tempbrach=$OPTARG;;
+            *)show_help;;
+        esac
+    done
+
+    [ -z "$oper_right" ] && show_help
+
+    _bemerged=$(__get_full_path $_bemerged)
+    _bemergeto=$(__get_full_path $_bemergeto)
+    [ -z "$_bemerged" -o -z "$_bemergeto" ]&&echo "error path"&&exit
+    merge
+}
+
+main "$@"
+
+

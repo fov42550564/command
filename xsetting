@@ -175,10 +175,10 @@ function show_settings()
 
 function eval_settings()
 {
-	set_rm
-	__mac && set_sed
-	__mac && set_node
-	__mac || set_nodelib
+	#set_rm
+	#__mac && set_sed
+	#__mac && set_node
+	#__mac || set_nodelib
 }
 
 function opsite_setting()

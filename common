@@ -59,7 +59,7 @@ function _declare_global_variables__()
 	_dialog_file_=/tmp/.dialog_file
 	_setting_file_=~/.setting_file
 	_DIALOG_=~/command/lxdialog
-	_PASSWORD_=SnowGeese
+	_PASSWORD_=fangyunjiang
 
 	[ -z "$_DIALOG_HEIGHT_" ]&&_DIALOG_HEIGHT_=30
 	[ -z "$_DIALOG_WIDTH_" ]&&_DIALOG_WIDTH_=80

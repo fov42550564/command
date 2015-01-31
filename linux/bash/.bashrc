@@ -9,8 +9,11 @@
 
 #source ~/.profile
 
-export _OS_=mac
-#export _OS_=cygwin
+if [ $(uname) = "Darwin" ];then
+    export _OS_=mac
+else
+    export _OS_=cygwin
+fi
 shopt -s  expand_aliases
 
 source ~/command/common
@@ -111,7 +114,11 @@ function xcat() { cat "$1"|pbcopy; }
 function wh() { cd $(which "$1"); }
 
 #diffmerge
-alias di='diffmerge'
+if [ $_OS_ = "mac" ];then
+    alias di='diffmerge.sh'
+else
+    alias di='bcompare'
+fi
 
 #copy
 alias mhon='xsmb -m'
@@ -127,13 +134,13 @@ alias mhmv='cp /Volumes/home/方运江/*'
 export PATH=$PATH:~/command:/usr/local/lib/node_modules/cordova/bin
 
 #ndk
-#alias ndk='ndk-build'
-#export ANDROID_NDK_ROOT=~/android/android-ndk-r8b
-#export ANDROID_SDK_ROOT=~/android/android-sdk-mac_x86
-#export ANDROID_NDK_PREFIX=$ANDROID_NDK_ROOT/toolchains/arm-linux-androideabi-4.6/prebuilt/darwin-x86/bin/arm-linux-androideabi
-#export ANDROID_SDK_PLATFORM_TOOLS=$ANDROID_SDK_ROOT/platform-tools
-#export ANDROID_SDK_TOOLS=$ANDROID_SDK_ROOT/tools
-#export PATH="$PATH:$ANDROID_NDK_ROOT:$ANDROID_SDK_TOOLS:$ANDROID_SDK_PLATFORM_TOOLS"
+alias ndk='ndk-build'
+export ANDROID_NDK_HOME=~/android/android-ndk-r8b
+export ANDROID_SDK_HOME=~/android/android-sdk-macosx
+export ANDROID_NDK_PREFIX=$ANDROID_NDK_HOME/toolchains/arm-linux-androideabi-4.6/prebuilt/darwin-x86/bin/arm-linux-androideabi
+export ANDROID_SDK_PLATFORM_TOOLS=$ANDROID_SDK_HOME/platform-tools
+export ANDROID_SDK_TOOLS=$ANDROID_SDK_HOME/tools
+export PATH="$PATH:$ANDROID_NDK_HOME:$ANDROID_SDK_TOOLS:$ANDROID_SDK_PLATFORM_TOOLS"
 #export NDK_MODULE_PATH=/Users/mac/Desktop/cocos2d-x-2.2.2/cocos2dx/platform/third_party/android/prebuilt:/Users/mac/Desktop/cocos2d-x-2.2.2
 #
 #vim
@@ -145,6 +152,8 @@ alias viclear='rm -f /Users/mac/.data/swap/*.swp'
 alias xgo='go run'
 #node.js
 export NODE_PATH="/usr/local/lib/node_modules/"
+#atom-shell
+alias atom='/Users/apple/node/atom-shell/Atom.app/Contents/MacOS/Atom'
 #node-webkit
 alias nw='~/node/node-webkit/node-webkit.app/Contents/MacOS/node-webkit'
 alias nw-build='nw-gyp build'
@@ -167,4 +176,5 @@ alias net='__skip_sudo;sudo ifconfig en0 ether c8:2a:14:5a:f9:bb'
 #function xphone(){ cp "/Users/mac/Desktop/cocos2d-x-2.2.2/samples/Cpp/HelloCpp/proj.android/bin/HelloCpp.apk" "/Volumes/NO NAME 1/a-qiubai/"; }
 function xphone(){ cp "/Users/mac/android/workspace/TestGlRender/bin/TestGlRender.apk" "/Volumes/NO NAME 1/a-qiubai/"; echo "done"; }
 
+alias tsvn='telnet tj.myrsky.com.cn 3690'
 

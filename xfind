@@ -152,13 +152,13 @@ function find_vim()
 	else
 		_list_=($(find "$_dir" -type f -"$_iname"name "$_name"|xargs egrep  -l $_ignorcase "$_str"))
 	fi
-	
+
 	len=${#_list_[@]}
 	[ $len -eq 0 ] && __error "have not find file" && return
 
 	for ((i=0; i<len; i++));do
 		#echo vim "${_list_[i]}" -e -s "$_vim_command"
-		eval vim "${_list_[i]}" -e -s "$_vim_command"
+		eval vim "${_list_[i]}" -e -s "$_vim_command -c \"normal ZZ\""
 		echo have do command in ${_list_[i]}
 	done
 }

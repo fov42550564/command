@@ -10,7 +10,7 @@
 	st = status
 	br = branch
 	di = diff
-	pu = push origin master
+	pu = push -u origin master
 	pl = pull
 	line = "log --pretty=oneline --since='two hours ago'"
 	one = log -p -1
@@ -25,3 +25,4 @@
 [core]
 	pager = 
 	autocrlf = true
+	editor = /usr/bin/vim

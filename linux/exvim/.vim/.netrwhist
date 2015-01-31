@@ -1,7 +1,8 @@
 let g:netrw_dirhistmax  =10
-let g:netrw_dirhist_cnt =5
+let g:netrw_dirhist_cnt =6
 let g:netrw_dirhist_1='/Users/mac/video/ffmpeg/ffplay/thirdparty/android/jni/src/haptic/dummy'
 let g:netrw_dirhist_2='/Users/mac/video/ffmpeg/ffplay/thirdparty/build-SDL20-party/install/include/SDL2'
 let g:netrw_dirhist_3='/Users/mac/Desktop/cocos2d-x-2.2.2/samples/Cpp/MediaEditor/Classesex'
 let g:netrw_dirhist_4='/Users/mac/Downloads/iOSBuild-master/build/src/xvidcore'
 let g:netrw_dirhist_5='/Users/mac/Desktop/work/include'
+let g:netrw_dirhist_6='/Users/apple/work/erp2/client/ios/MRPClient/MRPClient.xcodeproj'
