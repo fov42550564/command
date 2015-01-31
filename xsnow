@@ -1,0 +1,152 @@
+#!/bin/bash
+
+source ~/command/common
+ip="192.168.211.8"
+password=SnowGeese
+_oper=0
+
+function snow8_android()
+{
+	expect -c "
+		spawn ssh root@$ip;
+		expect {
+			\"*password:\" {send \"$password\r\"; exp_continue}
+			\"*#\" {send \" cd /var/www/html/dev/modules/maf/android\rPS1=\'\\\u@\\\w\\\n$\'\r\"}
+		}
+		interact
+	"
+}
+
+function snow8_node()
+{
+	expect -c "
+		spawn ssh root@$ip;
+		expect {
+			\"*password:\" {send \"$password\r\"; exp_continue}
+			\"*#\" {send \" cd /var/www/html/dev/nodejs/server \rPS1=\'\\\u@\\\w\\\n$\'\rps -A|grep node\r\"}
+		}
+		interact
+	"
+}
+
+function snow8_ticket()
+{
+	expect -c "
+		spawn ssh root@$ip;
+		expect {
+			\"*password:\" {send \"$password\r\"; exp_continue}
+			\"*#\" {send \" cd /var/www/html/snow8/ERP/myro_api \rPS1=\'\\\u@\\\w\\\n$\'\r\"}
+		}
+		interact
+	"
+}
+
+function snow7_ticket()
+{
+	expect -c "
+		spawn ssh guanli@192.168.211.7;
+		expect {
+			\"*password:\" {send \"SnowGeese\rcd /var/www/html/dev/modules/maf/android\rPS1=\'\\\u@\\\w\\\n$\'\r\"}
+		}
+		interact
+	"
+}
+
+function tianjin_node()
+{
+	expect -c "
+        spawn ssh guanli@tj.myrsky.com.cn -p 2230
+		expect {
+			\"*password:\" {send \"SnowMyrsky1\rsu\r\"; exp_continue}
+			\"*Password:\" {send \"Snow,Geese\r\"; exp_continue}
+			\"*#\" {send \" cd /var/www/html/mrp/nodejs/server\rPS1=\'\\\u@\\\w\\\n$\'\r\"}
+		}
+		interact
+	"
+}
+
+function meiguo_node()
+{
+	expect -c "
+        spawn ssh guanli@67.224.83.75 -p 2229
+		expect {
+			\"*password:\" {send \"time,1234\rsu\r\"; exp_continue}
+			\"*Password:\" {send \"time,12341\r\"; exp_continue}
+			\"*#\" {send \" cd /var/www/html/mrp/nodejs/server\rPS1=\'\\\u@\\\w\\\n$\'\r\"}
+		}
+		interact
+	"
+}
+
+function weixin_server()
+{
+	expect -c "
+        spawn ssh guanli@58.251.15.147
+		expect {
+			\"*password:\" {send \"SnowGeese\rsu\r\"; exp_continue}
+			\"*Password:\" {send \"SnowGeese\r\"; exp_continue}
+			\"*#\" {send \" cd /var/www/html\rPS1=\'\\\u@\\\w\\\n$\'\r\"}
+		}
+		interact
+	"
+}
+
+function svn_server()
+{
+	expect -c "
+        spawn ssh -p 2228 guanli@tj.myrsky.com.cn
+		expect {
+			\"*password:\" {send \"Snow,Geese\rsu\r\"; exp_continue}
+			\"*Password:\" {send \"abcd1234!\r\"; exp_continue}
+			\"*#\" {send \" cd /svnroot/erp2/conf\rPS1=\'\\\u@\\\w\\\n$\'\rps -ef|grep svn\r\"}
+		}
+		interact
+	"
+}
+
+function show_help()
+{
+    local -a list
+    list="help"
+    list=("${list[@]}" "Usage :xfind [OPTIONS]")
+    list=("${list[@]}" "  -a snow8 android")
+    list=("${list[@]}" "  -n snow8 node")
+    list=("${list[@]}" "  -t snow8 ticket")
+    list=("${list[@]}" "  -i snow7 ticket")
+    list=("${list[@]}" "  -j tianjin node")
+    list=("${list[@]}" "  -m meiguo node")
+    list=("${list[@]}" "  -w weixin server")
+    list=("${list[@]}" "  -s svn server")
+    __msgbox "${list[@]}"
+}
+
+function main()
+{
+    while getopts :antijmwsh opt;do
+        case $opt in
+            a)_oper=1;;
+            n)_oper=0;;
+            t)_oper=2;;
+            i)_oper=3;;
+            j)_oper=4;;
+            m)_oper=5;;
+            w)_oper=6;;
+            s)_oper=7;;
+            h)show_help;exit;;
+        esac
+    done
+
+    case $_oper in
+        0)snow8_node;;
+        1)snow8_android;;
+        2)snow8_ticket;;
+        3)snow7_ticket;;
+        4)tianjin_node;;
+        5)meiguo_node;;
+        6)weixin_server;;
+        7)svn_server;;
+    esac
+}
+
+main "$@"
+

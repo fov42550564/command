@@ -79,7 +79,7 @@ function git_edit_vi()
 function git_show_version_diff()
 {
 	ver=$1
-	git_single_command "git diff $ver $ver^ $_TARGET_" "no" "diff" "select bellow _files to show diff with preversion"
+	git_single_command "git diff $ver^ $ver $_TARGET_" "no" "diff" "select bellow _files to show diff with preversion"
 }
 
 function git_log_by_version()
@@ -129,7 +129,11 @@ function git_get_log_version_files()
 	i=0
 	unset _files
 	for var in $s;do
-		_files[i]=$var
+        if [ $_OS_ = "cygwin" ];then
+            _files[i]=$(echo $var|sed 's/^\.\.\./windows/')
+        else
+            _files[i]=$var
+        fi
 		let i++
 	done
 }
@@ -172,6 +176,7 @@ function show_help()
 	list=("${list[@]}" "  -l :show git log, user -f set filter")
 	list=("${list[@]}" "  -t [filter]: set filter")
 	list=("${list[@]}" "  -f [file]: set one log file")
+	list=("${list[@]}" "  -n [version]: show at this version's log")
 	list=("${list[@]}" "  -d :show git diff")
 	list=("${list[@]}" "  -a :add git file")
 	list=("${list[@]}" "  -r :revert git file")
@@ -182,10 +187,10 @@ function show_help()
 
 function main()
 {
-	local oper_right
+	local oper_right ver
 	oper_right=0
 
-	while getopts :p:darvlt:f:h opt;do
+	while getopts :p:darvlt:n:f:h opt;do
 		oper_right=1
 		case $opt in
 			p)_oper=0;_dest_dir="$OPTARG";;
@@ -196,6 +201,7 @@ function main()
 			l)_oper=5;;
 			t)_filter="$OPTARG";;
 			f)_logfile="$OPTARG";;
+			n)_oper=6;ver="$OPTARG";;
 			*)show_help;exit;;
 		esac
 	done
@@ -217,6 +223,7 @@ function main()
 		3)git_edit_vi;;
 		4)git_add_files;;
 		5)git_show_logs;;
+		6)git_log_by_version $ver;;
 	esac
 }
 
