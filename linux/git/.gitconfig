@@ -27,3 +27,4 @@
 	pager = 
 	autocrlf = true
 	editor = /usr/bin/vim
+
