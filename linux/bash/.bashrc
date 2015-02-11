@@ -135,8 +135,13 @@ export PATH=$PATH:~/command:/usr/local/lib/node_modules/cordova/bin
 
 #ndk
 alias ndk='ndk-build'
+if [ "$_OS_" = "cygwin" ];then
+export ANDROID_NDK_HOME=~/f/android/android-ndk-r9d
+export ANDROID_SDK_HOME=~/f/android/android-sdk
+else
 export ANDROID_NDK_HOME=~/android/android-ndk-r8b
 export ANDROID_SDK_HOME=~/android/android-sdk-macosx
+fi
 export ANDROID_NDK_PREFIX=$ANDROID_NDK_HOME/toolchains/arm-linux-androideabi-4.6/prebuilt/darwin-x86/bin/arm-linux-androideabi
 export ANDROID_SDK_PLATFORM_TOOLS=$ANDROID_SDK_HOME/platform-tools
 export ANDROID_SDK_TOOLS=$ANDROID_SDK_HOME/tools
@@ -151,7 +156,11 @@ alias viclear='rm -f /Users/mac/.data/swap/*.swp'
 #go
 alias xgo='go run'
 #node.js
+if __mac ;then
 export NODE_PATH="/usr/local/lib/node_modules/"
+else
+export NODE_PATH="/cygdrive/c/Documents and Settings/fang/Application Data/npm/node_modules"
+fi
 #atom-shell
 alias atom='/Users/apple/node/atom-shell/Atom.app/Contents/MacOS/Atom'
 #node-webkit
