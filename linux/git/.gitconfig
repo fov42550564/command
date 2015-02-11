@@ -22,7 +22,9 @@
 	rs = "reset --hard"
     noadd = "rm -r --cached"
     noaddall = "rm -r --cached ."
+    bare="init --bare"
 [core]
 	pager = 
 	autocrlf = true
 	editor = /usr/bin/vim
+
