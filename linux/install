@@ -6,63 +6,94 @@
 # dispcripe: install for linux bashrc and exvim
 # CopyRight@fangyunjiang[42550564@qq.com]
 #############################################
-source ~/command/common
 
 _src_path=~/command/linux
-_oper_right=0
-_oper=0
 _backdir=".linux_backup"
-
-function backup_single()
-{
-	local file
-	file="$1"
-	if [ -e ~/${file} ];then
-		if ! [ -L ~/${file} ];then
-			echo backup $file
-			mv ~/${file} ~/${_backdir}/${file}
-		fi
-	fi
-}
-
-
-function backup()
-{
-	cd ~
-	mkdir -p ${_backdir}
-	#bashrc
-	backup_single .bashrc
-	#exvim
-	backup_single .vim
-	backup_single .vimrc
-	backup_single .toolkit
-	#git
-	backup_single .gitconfig
-}
+_platforms=0
+_targets=0
+targets_bash=1
+targets_vim=2
+platforms_cygwin=1
+platforms_macosx=2
+platforms_linux=3
 
 function install_single()
 {
 	local src_file dst_file
 	src_file=$1;dst_file=$2
 	if ! [ -L ~/$dst_file ];then
-		echo install $dst_file
+        echo "backup $dst_file"
+        mv ~/${dst_file} ~/${_backdir}/${dst_file}
+		echo "install $dst_file"
 		ln -s ${_src_path}/$src_file $dst_file
+    else
+        echo "warning:$dst_file have installed"
 	fi
+}
+
+function install_bash()
+{
+	install_single bash/.bashrc .bashrc
+	install_single bash/.inputrc .inputrc
+	install_single bash/.gitconfig .gitconfig
+}
+
+function install_vim()
+{
+	install_single exvim/.vim .vim
+	install_single exvim/.vimrc .vimrc
+	install_single exvim/.toolkit .toolkit
 }
 
 function install()
 {
-	backup
-
-	#bashrc
-	install_single bash/.bashrc .bashrc
-	#exvim
-	install_single exvim/.vim .vim
-	install_single exvim/.vimrc .vimrc
-	install_single exvim/.toolkit .toolkit
-	#git
-	install_single git/.gitconfig .gitconfig
+    cd ~
+    mkdir -p ${_backdir}
+    if (($_targets&$targets_bash));then
+        install_bash
+    fi
+    if (($_targets&$targets_vim));then
+        install_vim
+    fi
 }
 
-install
+function show_help()
+{
+    echo "install [-p[platforms]|-t[targets]]"
+    echo "  -p [platforms]:platforms as follows:"
+    echo "      cygwin macosx linux"
+    echo "      uses: -p cygwin"
+    echo "      default: cygwin"
+    echo "  -t [targets]:targets as follows:"
+    echo "      bash vim all"
+    echo "      uses: -t bash"
+    echo "      uses: -p all"
+    echo "      default: bash"
+}
+
+function main()
+{
+    local has_oper all bash vim cygwin macosx linux
+
+    bash=$targets_bash
+    vim=$targets_vim
+    cygwin=$platforms_cygwin
+    macosx=$platforms_macosx
+    linux=$platforms_linux
+
+    has_oper=0
+    while getopts :p:d:f: opt;do
+        has_oper=1
+        case $opt in
+            p)all=7;_platforms=$(($OPTARG));;
+            d)all=3;_targets=$(($OPTARG));;
+            *)show_help;exit;;
+        esac
+    done
+    [ $has_oper -eq 0 ] && show_help && exit
+
+    install
+}
+
+main
 

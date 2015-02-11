@@ -22,17 +22,33 @@ source ~/command/common
 PS1='\n\[\e[32m\]\u\[\e[34m\]@\[\e[32m\]\t \[\e[33m\]\w\[\e[0m\]\n\$'
 
 # Uncomment to use the terminal colours set in DIR_COLORS
-__cygwin && eval "$(dircolors -b /etc/DIR_COLORS)"
+if __cygwin;then
+eval "$(dircolors -b /etc/DIR_COLORS)"
+# ignore return \r\d
+set -o igncr
+export SHELLOPTS
+#open
+alias open='cygstart'
+fi
 
 #set options
 shopt -s checkwinsize
 #shopt -s cdspell
+shopt -s nocaseglob
 
 #confirm to do command
 # alias rm='rm -i'
 # alias cp='cp -i'
 # alias mv='mv -i'
 # alias rm='xxrm'
+
+#path
+alias path='echo -e ${PATH//:/\\n}'
+alias libpath='echo -e ${LD_LIBRARY_PATH//:/\\n}'  
+
+#du df
+alias du='du -sh'
+alias df='df -kTh'
 
 #show ls color
 if __mac ;then
@@ -146,12 +162,12 @@ export ANDROID_NDK_PREFIX=$ANDROID_NDK_HOME/toolchains/arm-linux-androideabi-4.6
 export ANDROID_SDK_PLATFORM_TOOLS=$ANDROID_SDK_HOME/platform-tools
 export ANDROID_SDK_TOOLS=$ANDROID_SDK_HOME/tools
 export PATH="$PATH:$ANDROID_NDK_HOME:$ANDROID_SDK_TOOLS:$ANDROID_SDK_PLATFORM_TOOLS"
-#export NDK_MODULE_PATH=/Users/mac/Desktop/cocos2d-x-2.2.2/cocos2dx/platform/third_party/android/prebuilt:/Users/mac/Desktop/cocos2d-x-2.2.2
+#export NDK_MODULE_PATH=~/Desktop/cocos2d-x-2.2.2/cocos2dx/platform/third_party/android/prebuilt:~/Desktop/cocos2d-x-2.2.2
 #
 #vim
 alias vi='vim'
-alias clearvim='rm -fr /Users/mac/.data/swap'
-alias viclear='rm -f /Users/mac/.data/swap/*.swp'
+alias clearvim='rm -fr ~/.data/swap'
+alias viclear='rm -f ~/.data/swap/*.swp'
 
 #go
 alias xgo='go run'
@@ -176,14 +192,14 @@ alias ffyuv='ffplay -f rawvideo -loop 0 -video_size 568x320'
 alias copytext='lg __1__ && cat __1__|pbcopy && rm -f __1__'
 alias cpwd='echo -n `pwd`|pbcopy'
 
-alias gyp='/Users/mac/node/gyp/gyp-read-only/gyp --depth=.'
+alias gyp='~/node/gyp/gyp-read-only/gyp --depth=.'
 
 alias youku='nw ~/node/youku'
 alias qiubai='nw ~/node/git/node-qiubai/node_modules/node-qiubai/qiubai'
 alias net='__skip_sudo;sudo ifconfig en0 ether c8:2a:14:5a:f9:bb'
 
-#function xphone(){ cp "/Users/mac/Desktop/cocos2d-x-2.2.2/samples/Cpp/HelloCpp/proj.android/bin/HelloCpp.apk" "/Volumes/NO NAME 1/a-qiubai/"; }
-function xphone(){ cp "/Users/mac/android/workspace/TestGlRender/bin/TestGlRender.apk" "/Volumes/NO NAME 1/a-qiubai/"; echo "done"; }
+#function xphone(){ cp "~/Desktop/cocos2d-x-2.2.2/samples/Cpp/HelloCpp/proj.android/bin/HelloCpp.apk" "/Volumes/NO NAME 1/a-qiubai/"; }
+function xphone(){ cp "~/android/workspace/TestGlRender/bin/TestGlRender.apk" "/Volumes/NO NAME 1/a-qiubai/"; echo "done"; }
 
 alias tsvn='telnet tj.myrsky.com.cn 3690'
 

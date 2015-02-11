@@ -186,20 +186,7 @@ function __change_to_winpath()
 #Usage:__change_to_winpath path
 #	only use in cygwin
 ########################################
-	local drive path
-	path="$1"
-	if [ "${path:0:10}" = "/cygdrive/" ];then
-		drive=${path:10:1}
-		echo "$drive:/${path:12}"
-		return
-	fi
-	if [ "${path:0:1}" = "/" ];then
-		echo "D:/linux$path"
-		return
-	fi
-	if [ "${path:0:1}" = "~" ];then
-		echo "D:/linux/home/Administrator${path:1}"
-	fi
+    cygpath -C ANSI -w -a "$XPATH"
 }
 function __pause()
 {
