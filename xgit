@@ -124,7 +124,7 @@ function git_get_log_version_files()
 {
 	local rs s i var version
 	version=$1
-	rs=$(git show --stat ${version}|grep "\| *[0-9]* [+-]"|sed 's/|.*$//')
+	rs=$(git show --stat ${version}|grep "| *[0-9]* [+-]"|sed 's/|.*$//')
 	s=`echo $rs|awk '{split($0,tmp)} END {for(i in tmp) print tmp[i]}'`
 	i=0
 	unset _files
