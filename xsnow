@@ -46,7 +46,7 @@ function snow7_ticket()
 	expect -c "
 		spawn ssh guanli@192.168.211.7;
 		expect {
-			\"*password:\" {send \"SnowGeese\rcd /var/www/html/dev/modules/maf/android\rPS1=\'\\\u@\\\w\\\n$\'\r\"}
+			\"*password:\" {send \"SnowGeese\rcd /var/www/html/dev/download\rcd /var/www/html/testPCB/ERP/download\rPS1=\'\\\u@\\\w\\\n$\'\r\"}
 		}
 		interact
 	"
@@ -91,6 +91,18 @@ function weixin_server()
 	"
 }
 
+function aliyun_server()
+{
+	expect -c "
+        spawn ssh guanli@www.myrsky.com.cn
+		expect {
+			\"*password:\" {send \"SnowMyrsky15\r\"; exp_continue}
+			\"*#\" {send \" cd /alidata/www/htdocs/myrsky.com.cn/code/download\rPS1=\'\\\u@\\\w\\\n$\'\r\"}
+		}
+		interact
+	"
+}
+
 function svn_server()
 {
 	expect -c "
@@ -116,13 +128,14 @@ function show_help()
     list=("${list[@]}" "  -j tianjin node")
     list=("${list[@]}" "  -m meiguo node")
     list=("${list[@]}" "  -w weixin server")
+    list=("${list[@]}" "  -y aliyun server")
     list=("${list[@]}" "  -s svn server")
     __msgbox "${list[@]}"
 }
 
 function main()
 {
-    while getopts :antijmwsh opt;do
+    while getopts :antijmwsyh opt;do
         case $opt in
             a)_oper=1;;
             n)_oper=0;;
@@ -132,6 +145,7 @@ function main()
             m)_oper=5;;
             w)_oper=6;;
             s)_oper=7;;
+            y)_oper=8;;
             h)show_help;exit;;
         esac
     done
@@ -145,6 +159,7 @@ function main()
         5)meiguo_node;;
         6)weixin_server;;
         7)svn_server;;
+        8)aliyun_server;;
     esac
 }
 
