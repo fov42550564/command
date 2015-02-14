@@ -167,6 +167,22 @@ function git_copy_change_to()
 	done
 }
 
+function git_delete_history_force()
+{
+    local files file OLD_IFS
+    OLD_IFS="$IFS" 
+    IFS="," 
+    files=($1)
+    IFS="$OLD_IFS" 
+    for file in ${files[@]};do
+        git filter-branch --force --index-filter "git rm --cached --ignore-unmatch $file" --prune-empty --tag-name-filter cat -- --all
+    done
+    rm -rf .git/refs/original/
+    git reflog expire --expire=now --all
+    git gc --prune=now
+    git gc --aggressive --prune=now
+}
+
 function show_help()
 {
 	local -a list
@@ -181,16 +197,17 @@ function show_help()
 	list=("${list[@]}" "  -a :add git file")
 	list=("${list[@]}" "  -r :revert git file")
 	list=("${list[@]}" "  -v :edit file with vim")
+	list=("${list[@]}" "  -m [file;file]:delete history file force")
 	list=("${list[@]}" "  -h :show help ")
 	__msgbox "${list[@]}"
 }
 
 function main()
 {
-	local oper_right ver
+	local oper_right ver files
 	oper_right=0
 
-	while getopts :p:darvlt:n:f:h opt;do
+	while getopts :p:darvlt:n:f:m:h opt;do
 		oper_right=1
 		case $opt in
 			p)_oper=0;_dest_dir="$OPTARG";;
@@ -202,11 +219,16 @@ function main()
 			t)_filter="$OPTARG";;
 			f)_logfile="$OPTARG";;
 			n)_oper=6;ver="$OPTARG";;
+			m)_oper=7;files="$OPTARG";;
 			*)show_help;exit;;
 		esac
 	done
 
 	[ $oper_right -eq 0 ] && show_help && exit
+    if ((_oper==7));then
+		git_delete_history_force $files
+        exit
+    fi
 
 	if ((_oper==5));then
 		__show_progressbar 0.1 git_get_log_versions
