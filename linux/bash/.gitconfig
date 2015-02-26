@@ -26,6 +26,6 @@
     bare="init --bare"
 [core]
 	pager = 
-	autocrlf = true
+	autocrlf = false
 	editor = /usr/bin/vim
 
