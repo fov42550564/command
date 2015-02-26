@@ -180,7 +180,7 @@ fi
 #atom-shell
 alias atom='/Users/apple/node/atom-shell/Atom.app/Contents/MacOS/Atom'
 #node-webkit
-alias nw='~/node/node-webkit/node-webkit.app/Contents/MacOS/node-webkit'
+alias nw='/Users/apple/client/macosx/bin/i32/client.app/Contents/MacOS/node-webkit'
 alias nw-build='nw-gyp build'
 alias nw-rebuild='nw-gyp rebuild --target=0.7.5'
 alias nw-read='~/node/git/nw-read/nw-read'

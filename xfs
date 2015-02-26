@@ -46,7 +46,7 @@ app.post('/postfile', function(req, res){
 
 app.get('/getfile', function(req, res){
     var file = req.query.file,
-        fullName = path.join(__dirname, file);
+        fullName = path.join(process.cwd(), file);
     console.log(fullName);
     if (fs.existsSync(fullName)) {
         var zip = new JSZip();
@@ -62,6 +62,11 @@ app.get('/getfile', function(req, res){
         console.log("error file or path");
         res.send("error");
     }
+});
+
+app.get('/disconnect', function(req, res){
+    res.send("success");
+    setTimeout(function(){process.exit();}, 100);
 });
 
 
