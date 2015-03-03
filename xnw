@@ -12,7 +12,6 @@ _jquery_file="/Users/mac/work/stone/trunk/sources/mediaeditor/mp4editor_node/tes
 _name="*"
 _path="."
 _html_file="index.html"
-_oper=0
 
 function create_package_file(){
 	echo "{\"main\":\"$_html_file\", \"name\":\"test\"}" > "package.json"
@@ -40,6 +39,19 @@ function create_html_and_package_file()
 	create_package_file
 }
 
+function create_package_file_for_url() {
+    local url path nw
+    path=".xnwrun"
+    url="$1"
+    nw="/Users/apple/client/macosx/bin/i32/client.app/Contents/MacOS/node-webkit"
+    url="http://${url#http://}"
+
+    mkdir -p $path
+    echo "{ \"main\": \"${url}\",\"name\": \"debug\"}" > ${path}/package.json
+    $nw $path
+    rm -fr $path
+}
+
 function show_help()
 {
 	local -a list
@@ -48,6 +60,7 @@ function show_help()
 	list=("${list[@]}" "  -d [path] :set dest path")
 	list=("${list[@]}" "  -n :new html file and package file")
 	list=("${list[@]}" "  -p :new package file")
+	list=("${list[@]}" "  -l [url]:open nw for a url")
 	list=("${list[@]}" "  -k [file]:new package file with a html name")
 	list=("${list[@]}" "  -h :show help ")
 	__msgbox "${list[@]}"
@@ -55,14 +68,16 @@ function show_help()
 
 function main()
 {
-	local oper_right=0
-	while getopts :d:k:nph opt;do
+	local oper oper_right url
+	oper_right=0
+	while getopts :d:k:l:nph opt;do
 		oper_right=1
 		case $opt in
 			d)_path="$OPTARG";;
-			n)_oper=0;;
-			p)_oper=1;;
-			k)_oper=1;_html_file="$OPTARG";;
+			n)oper=0;;
+			p)oper=1;;
+			k)oper=1;_html_file="$OPTARG";;
+			l)oper=2;url="$OPTARG";;
 			h)show_help;exit;;
 			*)show_help;exit;;
 		esac
@@ -70,9 +85,10 @@ function main()
 
 	[ $oper_right -eq 0 ] && show_help && exit
 
-	case $_oper in
+	case $oper in
 		0)create_html_and_package_file;;
 		1)create_package_file;;
+		2)create_package_file_for_url "${url}";;
 	esac
 }
 
