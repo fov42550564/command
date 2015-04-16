@@ -57,8 +57,8 @@ function tianjin_node()
 	expect -c "
         spawn ssh guanli@tj.myrsky.com.cn -p 2230
 		expect {
-			\"*password:\" {send \"SnowMyrsky1\rsu\r\"; exp_continue}
-			\"*Password:\" {send \"Snow,Geese\r\"; exp_continue}
+			\"*password:\" {send \"SnowGeese\rsu\r\"; exp_continue}
+			\"*:\" {send \"SnowGeese,1\r\"; exp_continue}
 			\"*#\" {send \" cd /var/www/html/mrp/nodejs/server\rPS1=\'\\\u@\\\w\\\n$\'\r\"}
 		}
 		interact

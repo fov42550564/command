@@ -51,7 +51,8 @@ function find_replace()
 	[ $len -eq 0 ] && __error "have no $_str to be replace" && return
 
 	for ((i=0; i<len; i++));do
-		$_SED_ -i 's#\<'"$_str"'\>#'"$_new_str"'#g;' ${file[i]} 
+		#$_SED_ -i 's#\<'"$_str"'\>#'"$_new_str"'#g;' ${file[i]} 
+        vim -e -s -c '%s#\<'"$_str"'\>#'"$_new_str"'#g' -c :wq ${file[i]} 
 		echo have replace $_str with $_new_str in ${file[i]}
 	done
 }
