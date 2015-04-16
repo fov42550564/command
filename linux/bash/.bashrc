@@ -125,6 +125,7 @@ function log() { if [ -z "$1" ];then xlog -a; else xlog -a -f "$1"; fi }
 function logv() { if [ -z "$1" ];then xlog -v -a; else xlog -v -a -f "$1"; fi }
 function logm() { if [ -z "$1" ];then xlog -v -m -a; else xlog -v -m -a -f "$1"; fi }
 function xcat() { cat "$1"|pbcopy; }
+function xlg() { pbpaste|pbcopy; }
 
 #cd which
 function wh() { cd $(which "$1"); }
@@ -208,3 +209,6 @@ function xphone(){ cp "~/android/workspace/TestGlRender/bin/TestGlRender.apk" "/
 
 alias tsvn='telnet tj.myrsky.com.cn 3690'
 
+
+export NVM_DIR="/Users/apple/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
