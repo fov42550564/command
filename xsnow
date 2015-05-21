@@ -46,7 +46,20 @@ function snow7_ticket()
 	expect -c "
 		spawn ssh guanli@192.168.211.7;
 		expect {
-			\"*password:\" {send \"SnowGeese\rcd /var/www/html/dev/download\rcd /var/www/html/testPCB/ERP/download\rPS1=\'\\\u@\\\w\\\n$\'\r\"}
+            \"guanli@192.168.211.7's password:\" {send \"SnowGeese\rcd /var/www/html/chat/server\rPS1=\'\\\u@\\\w\\\n$\'\rsu\r\"; exp_continue}
+			\"Password:\" {send \"SnowGeese\r\"}
+		}
+		interact
+	"
+}
+
+function snow_node()
+{
+	expect -c "
+		spawn ssh guanli@67.224.83.75 -p 2229;
+		expect {
+            \"guanli@67.224.83.75's password:\" {send \"time,123\rcd /var/www/html/Chat\rPS1=\'\\\u@\\\w\\\n$\'\rsu\r\"; exp_continue}
+			\"Password:\" {send \"time,1231\r\"}
 		}
 		interact
 	"
@@ -57,8 +70,7 @@ function tianjin_node()
 	expect -c "
         spawn ssh guanli@tj.myrsky.com.cn -p 2230
 		expect {
-			\"*password:\" {send \"SnowGeese\rsu\r\"; exp_continue}
-			\"*:\" {send \"SnowGeese,1\r\"; exp_continue}
+			\"*password:\" {send \"SnowMyrsky214\r\"; exp_continue}
 			\"*#\" {send \" cd /var/www/html/mrp/nodejs/server\rPS1=\'\\\u@\\\w\\\n$\'\r\"}
 		}
 		interact
@@ -103,6 +115,18 @@ function aliyun_server()
 	"
 }
 
+function shenzhen_node()
+{
+	expect -c "
+        spawn ssh guanli@58.251.15.149 -p 2230
+		expect {
+			\"*password:\" {send \"SnowMyrsky214\r\"; exp_continue}
+			\"*#\" {send \" cd .\rPS1=\'\\\u@\\\w\\\n$\'\r\"}
+		}
+		interact
+	"
+}
+
 function svn_server()
 {
 	expect -c "
@@ -130,12 +154,14 @@ function show_help()
     list=("${list[@]}" "  -w weixin server")
     list=("${list[@]}" "  -y aliyun server")
     list=("${list[@]}" "  -s svn server")
+    list=("${list[@]}" "  -z shenzhen node")
+    list=("${list[@]}" "  -o snow node")
     __msgbox "${list[@]}"
 }
 
 function main()
 {
-    while getopts :antijmwsyh opt;do
+    while getopts :antijmwsyzoh opt;do
         case $opt in
             a)_oper=1;;
             n)_oper=0;;
@@ -146,6 +172,8 @@ function main()
             w)_oper=6;;
             s)_oper=7;;
             y)_oper=8;;
+            z)_oper=9;;
+            o)_oper=10;;
             h)show_help;exit;;
         esac
     done
@@ -160,6 +188,8 @@ function main()
         6)weixin_server;;
         7)svn_server;;
         8)aliyun_server;;
+        9)shenzhen_node;;
+        10)snow_node;;
     esac
 }
 

@@ -11,10 +11,12 @@ source ~/command/common
 _jquery_file="/Users/mac/work/stone/trunk/sources/mediaeditor/mp4editor_node/test/js/opengl/thirdparty/jquery-1.9.1.js"
 _name="*"
 _path="."
+_origin_mobile_config=",\"window\": { \"title\": \"MRP客户端\", \"width\": 480, \"height\": 720, \"always-on-top\":false, \"show_in_taskbar\":true, \"transparent\": false, \"resizable\": true, \"frame\": true, \"toolbar\": true, \"show\": true }"
+_mobile_config=""
 _html_file="index.html"
 
 function create_package_file(){
-	echo "{\"main\":\"$_html_file\", \"name\":\"test\"}" > "package.json"
+    echo "{\"main\":\"$_html_file\", \"name\":\"test\"${_mobile_config}}" > "package.json"
 }
 
 function create_html_and_package_file()
@@ -47,7 +49,7 @@ function create_package_file_for_url() {
     url="http://${url#http://}"
 
     mkdir -p $path
-    echo "{ \"main\": \"${url}\",\"name\": \"debug\"}" > ${path}/package.json
+    echo "{ \"main\": \"${url}\",\"name\": \"debug\"${_mobile_config}}" > ${path}/package.json
     $nw $path
     rm -fr $path
 }
@@ -60,6 +62,7 @@ function show_help()
 	list=("${list[@]}" "  -d [path] :set dest path")
 	list=("${list[@]}" "  -n :new html file and package file")
 	list=("${list[@]}" "  -p :new package file")
+	list=("${list[@]}" "  -m :create mobile package file")
 	list=("${list[@]}" "  -l [url]:open nw for a url")
 	list=("${list[@]}" "  -k [file]:new package file with a html name")
 	list=("${list[@]}" "  -h :show help ")
@@ -70,12 +73,13 @@ function main()
 {
 	local oper oper_right url
 	oper_right=0
-	while getopts :d:k:l:nph opt;do
+	while getopts :d:k:l:nmph opt;do
 		oper_right=1
 		case $opt in
 			d)_path="$OPTARG";;
 			n)oper=0;;
 			p)oper=1;;
+            m)_mobile_config="${_origin_mobile_config}";;
 			k)oper=1;_html_file="$OPTARG";;
 			l)oper=2;url="$OPTARG";;
 			h)show_help;exit;;
