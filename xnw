@@ -54,6 +54,16 @@ function create_package_file_for_url() {
     rm -fr $path
 }
 
+function create_express_server() {
+    local dir port
+    dir=${1:-.}
+    port=${2:-3001}
+    echo "var express = require('express');" > server.js
+    echo "var app = express();" >> server.js
+    echo "app.use(express.static('${dir}'));" >> server.js
+    echo "var server = app.listen(${port}, function() {console.log('http://localhost:${port}');});" >>server.js
+}
+
 function show_help()
 {
 	local -a list
@@ -65,15 +75,16 @@ function show_help()
 	list=("${list[@]}" "  -m :create mobile package file")
 	list=("${list[@]}" "  -l [url]:open nw for a url")
 	list=("${list[@]}" "  -k [file]:new package file with a html name")
+	list=("${list[@]}" "  -s [-i dir[defult:.]|-o port[defult:3001]]: create server file for express")
 	list=("${list[@]}" "  -h :show help ")
 	__msgbox "${list[@]}"
 }
 
 function main()
 {
-	local oper oper_right url
+	local oper oper_right url dir port
 	oper_right=0
-	while getopts :d:k:l:nmph opt;do
+	while getopts :d:k:l:o:i:snmph opt;do
 		oper_right=1
 		case $opt in
 			d)_path="$OPTARG";;
@@ -82,6 +93,9 @@ function main()
             m)_mobile_config="${_origin_mobile_config}";;
 			k)oper=1;_html_file="$OPTARG";;
 			l)oper=2;url="$OPTARG";;
+			o)port="$OPTARG";;
+			i)dir="$OPTARG";;
+			s)oper=3;;
 			h)show_help;exit;;
 			*)show_help;exit;;
 		esac
@@ -93,6 +107,7 @@ function main()
 		0)create_html_and_package_file;;
 		1)create_package_file;;
 		2)create_package_file_for_url "${url}";;
+        3)create_express_server "${dir}" "${port}";;
 	esac
 }
 
