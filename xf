@@ -4,7 +4,7 @@ var http = require('http'),
     fs = require('fs'),
     child_process = require('child_process'),
     JSZip = require('jszip'),
-    IP = "192.168.211.248",
+    IP = "192.168.211.107",
     PORT = "3001",
     finish_cnt = 0;
 
@@ -149,6 +149,7 @@ function putTextToServer(text) {
         path: "/puttext?text="+text,
         agent: false
     };
+    console.log(options);
     var req = http.get(options, function(res) {
         res.on('data', function(){
         }).on('end', function(){
