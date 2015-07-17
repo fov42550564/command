@@ -204,6 +204,15 @@ function find_copy_to()
 	done
 }
 
+function find_delete()
+{
+	if [ -z "$_str" ];then
+		find "$_dir" -"$_iname"name "$_name"|xargs -I bbbb rm -fr bbbb
+	else
+		find "$_dir" -type f -"$_iname"name "$_name"|xargs -I bbbb rm -fr bbbb
+	fi
+}
+
 function show_help()
 {
 	local -a list
@@ -221,7 +230,8 @@ function show_help()
 	list=("${list[@]}" "  -p [dest_dir]:copy find files to dest_dir and make dirs")
 	list=("${list[@]}" "  -a :set auto indent by vim")
 	list=("${list[@]}" "  -c :put the *first* found file to clipboard")
-	list=("${list[@]}" "  -i :set ignorcase ")
+	list=("${list[@]}" "  -x :remove file or dir,e.g:xfind -x -n \"*.c\"")
+	list=("${list[@]}" "  -i :set ignorcase e.g:xfind -i -n \"XxXx\" xxxx")
 	list=("${list[@]}" "  -f :show file only ")
 	list=("${list[@]}" "  -w :show with window")
 	list=("${list[@]}" "  -h :show help ")
@@ -230,7 +240,7 @@ function show_help()
 
 function main()
 {
-	while getopts :t:d:n:s:e:r:l:I:v:p:caifwh opt;do
+	while getopts :t:d:n:s:e:r:l:I:v:p:caifxwh opt;do
 		_oper_right=1
 		case $opt in
 			t)_str="$OPTARG";;
@@ -246,6 +256,7 @@ function main()
 			c)_oper=6;;
 			v)_oper=7;_vim_command="$OPTARG";;
 			p)_oper=8;_dest_dir="$OPTARG";;
+			x)_oper=9;;
 			l)_list_style="$OPTARG";;
 			I)_TARGET_="$OPTARG";;
 			h)show_help;exit;;
@@ -265,6 +276,7 @@ function main()
 		6)find_to_clipboard;;
 		7)find_vim;;
 		8)find_copy_to;;
+		9)find_delete;;
 	esac
 }
 
