@@ -3,7 +3,7 @@
 # author:fang
 # version : v1.0
 # name  : install
-# dispcripe: install for linux bashrc and exvim
+# dispcripe: install for linux bashrc
 # CopyRight@fangyunjiang[42550564@qq.com]
 #############################################
 
@@ -12,37 +12,29 @@ _backdir=".linux_backup"
 _platforms=0
 _targets=0
 targets_bash=1
-targets_vim=2
 platforms_cygwin=1
 platforms_macosx=2
 platforms_linux=3
 
 function install_single()
 {
-	local src_file dst_file
-	src_file=$1;dst_file=$2
-	if ! [ -L ~/$dst_file ];then
+    local src_file dst_file
+    src_file=$1;dst_file=$2
+    if ! [ -L ~/$dst_file ];then
         echo "backup $dst_file"
-        mv ~/${dst_file} ~/${_backdir}/${dst_file}
-		echo "install $dst_file"
-		ln -s ${_src_path}/$src_file $dst_file
+        mv ~/${dst_file} ~/${_backdir}/${dst_file} 2>/dev/null
+        echo "install $dst_file"
+        ln -s ${_src_path}/$src_file $dst_file
     else
         echo "warning:$dst_file have installed"
-	fi
+    fi
 }
 
 function install_bash()
 {
-	install_single bash/.bashrc .bashrc
-	install_single bash/.inputrc .inputrc
-	install_single bash/.gitconfig .gitconfig
-}
-
-function install_vim()
-{
-	install_single exvim/.vim .vim
-	install_single exvim/.vimrc .vimrc
-	install_single exvim/.toolkit .toolkit
+    install_single bash/.bashrc .bashrc
+    install_single bash/.inputrc .inputrc
+    install_single bash/.gitconfig .gitconfig
 }
 
 function install()
@@ -51,9 +43,6 @@ function install()
     mkdir -p ${_backdir}
     if (($_targets&$targets_bash));then
         install_bash
-    fi
-    if (($_targets&$targets_vim));then
-        install_vim
     fi
 }
 
@@ -65,7 +54,7 @@ function show_help()
     echo "      uses: -p cygwin"
     echo "      default: cygwin"
     echo "  -t [targets]:targets as follows:"
-    echo "      bash vim all"
+    echo "      bash all"
     echo "      uses: -t bash"
     echo "      uses: -p all"
     echo "      default: bash"
@@ -73,20 +62,19 @@ function show_help()
 
 function main()
 {
-    local has_oper all bash vim cygwin macosx linux
+    local has_oper all bash cygwin macosx linux
 
     bash=$targets_bash
-    vim=$targets_vim
     cygwin=$platforms_cygwin
     macosx=$platforms_macosx
     linux=$platforms_linux
 
     has_oper=0
-    while getopts :p:d:f: opt;do
+    while getopts :p:t:h opt;do
         has_oper=1
         case $opt in
             p)all=7;_platforms=$(($OPTARG));;
-            d)all=3;_targets=$(($OPTARG));;
+            t)all=3;_targets=$(($OPTARG));;
             *)show_help;exit;;
         esac
     done
@@ -95,5 +83,5 @@ function main()
     install
 }
 
-main
+main "$@"
 
