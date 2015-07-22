@@ -1,0 +1,4 @@
+cygwin
+1.修改CygwinEx.bat和cygwin.reg的路径
+2.讲CygwinEx.bat拷贝到/目录下
+3.双击cygwin.reg添加注册表
