@@ -1,3 +1,3 @@
 #!/bin/bash
 
-node nodejs/np.js $@
+node ~/command/nodejs/np.js $@

@@ -259,6 +259,41 @@ function __repeat()
 		eval "$@"
 	done
 }
+function __get_extname()
+{
+########################################
+#Usage:__get_extname filename
+#   return file's extname
+########################################
+    local basename extname file
+    file="$1"
+    [ -z "$file" ]&&echo ""&&return
+    [ "$file" = "." ]&&echo "."&&return
+
+    basename=$(basename $file)
+    extname=${basename/#*./}
+    [ "$extname" = "" ]&&extname="."
+    [ "$extname" = "$basename" ]&&extname=""
+    echo "$extname"
+}
+function __get_pure_filename()
+{
+########################################
+#Usage:__get_pure_filename filename
+#   return file's pure file name
+########################################
+    local file extname purename
+    file="$1"
+    [ -z "$file" ]&&echo ""&&return
+    [ "$file" = "." ]&&echo "."&&return
+
+    extname=`__get_extname ${file}`
+    [ "$extname" = "" ]&&purename=${file}
+
+    basename=$(basename $file)
+    purename=${basename/%.${extname}/}
+    echo "$purename"
+}
 function __check_opts()
 {
 ########################################

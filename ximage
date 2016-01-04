@@ -1,0 +1,41 @@
+#!/usr/local/bin/node
+var fs = require("fs");
+var path = require("path");
+
+var args = process.argv.slice(2), imagefile, destPath;
+
+if (args.length < 2) {
+    console.log("Usage:");
+    console.log("base64 imagefile destPath");
+    process.exit();
+}
+
+imagefile = args[0];
+destPath = args[1];
+
+var extname = path.extname(imagefile);
+var basename = path.basename(imagefile);
+if ([".png", ".jpg", ".gif"].indexOf(extname) === -1) {
+    console.log("imagefile must be png/jpg/gif file");
+    process.exit();
+}
+
+
+var header;
+if (args[2]==='html') {
+    header = '<img src="data:image/'+extname.substr(1)+';base64,'
+} else {
+    header = 'module.exports="data:image/'+extname.substr(1)+';base64,'
+}
+var imageBuf = fs.readFileSync(imagefile);
+var base64Buf = header+imageBuf.toString("base64")+'"';
+var destFile;
+if (args[2]==='html') {
+    base64Buf+='>'
+    destFile = path.join(destPath, basename+'.html');
+} else {
+    destFile = path.join(destPath, basename+'.js');
+}
+fs.writeFileSync(destFile, base64Buf);
+
+console.log("write base64 image in "+destFile);
