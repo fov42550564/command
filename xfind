@@ -188,6 +188,7 @@ function find_format()
 
 	for ((i=0; i<len; i++));do
 		#echo eval vim "${_list_[i]}" -e -s "-c \"set fileformat\" -c \"q\""
+        echo ${_list_[i]}:
 		eval vim "${_list_[i]}" -e -s "-c \"${format}\" -c \"${quit}\""
 	done
 }
@@ -214,6 +215,7 @@ function find_encoding()
 
 	for ((i=0; i<len; i++));do
 		#echo eval vim "${_list_[i]}" -e -s "-c \"set fileformat\" -c \"q\""
+        echo ${_list_[i]}:
 		eval vim "${_list_[i]}" -e -s "-c \"${encoding}\" -c \"${quit}\""
 	done
 }
