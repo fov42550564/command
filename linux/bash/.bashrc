@@ -41,6 +41,7 @@ shopt -s nocaseglob
 # alias cp='cp -i'
 # alias mv='mv -i'
 # alias rm='xxrm'
+alias rm='/Users/fang/tools/rm-trash/rm.rb'
 
 #path
 alias path='echo -e ${PATH//:/\\n}'
@@ -156,8 +157,8 @@ if [ "$_OS_" = "cygwin" ];then
 export ANDROID_NDK_HOME=~/f/android/android-ndk-r9d
 export ANDROID_SDK_HOME=~/f/android/android-sdk
 else
-export ANDROID_NDK_HOME=~/android/android-ndk-r8b
-export ANDROID_SDK_HOME=~/android/android-sdk-macosx
+export ANDROID_NDK_HOME=~/tools/android-ndk-r10e
+export ANDROID_SDK_HOME=/usr/local/opt/android-sdk
 fi
 export ANDROID_NDK_PREFIX=$ANDROID_NDK_HOME/toolchains/arm-linux-androideabi-4.6/prebuilt/darwin-x86/bin/arm-linux-androideabi
 export ANDROID_SDK_PLATFORM_TOOLS=$ANDROID_SDK_HOME/platform-tools
@@ -165,6 +166,7 @@ export ANDROID_SDK_TOOLS=$ANDROID_SDK_HOME/tools
 export PATH="$PATH:$ANDROID_NDK_HOME:$ANDROID_SDK_TOOLS:$ANDROID_SDK_PLATFORM_TOOLS"
 #export NDK_MODULE_PATH=~/Desktop/cocos2d-x-2.2.2/cocos2dx/platform/third_party/android/prebuilt:~/Desktop/cocos2d-x-2.2.2
 #
+export ANDROID_HOME=/usr/local/opt/android-sdk
 #vim
 alias vi='vim'
 alias clearvim='rm -fr ~/.data/swap'
@@ -184,10 +186,9 @@ else
 export NODE_PATH="/cygdrive/c/Documents and Settings/fang/Application Data/npm/node_modules"
 fi
 #atom-shell
-alias atom='/Users/apple/node/atom-shell/Atom.app/Contents/MacOS/Atom'
+#alias atom='/Users/apple/node/atom-shell/Atom.app/Contents/MacOS/Atom'
 #node-webkit
-#alias nw='/Users/apple/client/macosx/bin/x64/client.app/Contents/MacOS/node-webkit'
-alias nw='/Users/apple/node-webkit/node-webkit.app/Contents/MacOS/node-webkit'
+alias nw='/usr/local/lib/nwjs/nwjs.app/Contents/MacOS/nwjs'
 alias nw-build='nw-gyp build'
 alias nw-rebuild='nw-gyp rebuild --target=0.7.5'
 alias nw-read='~/node/git/nw-read/nw-read'
@@ -210,6 +211,9 @@ function xphone(){ cp "~/android/workspace/TestGlRender/bin/TestGlRender.apk" "/
 
 alias tsvn='telnet tj.myrsky.com.cn 3690'
 
+#pod
+alias pinstall='pod install --no-repo-update'
+alias xandroid='react-native run-android'
 
 export NVM_DIR="/Users/apple/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm

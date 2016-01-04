@@ -1,19 +1,54 @@
 #!/bin/bash
 
-ip="10.254.33.105"
-password=longmaster
-dir="/server/pns/demo"
+#主机
+#ip="192.168.0.18"
+#password="88164657"
+#user="root"
+#password="xhrt123"
+#user="xhrt"
 
+
+#阿里云
+#ip="61.174.8.254"
+#user="ubuntu"
+#password="GZyunzhishuju123"
+
+#阿里云
+#ip="192.168.0.17"
+#user="root"
+#password="88164657"
+
+#阿里云
+ip="139.129.99.185"
+user="root"
+password="88164657XHrt"
 function p2p_enter()
 {
 	expect -c "
-		spawn ssh root@$ip;
+		spawn ssh $user@$ip;
 		expect {
 			\"*password:\" {send \"$password\r\"; exp_continue}
-			\"*#\" {send \"cd $dir\rkillall accessServer\r./accessServer\r\";}
+            \"*#\" {send \" cd /home/lynx/association/apache-tomcat-7.0.56/webapps/phone\rPS1=\'\\\u@\\\w\\\n$\'\r\"}
 		}
 		interact
 	"
 }
 
-p2p_enter
+
+_localfile=$1
+function p2p_sendfile()
+{
+    [ -z "$_localfile" ]&&return
+    expect -c "
+        spawn scp "${_localfile}" root@$ip:/home/lynx/association/apache-tomcat-7.0.56/webapps/phone/${_localfile}
+        expect {
+            \"*password:\" {send \"$password\r\"}
+        }
+        interact
+    "
+}
+if [ -z "$1" ];then
+    p2p_enter
+else
+    p2p_sendfile
+fi

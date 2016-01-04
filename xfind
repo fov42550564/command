@@ -18,6 +18,8 @@ _rename_str=""
 _vim_command=""
 _dest_dir=""
 _command=""
+_format="null"
+_encoding="null"
 _oper_right=0
 _list_style=0
 _oper=0
@@ -98,7 +100,7 @@ function find_rename()
 	local old_s new_s
 	if [ "$_rename_str" = "" ] ;then
 		if [ -z "$_str" ];then
-			_list_=($(find "$_dir" -type f -"$_iname"name "$_name"))
+			_list_=($(find "$_dir" -"$_iname"name "$_name"))
 		else
 			_list_=($(find "$_dir" -type f -"$_iname"name "$_name"|xargs egrep  -l $_ignorcase "$_str"))
 		fi
@@ -110,7 +112,7 @@ function find_rename()
 			return
 		fi
 		if [ -z "$_str" ];then
-			find "$_dir" -type f -"$_iname"name "$_name"|awk '{oldname=$1;sub(/'$old_s'/,"'$new_s'");print oldname, $1}'|xargs -t -n2 mv
+			find "$_dir" -"$_iname"name "$_name"|awk '{oldname=$1;sub(/'$old_s'/,"'$new_s'");print oldname, $1}'|xargs -t -n2 mv
 		else
 			find "$_dir" -type f -"$_iname"name "$_name"|xargs egrep -l $_ignorcase "$_str"|awk '{oldname=$1;sub(/'$old_s'/,"'$new_s'");print oldname, $1}'|xargs -t -n2 mv
 		fi
@@ -161,6 +163,58 @@ function find_vim()
 		#echo vim "${_list_[i]}" -e -s "$_vim_command"
 		eval vim "${_list_[i]}" -e -s "$_vim_command -c \"normal ZZ\""
 		echo have do command in ${_list_[i]}
+	done
+}
+
+function find_format()
+{
+	local i format quit
+	if [ -z "$_str" ];then
+		_list_=($(find "$_dir" -type f -"$_iname"name "$_name"))
+	else
+		_list_=($(find "$_dir" -type f -"$_iname"name "$_name"|xargs egrep  -l $_ignorcase "$_str"))
+	fi
+
+	len=${#_list_[@]}
+	[ $len -eq 0 ] && __error "have not find file" && return
+
+	if [ "$_format" = "null" ];then
+        format="set fileformat"
+        quit="q"
+    else
+        format="set fileformat=${_format}"
+        quit="wq"
+    fi
+
+	for ((i=0; i<len; i++));do
+		#echo eval vim "${_list_[i]}" -e -s "-c \"set fileformat\" -c \"q\""
+		eval vim "${_list_[i]}" -e -s "-c \"${format}\" -c \"${quit}\""
+	done
+}
+
+function find_encoding()
+{
+	local i encoding quit
+	if [ -z "$_str" ];then
+		_list_=($(find "$_dir" -type f -"$_iname"name "$_name"))
+	else
+		_list_=($(find "$_dir" -type f -"$_iname"name "$_name"|xargs egrep  -l $_ignorcase "$_str"))
+	fi
+
+	len=${#_list_[@]}
+	[ $len -eq 0 ] && __error "have not find file" && return
+
+	if [ "$_format" = "null" ];then
+        encoding="set fileencoding"
+        quit="q"
+    else
+        encoding="set fileencoding=${_encoding}"
+        quit="wq"
+    fi
+
+	for ((i=0; i<len; i++));do
+		#echo eval vim "${_list_[i]}" -e -s "-c \"set fileformat\" -c \"q\""
+		eval vim "${_list_[i]}" -e -s "-c \"${encoding}\" -c \"${quit}\""
 	done
 }
 
@@ -228,10 +282,13 @@ function show_help()
 	list=("${list[@]}" "  -I [_TARGET_]: set _TARGET_, default is ~~ ")
 	list=("${list[@]}" "  -v [vim_command]:do vim command")
 	list=("${list[@]}" "  -p [dest_dir]:copy find files to dest_dir and make dirs")
+	list=("${list[@]}" "  -o [format]:format=null show format else change to format")
+	list=("${list[@]}" "  -g [encoding]:encoding=null show encoding else change to encoding")
 	list=("${list[@]}" "  -a :set auto indent by vim")
 	list=("${list[@]}" "  -c :put the *first* found file to clipboard")
 	list=("${list[@]}" "  -x :remove file or dir,e.g:xfind -x -n \"*.c\"")
 	list=("${list[@]}" "  -i :set ignorcase e.g:xfind -i -n \"XxXx\" xxxx")
+	list=("${list[@]}" "  -f :show file only ")
 	list=("${list[@]}" "  -f :show file only ")
 	list=("${list[@]}" "  -w :show with window")
 	list=("${list[@]}" "  -h :show help ")
@@ -240,7 +297,7 @@ function show_help()
 
 function main()
 {
-	while getopts :t:d:n:s:e:r:l:I:v:p:caifxwh opt;do
+	while getopts :t:d:n:s:e:r:l:I:v:p:o:g:caifxwh opt;do
 		_oper_right=1
 		case $opt in
 			t)_str="$OPTARG";;
@@ -257,6 +314,8 @@ function main()
 			v)_oper=7;_vim_command="$OPTARG";;
 			p)_oper=8;_dest_dir="$OPTARG";;
 			x)_oper=9;;
+			o)_oper=10;_format="$OPTARG";;
+			g)_oper=11;_encoding="$OPTARG";;
 			l)_list_style="$OPTARG";;
 			I)_TARGET_="$OPTARG";;
 			h)show_help;exit;;
@@ -277,6 +336,8 @@ function main()
 		7)find_vim;;
 		8)find_copy_to;;
 		9)find_delete;;
+		10)find_format;;
+		11)find_encoding;;
 	esac
 }
 

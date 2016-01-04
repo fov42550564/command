@@ -24,6 +24,7 @@
     noadd = "rm -r --cached"
     noaddall = "rm -r --cached ."
     bare="init --bare"
+    remoteadd="remote add origin"
 [core]
 	pager = 
 	autocrlf = false

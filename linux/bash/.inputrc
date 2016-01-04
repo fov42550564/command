@@ -52,8 +52,9 @@
 #ignore case and input short up down history
 "\e[A": history-search-backward
 "\e[B": history-search-forward
+
 set show-all-if-ambiguous on
-set completion-ignore-case on
+set completion-ignore-case off
 
 # Allow 8-bit input/output
 #set meta-flag on
