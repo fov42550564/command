@@ -22,13 +22,14 @@
 ip="139.129.99.185"
 user="root"
 password="88164657XHrt"
+remote_path="/usr/local/nginx/html/yxjqd1/"
 function p2p_enter()
 {
 	expect -c "
 		spawn ssh $user@$ip;
 		expect {
 			\"*password:\" {send \"$password\r\"; exp_continue}
-            \"*#\" {send \" cd /home/lynx/association/apache-tomcat-7.0.56/webapps/phone\rPS1=\'\\\u@\\\w\\\n$\'\r\"}
+            \"*#\" {send \" cd  ${remote_path}\rPS1=\'\\\u@\\\w\\\n$\'\r\"}
 		}
 		interact
 	"
@@ -40,7 +41,8 @@ function p2p_sendfile()
 {
     [ -z "$_localfile" ]&&return
     expect -c "
-        spawn scp "${_localfile}" root@$ip:/home/lynx/association/apache-tomcat-7.0.56/webapps/phone/${_localfile}
+        set timeout 60
+        spawn scp "${_localfile}" root@$ip:${remote_path}${_localfile}
         expect {
             \"*password:\" {send \"$password\r\"}
         }

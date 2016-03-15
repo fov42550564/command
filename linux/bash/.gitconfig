@@ -11,6 +11,7 @@
 	br = branch
 	di = diff
 	pu = push -u origin master
+	pupage = push origin gh-pages
     puf = push origin master --force
 	pl = pull
 	line = "log --pretty=oneline --since='two hours ago'"
