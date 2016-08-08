@@ -41,7 +41,7 @@ shopt -s nocaseglob
 # alias cp='cp -i'
 # alias mv='mv -i'
 # alias rm='xxrm'
-alias rm='/Users/fang/tools/rm-trash/rm.rb'
+alias rm='/Users/fang/command/linux/rm-trash/rm.rb'
 
 #path
 alias path='echo -e ${PATH//:/\\n}'
