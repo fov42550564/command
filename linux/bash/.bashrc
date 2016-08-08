@@ -216,5 +216,8 @@ alias st='svn st|grep -v node_modules'
 alias pinstall='pod install --no-repo-update'
 alias xandroid='react-native run-android'
 
+#mongodb
+alias mongostart='mongod —config /usr/local/etc/mongod.conf'
+
 export NVM_DIR="/Users/apple/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
