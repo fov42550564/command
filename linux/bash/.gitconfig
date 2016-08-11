@@ -31,3 +31,5 @@
 	autocrlf = false
 	editor = /usr/bin/vim
 
+[http]
+	postBuffer = 2077721600
