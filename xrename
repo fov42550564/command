@@ -1,8 +1,0 @@
-#!/bin/bash
-
-if [ -z "$1" -o -z "$2" ];then
-	echo usage : xrename c cpp
-	exit
-fi
-
-find -name "*.$1"|awk '{oldname=$1;sub(/'$1'/,"'$2'");print oldname, $1}'|xargs -t -n2 mv
