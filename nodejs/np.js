@@ -88,6 +88,12 @@ function changeKeyForFile(file, key, newkey) {
 	writePasswordToFile(file, newdata, newkey);
 }
 
+function deleteItemForFile(file, key, item) {
+	var data = readPasswordFromFile(file, key);
+	delete data[encode(item, key)];
+	writePasswordToFile(file, data, key);
+}
+
 function showHelp() {
     var help = '';
 	help += 'np is a tool for log password\n';;
@@ -96,6 +102,7 @@ function showHelp() {
 	help += 'Usage:np --set key file item passwd\n';;
 	help += '      np --get key file [item]\n';;
 	help += '      np --list key file\n';;
+	help += '      np --delete key file item\n';;
 	help += '      np --key key file newkey\n';;
     console.log(help);
 }
@@ -123,6 +130,10 @@ function main() {
 		case '--key':
 			oper = 4;
 			newkey = args[3];
+			break;
+		case '--delete':
+			oper = 5;
+			item = args[3];
 			break;
 		default:
 			showHelp();
@@ -163,13 +174,15 @@ function main() {
                 console.log('error: invalid parameters');
             }
 			break;
+		case 5:
+            if (file && key && item) {
+			    deleteItemForFile(file, key, item);
+				console.log('success: delete key:'+item+' success');
+            } else {
+                console.log('error: invalid parameters');
+            }
+			break;
 	}
 }
 
 main();
-
-
-
-
-
-
