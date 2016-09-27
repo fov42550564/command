@@ -141,7 +141,7 @@ function git_get_log_version_files()
 function git_get_log_versions()
 {
 	unset _versions
-	eval `git log --oneline ${_filter} ${_logfile}|awk -v FS=";;;;" '{print "_versions["NR-1"]=\""$1"\""}'`
+	eval `git log --oneline ${_filter} ${_logfile}|sed 's/"/\\\\"/g'|awk -v FS=";;;;" '{print "_versions["NR-1"]=\""$1"\""}'`
 }
 
 function git_get_add_files()
@@ -189,7 +189,7 @@ function show_help()
 	list="help"
 	list=("${list[@]}" "Usage :xgit [OPTIONS]")
 	list=("${list[@]}" "  -p [dest_dir]:copy change files to dest_dir and make dirs")
-	list=("${list[@]}" "  -l :show git log, user -f set filter")
+	list=("${list[@]}" "  -l :show git log, use -f set file")
 	list=("${list[@]}" "  -t [filter]: set filter")
 	list=("${list[@]}" "  -f [file]: set one log file")
 	list=("${list[@]}" "  -n [version]: show at this version's log")
