@@ -1,0 +1,9 @@
+#!/bin/bash
+
+oldname=$1
+newname=$2
+
+[ -z "$newname" ]&&echo "input oldname newname"&&exit
+
+xfind -n "*${oldname}*" -r "${oldname}:${newname}"
+xfind -v "-c \"%s/${oldname}/${newname}/g\""
