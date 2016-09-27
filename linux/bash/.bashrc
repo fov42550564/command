@@ -127,6 +127,7 @@ function logv() { if [ -z "$1" ];then xlog -v -a; else xlog -v -a -f "$1"; fi }
 function logm() { if [ -z "$1" ];then xlog -v -m -a; else xlog -v -m -a -f "$1"; fi }
 function xcat() { cat "$1"|pbcopy; }
 function xlg() { pbpaste|pbcopy; }
+function xecho() { echo $(pbpaste)|pbcopy; }
 
 #cd which
 function wh() { cd $(which "$1"); }
@@ -215,6 +216,9 @@ alias st='svn st|grep -v node_modules'
 #pod
 alias pinstall='pod install --no-repo-update'
 alias xandroid='react-native run-android'
+
+#mongodb
+alias mongostart='mongod —config /usr/local/etc/mongod.conf'
 
 export NVM_DIR="/Users/apple/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm

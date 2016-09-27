@@ -17,12 +17,13 @@ _vers=""
 _file=""
 _path=""
 _name=""
+_filter=999999
 
 
 function xsvnSingleCommand()
 {
 	local command title disp is_update
-	
+
 	command=$1
 	is_update=$2
 	title=$3
@@ -234,23 +235,24 @@ function xsvnGetVersions()
 	local i note vers vergap name names var target
 
 	[ -z "$1" ] && target="." || target=$1
-	[ -z "$2" ] && vergap="0:head" || vergap=$2
+	[ -z "$2" ] && vergap="head:0" || vergap=$2
 	name=$3
 
 	if [ -z "$name" ];then
-		vers=$(svn log $target -r $vergap|sed -r '/^r[0-9]+/!d'|sed -r 's/^r([0-9]+).*/\1/')
+		vers=$(svn log $target -r $vergap -l $_filter|sed -r '/^r[0-9]+/!d'|sed -r 's/^r([0-9]+).*/\1/')
 	else
-		vers=$(svn log $target -r $vergap|sed -r '/^r[0-9]+ \| '$name'/!d'|sed -r 's/^r([0-9]+).*/\1/')
+		vers=$(svn log $target -r $vergap -l $_filter|sed -r '/^r[0-9]+ \| '$name'/!d'|sed -r 's/^r([0-9]+).*/\1/')
 		names=$name
 	fi
 
-	i=0		
+	i=0
 	unset _versions
 	for var in $vers;do
 		if [ -z "$name" ];then
 			names=$(svn log -r $var|grep "^r[0-9]\+"|sed -r 's/^r[0-9]+ \| ([^|]+) .*/\1/')
 		fi
 		note=$(svn log -r $var|grep -v "^-\+$"|sed -n '$p')
+        note=${note:0:30}
 		_versions[i]="$var:[$names]$note"
 		let i++
 	done
@@ -313,13 +315,14 @@ function xsvnShowHelp()
 	local -a list
 
 	list="help"
-	list=("${list[@]}" "Usage:xsvn [-l|-f file|-d path|-n name|-r ver|-w|-h]")
+	list=("${list[@]}" "Usage:xsvn [-l|-f file|-d path|-n name|-t filter|-r ver|-w|-h]")
 	list=("${list[@]}" "xsvn can do [svn diff|revert|commit|delete note|vi]")
 	list=("${list[@]}" "-l: show svn log")
 	list=("${list[@]}" "-f file:can be regex")
 	list=("${list[@]}" "-d path:svn current path/file")
 	list=("${list[@]}" "-n name:svn commmiter's name")
 	list=("${list[@]}" "-r ver:versions[1000|1000:1002] ")
+	list=("${list[@]}" "-t filter:limit filter, same as -l 5")
 	list=("${list[@]}" "-w: show with lxdialog")
 	list=("${list[@]}" "-h: show help")
 	list=("${list[@]}" "")
@@ -331,12 +334,13 @@ function xsvnShowHelp()
 
 function main()
 {
-	while getopts :f:d:n:r:lawh opt;do
+	while getopts :f:d:n:t:r:lawh opt;do
 		case $opt in
 			l)_oper=1;;
 			f)_oper=2;_file="$OPTARG";;
 			d)_path="$OPTARG";;
 			n)_name="$OPTARG";;
+			t)_filter="$OPTARG";;
 			r)_vers="$OPTARG";;
 			w)_WINDOW_=1;;
 			h)xsvnShowHelp;exit;;

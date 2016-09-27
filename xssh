@@ -1,0 +1,98 @@
+#!/bin/bash
+
+source ~/command/common
+ip="120.76.24.145"
+password=88164657YXjqd
+remote_root=/home/yxjqd/project/
+_oper=0
+_localpath="./"
+_remotepath="${remote_root}"
+
+function xssh_enter()
+{
+	expect -c "
+		spawn ssh root@${ip};
+		expect {
+            \"*password:\" {send \"${password}\r\"; exp_continue}
+            \"*#\" {send \" cd  ${remote_root}\rPS1=\'\\\u@\\\w\\\n$\'\r\"}
+		}
+		interact
+	"
+}
+
+function xssh_enter_command()
+{
+	expect -c "
+		spawn ssh root@${ip};
+		expect {
+            \"*password:\" {send \"${password}\r\"; exp_continue}
+            \"*#\" {send \" cd  ${remote_root}\rPS1=\'\\\u@\\\w\\\n$\'\r__services__=(web seller batch video batch sos quartz batch admin hdfs download weChat app orders image customer)\rfor var in \\\${__services__\\[@\\]};do ps -ef|grep java|grep \\\${var} 2>&1 1>/dev/null;echo \\\$? : \\\${var};done\r\"}
+		}
+		interact
+	"
+}
+
+function xssh_push()
+{
+	[ -z "${_localpath}" ]&&return
+	expect -c "
+		spawn scp -r "${_localpath}" "root@${ip}:${_remotepath}"
+		expect {
+			\"*password:\" {send \"${password}\r\"}
+		}
+		interact
+	"
+}
+
+function xssh_pull()
+{
+	[ -z "${_localpath}" ]&&return
+	expect -c "
+		spawn scp -r "root@${ip}:${_remotepath}" "${_localpath}"
+		expect {
+			\"*password:\" {send \"${password}\r\"}
+		}
+		interact
+	"
+}
+
+function show_help()
+{
+	local -a list
+	list="xssh"
+	list=("${list[@]}" "Usage :xssh [-s|-l|-i|-h]")
+	list=("${list[@]}" "xssh:login ssh")
+	list=("${list[@]}" "xssh -i:login ssh show ps")
+	list=("${list[@]}" "xssh -s [local:remote]:push local file/dir to ssh server")
+	list=("${list[@]}" "xssh -l [remote:local]:pull remote file/dir from ssh server to local")
+	list=("${list[@]}" "xssh -h:show help")
+	__msgbox "${list[@]}"
+}
+
+
+function main()
+{
+	while getopts :s:l:ih opt;do
+		case ${opt} in
+			i)_oper=1;;
+			s)_oper=2;_localpath="${OPTARG%%:*}";_remotepath="${OPTARG##*:}";;
+			l)_oper=3;_remotepath="${OPTARG%%:*}";_localpath="${OPTARG##*:}";;
+			*)show_help;exit;;
+		esac
+	done
+    if ! [ "${_localpath:0:1}" = "/" -o "${_localpath:0:1}" = "~" ];then
+        _localpath="./${_localpath}"
+    fi
+    if ! [ "${_remotepath:0:1}" = "/" -o "${_remotepath:0:1}" = "~" ];then
+        _remotepath="${remote_root}${_remotepath}"
+    fi
+
+	case ${_oper} in
+		0)xssh_enter;;
+		1)xssh_enter_command;;
+		2)xssh_push;;
+		3)xssh_pull;;
+	esac
+}
+
+main "$@"

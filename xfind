@@ -162,7 +162,7 @@ function find_vim()
 	[ $len -eq 0 ] && __error "have not find file" && return
 
 	for ((i=0; i<len; i++));do
-		#echo vim "${_list_[i]}" -e -s "$_vim_command"
+		#echo vim "${_list_[i]}" -e -s "$_vim_command -c \"normal ZZ\""
 		eval vim "${_list_[i]}" -e -s "$_vim_command -c \"normal ZZ\""
 		echo have do command in ${_list_[i]}
 	done
@@ -246,7 +246,7 @@ function find_copy_to()
 	else
 		_list_=($(find "$_dir" -type f -"$_iname"name "$_name"|xargs egrep  -l $_ignorcase "$_str"))
 	fi
-	
+
 	len=${#_list_[@]}
 	[ $len -eq 0 ] && __error "have not find file" && return
 	! [ -d "$_dest_dir" ] && __error "dest dir is not exist" && return
@@ -284,7 +284,7 @@ function show_help()
 	list=("${list[@]}" "  -r [rename_str]:[c:cpp]|[]")
 	list=("${list[@]}" "  -l [_list_style]:set list_style[0:not show list,1:radiobox,2:checkbox mult command,3:checkbox single command] ")
 	list=("${list[@]}" "  -I [_TARGET_]: set _TARGET_, default is ~~ ")
-	list=("${list[@]}" "  -v [vim_command]:do vim command")
+	list=("${list[@]}" "  -v [vim_command]:do vim command: \"-c \\\"commond\\\"\"")
 	list=("${list[@]}" "  -p [dest_dir]:copy find files to dest_dir and make dirs")
 	list=("${list[@]}" "  -o [format]:format=null show format else change to format")
 	list=("${list[@]}" "  -g [encoding]:encoding=null show encoding else change to encoding")
