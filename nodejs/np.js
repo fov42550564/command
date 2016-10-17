@@ -54,17 +54,27 @@ function setPasswordByItem(item, passwd, data, key) {
 
 function listItemFromFile(file, key) {
 	var data = readPasswordFromFile(file, key);
+	var list = [];
 	console.log('all password keys:');
 	for (var item in data) {
-		console.log(decode(item, key));
+		list.push(decode(item, key));
+	}
+	list.sort();
+	for (var item of list) {
+		console.log(item);
 	}
 }
 
 function listAllPasswordFromFile(file, key) {
 	var data = readPasswordFromFile(file, key);
+	var list = [];
 	console.log('all password:');
 	for (var item in data) {
-		console.log(decode(item, key)+':'+decode(data[item], key));
+		list.push(decode(item, key)+':'+decode(data[item], key));
+	}
+	list.sort();
+	for (var item of list) {
+		console.log(item);
 	}
 }
 
