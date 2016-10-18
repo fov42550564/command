@@ -1,7 +1,7 @@
 require 'optparse'
 require 'string_color'
 require 'interaction'
-require 'auto_update'
+require 'version'
 
 PARAMS = ARGV.dup
 
