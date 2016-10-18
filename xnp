@@ -1,3 +1,199 @@
-#!/bin/bash
+#!/usr/bin/env node
+var crypto = require('crypto'),
+	fs = require('fs');
 
-node ~/command/nodejs/np.js $@
+function encode(code, key) {
+	var cipher = crypto.createCipher('aes-256-cbc', key);
+	var enc = cipher.update(code,'utf8','hex');
+	enc += cipher.final('hex');
+	return enc;
+}
+
+function decode(code, key) {
+	var dec;
+	try {
+		var decipher = crypto.createDecipher('aes-256-cbc', key);
+		dec = decipher.update(code,'hex','utf8');
+		dec += decipher.final('utf8');
+	} catch (e) {
+		console.log('error: invalid key '+key);
+		process.exit(0);
+	}
+	return dec;
+}
+
+function readPasswordFromFile(file, key, flag) {
+	var data = '{}';
+	try {
+	var text = fs.readFileSync(file,'utf8');
+		data = decode(text, key);
+	} catch (e) {
+		if (!flag) {
+			console.log('error: file '+file+' is no exist');
+			process.exit(0);
+		}
+	}
+	return JSON.parse(data);
+}
+
+function writePasswordToFile(file, data, key) {
+	var text = JSON.stringify(data);
+	text = encode(text, key);
+	fs.writeFileSync(file, text,'utf8');
+}
+
+function getPasswordByItem(item, data, key) {
+	var citem = encode(item, key);
+	return decode(data[citem], key);
+}
+
+function setPasswordByItem(item, passwd, data, key) {
+	var citem = encode(item, key);
+	var cpasswd = encode(passwd, key);
+	data[citem] = cpasswd;
+}
+
+function listItemFromFile(file, key) {
+	var data = readPasswordFromFile(file, key);
+	var list = [];
+	console.log('all password keys:');
+	for (var item in data) {
+		list.push(decode(item, key));
+	}
+	list.sort();
+	for (var item of list) {
+		console.log(item);
+	}
+}
+
+function listAllPasswordFromFile(file, key) {
+	var data = readPasswordFromFile(file, key);
+	var list = [];
+	console.log('all password:');
+	for (var item in data) {
+		list.push(decode(item, key)+':'+decode(data[item], key));
+	}
+	list.sort();
+	for (var item of list) {
+		console.log(item);
+	}
+}
+
+function getPasswordByItemFromFile(item, file, key) {
+	var data = readPasswordFromFile(file, key);
+	console.log(getPasswordByItem(item, data, key));
+}
+
+function setPasswordByItemToFile(item, passwd, file, key) {
+	var data = readPasswordFromFile(file, key, true);
+	setPasswordByItem(item, passwd, data, key);
+	writePasswordToFile(file, data, key);
+}
+
+function changeKeyForFile(file, key, newkey) {
+	var newdata = {};
+	var data = readPasswordFromFile(file, key);
+	for (var item in data) {
+		newdata[encode(decode(item, key), newkey)] = encode(decode(data[item], key), newkey);
+	}
+	writePasswordToFile(file, newdata, newkey);
+}
+
+function deleteItemForFile(file, key, item) {
+	var data = readPasswordFromFile(file, key);
+	delete data[encode(item, key)];
+	writePasswordToFile(file, data, key);
+}
+
+function showHelp() {
+    var help = '';
+	help += 'np is a tool for log password\n';;
+	help += 'key must be same all the time and keep secret\n';;
+	help += '\n';;
+	help += 'Usage:np --set key file item passwd\n';;
+	help += '      np --get key file [item]\n';;
+	help += '      np --list key file\n';;
+	help += '      np --delete key file item\n';;
+	help += '      np --key key file newkey\n';;
+    console.log(help);
+}
+
+
+function main() {
+	var args = process.argv.slice(2), oper = 0,
+		key, file, item, passwd, newkey;
+
+	key = args[1];
+	file = args[2];
+	switch (args[0]) {
+		case '--set':
+			oper = 1;
+			item = args[3];
+			passwd = args[4];
+			break;
+		case '--get':
+			oper = 2;
+			item = args[3];
+			break;
+		case '--list':
+			oper = 3;
+			break;
+		case '--key':
+			oper = 4;
+			newkey = args[3];
+			break;
+		case '--delete':
+			oper = 5;
+			item = args[3];
+			break;
+		default:
+			showHelp();
+			process.exit(0);
+	}
+	switch (oper) {
+		case 1:
+            if (item && passwd && file && key) {
+			    setPasswordByItemToFile(item, passwd, file, key);
+                console.log('success: set passwd success');
+            } else {
+                console.log('error: invalid parameters');
+            }
+			break;
+		case 2:
+            if (file && key) {
+                if (!item) {
+                    listAllPasswordFromFile(file, key);
+                } else {
+                    getPasswordByItemFromFile(item, file, key);
+                }
+            } else {
+                console.log('error: invalid parameters');
+            }
+			break;
+		case 3:
+            if (file && key) {
+			    listItemFromFile(file, key);
+            } else {
+                console.log('error: invalid parameters');
+            }
+			break;
+		case 4:
+            if (file && key && newkey) {
+			    changeKeyForFile(file, key, newkey);
+				console.log('success: change key:'+key+' to '+newkey+' success');
+            } else {
+                console.log('error: invalid parameters');
+            }
+			break;
+		case 5:
+            if (file && key && item) {
+			    deleteItemForFile(file, key, item);
+				console.log('success: delete key:'+item+' success');
+            } else {
+                console.log('error: invalid parameters');
+            }
+			break;
+	}
+}
+
+main();

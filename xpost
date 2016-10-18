@@ -1,0 +1,61 @@
+var http=require('http');
+var querystring = require('querystring');
+var DES = require('./des.js');
+var KEY = "ABCDEFGH";
+
+var body = {
+    auth_type: 1,
+    account: 'v13499533',
+    password: '19850701',
+    app_key: '1349953300',
+};
+
+var bodyString = JSON.stringify(body);
+console.log(bodyString);
+
+var headers = {
+    //'Content-Type': 'application/json',
+    //'Content-Type': 'text/plain',
+    'Content-Type': 'application/json; charset=utf-8',
+    'Content-Length': bodyString.length,
+};
+
+var options = {
+    //host: '192.168.0.19',
+    host: 'http://e.vhall.com',
+    port: 80,
+    // host: '192.168.0.115',
+    // port: 8081,
+    //port:8080,
+    //path: '/test',
+    //path: '/phone/upload/headIcon',
+    //path: '/taskReward/firstLoginReward',
+    path: '/api/vhallapi/v2/verify/access-token',
+    method: 'POST',
+    headers: headers
+};
+
+var req=http.request(options,function(res){
+    console.log(res.headers);
+    res.setEncoding('utf-8');
+
+    var responseString = '';
+
+    res.on('data', function(data) {
+        responseString += data;
+    });
+
+    res.on('end', function() {
+        //这里接收的参数是字符串形式,需要格式化成json格式使用
+        //var resultObject = JSON.parse(responseString);
+        //console.log('-----resBody-----',resultObject);
+        console.log('-----resBody-----', responseString);
+    });
+
+    req.on('error', function(e) {
+        // TODO: handle error.
+        console.log('-----error-------',e);
+    });
+});
+req.write(bodyString);
+req.end();
