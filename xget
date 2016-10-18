@@ -1,40 +1,47 @@
 #!/usr/local/bin/node
-// var http = require('http');
+var http = require('http');
 var program = require('commander');
-// var qs = require('querystring');
+var qs = require('querystring');
 
 program
 .version('0.0.1')
-.option('-s, --host', 'server host', '127.0.0.1')
-.option('-p, --port', 'server port', '3000')
-.option('-t, --path', 'server get path', '/test')
-.option('-u, --url', 'url=[host+\":\"+port+path], if use url, not set host etc.')
-.option('-d, --data', 'data must be json format', '{}')
+.option('-s, --host [127.0.0.1]', 'server host', '127.0.0.1')
+.option('-p, --port [3000]', 'server port', '3000')
+.option('-t, --path [/test]', 'server get path', '/test')
+.option('-u, --url [http://127.0.0.1:3000/test]', 'url=[host+\":\"+port+path], if use url, not set host etc.')
+.option('-d, --data <json>', 'data must be json format', (v)=>eval('v='+v), '{}')
 .parse(process.argv);
 
 let { host, port, path, url, data } = program;
-console.log({ host, port, path, url, data});
 
-// var content = qs.stringify(data);
+if (url) {
+    host = url.replace(/http:\/\//, '').replace(/:.*/, '');
+    port = url.replace(/.*:/, '').replace(/\/.*/, '');
+    path = url.replace(/.*:\d+/, '');
+}
 
-// var options = {
-//     hostname: '127.0.0.1',
-//     port: 8080,
-//     path: '/login?' + content,
-//     method: 'GET'
-// };
-//
-// var req = http.request(options, function (res) {
-//     // console.log('STATUS: ' + res.statusCode);
-//     // console.log('HEADERS: ' + JSON.stringify(res.headers));
-//     res.setEncoding('utf8');
-//     res.on('data', function (chunk) {
-//         console.log('recv: ', chunk);
-//     });
-// });
-//
-// req.on('error', function (e) {
-//     console.log('error: ', e.message);
-// });
-//
-// req.end();
+var content = qs.stringify(data);
+
+var options = {
+    hostname: host,
+    port: port,
+    path: path +( content ? '?'+content : '' ),
+    method: 'GET'
+};
+
+console.log('send:', options);
+
+var req = http.request(options, function (res) {
+    // console.log('STATUS: ' + res.statusCode);
+    // console.log('HEADERS: ' + JSON.stringify(res.headers));
+    res.setEncoding('utf8');
+    res.on('data', function (chunk) {
+        console.log('recv: ', chunk);
+    });
+});
+
+req.on('error', function (e) {
+    console.log('error: ', e.message);
+});
+
+req.end();
