@@ -8,7 +8,6 @@ require 'option_parser'
 require 'interaction'
 require 'string_color'
 require 'helper'
-require 'auto_update'
 
 $retval = 0
 
@@ -18,9 +17,6 @@ Signal.trap 'INT' do
 end
 
 def main files = []
-  AutoUpdate.start_checking!
-  at_exit { AutoUpdate.prompt_for_update }
-
   files = warn_if_any_current_or_parent_directory(files).to_pathnames!
 
   all_trees = files.map do |file|
