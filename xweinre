@@ -1,0 +1,15 @@
+#!/bin/bash
+
+echo "########################################################################"
+echo "weinre调试远程界面"
+echo "使用方法："
+echo "1.在文件中添加"
+echo "<script src=\"http://192.168.1.137:8081/target/target-script-min.js#fang\"></script>"
+echo "2.在浏览器访问"
+echo "http://192.168.1.137:8081/client/#fang"
+echo "########################################################################"
+echo
+echo
+echo
+
+weinre --httpPort 8081 --boundHost 192.168.1.137
