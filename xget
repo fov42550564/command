@@ -29,11 +29,7 @@ var options = {
     method: 'GET'
 };
 
-<<<<<<< HEAD
-console.log('send:', options);
-=======
 console.log('options:', options);
->>>>>>> 851960c05dc2950bc6c209ea2b54c97dab7c6f1d
 
 var req = http.request(options, function (res) {
     // console.log('STATUS: ' + res.statusCode);
