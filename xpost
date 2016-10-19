@@ -33,6 +33,11 @@ var options = {
     headers: headers
 };
 
+<<<<<<< HEAD
+=======
+console.log('options: ', options);
+console.log('send: ', data);
+>>>>>>> 851960c05dc2950bc6c209ea2b54c97dab7c6f1d
 var req=http.request(options, function(res){
     // console.log(res.headers);
     res.setEncoding('utf-8');
