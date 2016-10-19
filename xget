@@ -29,7 +29,7 @@ var options = {
     method: 'GET'
 };
 
-console.log('send:', options);
+console.log('options:', options);
 
 var req = http.request(options, function (res) {
     // console.log('STATUS: ' + res.statusCode);

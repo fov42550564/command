@@ -33,6 +33,8 @@ var options = {
     headers: headers
 };
 
+console.log('options: ', options);
+console.log('send: ', data);
 var req=http.request(options, function(res){
     // console.log(res.headers);
     res.setEncoding('utf-8');
