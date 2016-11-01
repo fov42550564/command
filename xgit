@@ -3,7 +3,7 @@
 # author:fang
 # version : v1.0
 # name  : xgit
-# dispcripe: the set of git 
+# dispcripe: the set of git
 # CopyRight@fangyunjiang[42550564@qq.com]
 #############################################
 source ~/command/common
@@ -170,10 +170,10 @@ function git_copy_change_to()
 function git_delete_history_force()
 {
     local files file OLD_IFS
-    OLD_IFS="$IFS" 
-    IFS="," 
+    OLD_IFS="$IFS"
+    IFS=","
     files=($1)
-    IFS="$OLD_IFS" 
+    IFS="$OLD_IFS"
     for file in ${files[@]};do
         git filter-branch --force --index-filter "git rm --cached --ignore-unmatch $file" --prune-empty --tag-name-filter cat -- --all
     done
@@ -198,6 +198,7 @@ function show_help()
 	list=("${list[@]}" "  -r :revert git file")
 	list=("${list[@]}" "  -v :edit file with vim")
 	list=("${list[@]}" "  -m [file;file]:delete history file force")
+	list=("${list[@]}" "  -b [url]: download file or directory from github")
 	list=("${list[@]}" "  -h :show help ")
 	__msgbox "${list[@]}"
 }
@@ -207,7 +208,7 @@ function main()
 	local oper_right ver files
 	oper_right=0
 
-	while getopts :p:darvlt:n:f:m:h opt;do
+	while getopts :p:darvlt:n:f:m:b:h opt;do
 		oper_right=1
 		case $opt in
 			p)_oper=0;_dest_dir="$OPTARG";;
@@ -220,6 +221,7 @@ function main()
 			f)_logfile="$OPTARG";;
 			n)_oper=6;ver="$OPTARG";;
 			m)_oper=7;files="$OPTARG";;
+			b)xgithub -u "$OPTARG";exit;;
 			*)show_help;exit;;
 		esac
 	done
@@ -250,4 +252,3 @@ function main()
 }
 
 main "$@"
-
