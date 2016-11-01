@@ -1,0 +1,86 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+var jsdom = require("jsdom");
+var fs = require('fs');
+var https = require('https');
+var path = require('path');
+var shell = require('shelljs');
+shell.config.silent = true;
+
+const DOMAIN = 'https://github.com';
+const RAW_DOMAIN = 'https://raw.githubusercontent.com';
+
+function createFile(href, filepath) {
+	let rawurl = RAW_DOMAIN+href.replace('/blob/', '/');
+	let filename = path.join(filepath, path.basename(href));
+	let file = fs.createWriteStream(filename);
+	console.log('[file] start:', filename);
+	var request = https.get(rawurl, function(res) {
+		res.pipe(file);
+		file.on('finish', function() {
+			console.log('[file] done:', filename);
+			file.close();
+		});
+	}).on('error', function(err) {
+		fs.unlink(filename);
+		console.error('[file] error:', err.message);
+	});
+}
+
+function parseDirectory(url, dir) {
+	jsdom.env({
+		url,
+		headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:23.0) Gecko/20100101 Firefox/23.0' },
+		done: function (error, window) {
+			if (error) {
+				console.log('[jsdom] error:', error);
+				return;
+			}
+			let $ = require("jquery")(window);
+			if (!dir) {
+				let isFile = $('.file table').length !==0;
+				if (isFile) {
+					createFile(url.replace(DOMAIN, ''), shell.pwd());
+					return;
+				} else {
+					url = url.replace('/blob/', '/tree/');
+					dir = path.basename(url);
+				}
+			}
+
+			shell.mkdir('-p', dir);
+			shell.pushd(dir);
+			console.log('[dir] start:', dir);
+			let pwd = shell.pwd();
+
+			$(".file-wrap .files .js-navigation-item .content").each(function() {
+				let el = $(this);
+				let isDirectory = el.prev().find('.octicon-file-directory').length !==0;
+				let href = el.find('a').attr('href');
+				let suburl = DOMAIN + href;
+				if (isDirectory) {
+					let subdir = suburl.replace(url+'/', '');
+					parseDirectory(suburl, path.join(pwd, subdir));
+					shell.popd();
+					console.log('[dir] done:', dir);
+				} else {
+					createFile(href, pwd);
+				}
+			});
+		}
+	});
+}
+
+program
+.version('0.0.1')
+.option('-u, --url [url]', 'the url for download', '')
+.parse(process.argv);
+
+let { url } = program;
+if (!url) {
+	console.log('url must be set');
+	return;
+}
+
+parseDirectory(url);
