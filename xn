@@ -1,0 +1,46 @@
+#!/usr/bin/env node
+
+'use strict';
+
+var path = require('path');
+var osHomedir = require('os-homedir');
+var replHistory = require('repl.history');
+
+var repl = require('repl');
+var server = repl.start({
+    prompt: 'node > ',
+    // allow strict mode via environment variable
+    replMode: (process.env.NODE_REPL_MODE === 'strict' || process.argv.indexOf('--use_strict') !== -1) ? repl.REPL_MODE_STRICT : repl.REPL_MODE_MAGIC
+});
+
+// save repl history
+replHistory(server, path.join(osHomedir(), '.n_repl_history'));
+
+var _ = require('lodash').runInContext(server.context);
+
+Object.defineProperty(server.context, '_', {
+    'configurable': true,
+    'enumerable': false,
+    'get': function () {
+        return _;
+    }
+});
+
+var moment = require('moment');
+Object.defineProperty(server.context, 'moment', {
+    'configurable': true,
+    'enumerable': false,
+    'get': function () {
+        return moment;
+    }
+});
+
+var events = server.rli._events;
+events.line = _.wrap(events.line, function (line, cmd) {
+    if (/_\s*=|moment\s*=/.test(cmd)) {
+        console.error('can not change const variable');
+        cmd = '';
+    }
+    line[0](cmd); // actual command execution
+    line[1](cmd); // history persistance
+});
