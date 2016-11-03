@@ -198,7 +198,7 @@ function show_help()
 	list=("${list[@]}" "  -r :revert git file")
 	list=("${list[@]}" "  -v :edit file with vim")
 	list=("${list[@]}" "  -m [file;file]:delete history file force")
-	list=("${list[@]}" "  -b [url]: download file or directory from github")
+	list=("${list[@]}" "  -u [url]: download file or directory from github")
 	list=("${list[@]}" "  -h :show help ")
 	__msgbox "${list[@]}"
 }
@@ -208,7 +208,7 @@ function main()
 	local oper_right ver files
 	oper_right=0
 
-	while getopts :p:darvlt:n:f:m:b:h opt;do
+	while getopts :p:darvlt:n:f:m:u:h opt;do
 		oper_right=1
 		case $opt in
 			p)_oper=0;_dest_dir="$OPTARG";;
@@ -221,7 +221,7 @@ function main()
 			f)_logfile="$OPTARG";;
 			n)_oper=6;ver="$OPTARG";;
 			m)_oper=7;files="$OPTARG";;
-			b)xgithub -u "$OPTARG";exit;;
+			u)xgithub -u "$OPTARG";exit;;
 			*)show_help;exit;;
 		esac
 	done
