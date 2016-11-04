@@ -14,7 +14,7 @@ function smb_connect()
 		expect {
 			\"*assword*\" {send \"$password\r\"}
 		}
-		wait	
+		wait
 	" 2>/dev/null 1>&2
 }
 
