@@ -9,7 +9,7 @@ program
 .option('-p, --port [3000]', 'server port', '3000')
 .option('-t, --path [/test]', 'server get path', '/test')
 .option('-u, --url [http://127.0.0.1:3000/test]', 'url=[host+\":\"+port+path], if use url, not set host etc.')
-.option('-d, --data <json>', 'data must be json format', (v)=>eval('v='+v), '{}')
+.option('-d, --data <json>', 'data must be json format', (v)=>eval('v='+v), {})
 .parse(process.argv);
 
 let { host, port, path, url, data } = program;

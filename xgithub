@@ -41,7 +41,7 @@ function parseDirectory(url, dir) {
 			if (!dir) {
 				let isFile = $('.file table').length !==0;
 				if (isFile) {
-					createFile(url.replace(DOMAIN, ''), shell.pwd());
+					createFile(url.replace(DOMAIN, ''), shell.pwd()+'');
 					return;
 				} else {
 					url = url.replace('/blob/', '/tree/');
@@ -52,7 +52,7 @@ function parseDirectory(url, dir) {
 			shell.mkdir('-p', dir);
 			shell.pushd(dir);
 			console.log('[dir] start:', dir);
-			let pwd = shell.pwd();
+			let pwd = shell.pwd()+'';
 
 			$(".file-wrap .files .js-navigation-item .content").each(function() {
 				let el = $(this);
