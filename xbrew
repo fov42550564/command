@@ -12,7 +12,7 @@ function xbrewSetInstallApps()
 	i=0
 	_apps[i]="coreutils"
 	((i++))
-	
+
 	_apps[i]="gawk"
 	_app_params[i]="--with-default-names"
 	((i++))
@@ -50,7 +50,7 @@ function xbrewInstallApps()
 function main()
 {
 	xbrewSetInstallApps
-	xbrewInstallApps	
+	xbrewInstallApps
 }
 
 
