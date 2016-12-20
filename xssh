@@ -11,6 +11,7 @@ _remotepath="${remote_root}"
 function xssh_enter()
 {
 	expect -c "
+    set timeout 30000;
 		spawn ssh root@${ip};
 		expect {
             \"*password:\" {send \"${password}\r\"; exp_continue}
@@ -23,6 +24,7 @@ function xssh_enter()
 function xssh_enter_command()
 {
 	expect -c "
+    set timeout 30000;
 		spawn ssh root@${ip};
 		expect {
             \"*password:\" {send \"${password}\r\"; exp_continue}
@@ -36,6 +38,7 @@ function xssh_push()
 {
 	[ -z "${_localpath}" ]&&return
 	expect -c "
+    set timeout 30000;
 		spawn scp -r "${_localpath}" "root@${ip}:${_remotepath}"
 		expect {
 			\"*password:\" {send \"${password}\r\"}
@@ -48,6 +51,7 @@ function xssh_pull()
 {
 	[ -z "${_localpath}" ]&&return
 	expect -c "
+    set timeout 30000;
 		spawn scp -r "root@${ip}:${_remotepath}" "${_localpath}"
 		expect {
 			\"*password:\" {send \"${password}\r\"}
