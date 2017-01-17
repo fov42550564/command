@@ -222,3 +222,9 @@ alias mongostart='mongod —config /usr/local/etc/mongod.conf'
 
 export NVM_DIR="/Users/apple/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
+
+#hadoop
+export HADOOP_HOME=/Users/fang/tools/hadoop-2.7.3
+export PATH=$PATH:$HADOOP_HOME/bin
+export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
+export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib"

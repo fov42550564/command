@@ -1,0 +1,25 @@
+#!/bin/bash
+#############################################
+# author:fang
+# version : v1.0
+# name  : xd
+# dispcripe: uses of log daily
+# CopyRight@fangyunjiang[42550564@qq.com]
+#############################################
+
+source ~/command/common
+file=~/.daily
+
+if [ "$1" = "" ];then
+    cat ${file} 2>/dev/null
+    exit
+fi
+
+if [ "$1" = "clear" ];then
+    echo > ${file}
+    cat ${file} 2>/dev/null
+    exit
+fi
+
+echo "$1" >> ${file}
+
