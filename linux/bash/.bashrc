@@ -223,6 +223,12 @@ alias mongostart='mongod —config /usr/local/etc/mongod.conf'
 export NVM_DIR="/Users/apple/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
 
+#npm
+alias cnpm="npm --registry=https://registry.npm.taobao.org \
+    --cache=$HOME/.npm/.cache/cnpm \
+    --disturl=https://npm.taobao.org/dist \
+    --userconfig=$HOME/.cnpmrc"
+
 #hadoop
 export HADOOP_HOME=/Users/fang/tools/hadoop-2.7.3
 export PATH=$PATH:$HADOOP_HOME/bin
