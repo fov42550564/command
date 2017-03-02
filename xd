@@ -16,8 +16,13 @@ if [ "$1" = "" ];then
 fi
 
 if [ "$1" = "clear" ];then
-    echo > ${file}
-    cat ${file} 2>/dev/null
+    echo -n > ${file}
+    echo "clear success"
+    exit
+fi
+
+if [ "$1" = "send" ];then
+    xtask `cat ${file}`
     exit
 fi
 
