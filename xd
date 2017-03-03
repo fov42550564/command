@@ -22,9 +22,12 @@ if [ "$1" = "clear" ];then
 fi
 
 if [ "$1" = "send" ];then
+    oldIFS=$IFS
+    IFS=$'\n'
     xtask `cat ${file}`
+    IFS=$oldIFS
     exit
 fi
 
-echo "$1" >> ${file}
+echo "$@" >> ${file}
 
