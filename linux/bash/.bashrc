@@ -150,7 +150,7 @@ alias mhmv='cp /Volumes/home/方运江/*'
 
 
 #set_path
-export PATH=$PATH:~/command:/usr/local/lib/node_modules/cordova/bin
+export PATH=$PATH:~/command:/usr/local/lib/node_modules/cordova/bin:/Users/fang/tools/phantomjs-2.1.1-macosx/bin
 
 #ndk
 alias ndk='ndk-build'
