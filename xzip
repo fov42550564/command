@@ -1,0 +1,60 @@
+#!/usr/bin/env node
+
+var jszip = require('jszip');
+var fs = require('fs');
+var zip = new jszip();
+var params = process.argv.splice(2);
+
+function zipDir(dir, distDir) {
+    var files = fs.readdirSync(dir);
+    files.forEach(function(file) {
+        var filepath = dir + '/' + file;
+        if (fs.statSync(filepath).isDirectory()) {
+            zipDir(filepath, distDir + '/' + file);
+        } else {
+            zip.folder(distDir).file(file, fs.readFileSync(filepath));
+        }
+    })
+}
+function zipFile(file, distDir) {
+    zip.folder(distDir).file(file, fs.readFileSync(file));
+}
+function doZip(zipName, distDir, files) {
+    for (var file of files) {
+        if (fs.statSync(file).isDirectory()) {
+            zipDir(file, distDir+'/'+file);
+        } else {
+            zipFile(file, distDir);
+        }
+    }
+    var zipStream = zip.generate({
+        base64: false,
+        compression: 'DEFLATE'
+    });
+    fs.writeFile(zipName, zipStream, 'binary', function() {
+        console.log('success')
+    })
+}
+
+function showHelp() {
+    console.log('')
+    console.log('xzip [innerRootDir] zipname file/dir ....');
+}
+
+var innerRootDir = '', zipName = '';
+if (params[0]==='-h') {
+    showHelp();
+    return;
+}
+if (!/.*\.zip/.test(params[0])) {
+    innerRootDir = params[0];
+    params.shift(0);
+}
+if (!/.*\.zip/.test(params[0]) || !params[1]) {
+    showHelp();
+    return;
+}
+zipName = params[0];
+params.shift(0);
+
+doZip(zipName, innerRootDir, params);

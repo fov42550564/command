@@ -1,0 +1,67 @@
+#!/usr/local/bin/node
+
+var request = require('superagent');
+var crypto = require('crypto');
+var moment = require('moment');
+
+const USER_ID = '5811d3e8e4b0c0b6030dd492';
+const DES_KEY = 'SV#Y!jAz';
+
+function encrypt(text, key) {
+    var cipher = crypto.createCipheriv('des-ecb', key, new Buffer(0));
+    var ciph = cipher.update(text, 'utf8', 'base64');
+    ciph += cipher.final('base64');
+    return ciph;
+}
+
+function decrypt(code, key) {
+    var decipher = crypto.createDecipheriv('des-ecb', key, new Buffer(0));
+    var txt = decipher.update(code, 'base64', 'utf8');
+    txt += decipher.final('utf8');
+    return txt;
+}
+
+function post(api, param) {
+    return new Promise((resolve, reject) => {
+        const req = request
+        .post('http://www.gyyxjqd.com/app/api/' + api)
+        .set({
+            'Accept': 'text/plain',
+            'Content-Type': 'text/plain',
+            'version': 2,
+        })
+        .send(param);
+
+        req.end((error, res) => {
+            if (error) {
+                console.error('recv error:', error);
+                reject();
+            } else {
+                resolve(res.text);
+            }
+        });
+    });
+}
+
+function writeItem(content, callback) {
+    var param = encrypt(JSON.stringify({userID: USER_ID, workDate: moment().format('YYYY-MM-DD'), content}), DES_KEY);
+    post('addActualCompleteWork', param).then((base64)=>{
+        var json = decrypt(base64, DES_KEY);
+        var obj = JSON.parse(json);
+        var param1 = encrypt(JSON.stringify({userID: USER_ID, id: obj.context.actualWork.id}), DES_KEY);
+        post('finishActualCompleteWork', param1).then(()=>{
+            console.log("完成：", content);
+            callback();
+        });
+    });
+}
+
+function writeAll(list, level) {
+    if (level === list.length) {
+        return;
+    }
+    writeItem(list[level], writeAll.bind(null, list, level+1));
+}
+
+var args = process.argv.splice(2);
+writeAll(args, 0);
