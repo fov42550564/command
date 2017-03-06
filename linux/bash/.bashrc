@@ -217,6 +217,9 @@ alias st='svn st|grep -v node_modules'
 alias pinstall='pod install --no-repo-update'
 alias xandroid='react-native run-android'
 
+#phantomjs
+alias pt='~/tools/phantomjs-2.1.1-macosx/bin/phantomjs'
+
 #mongodb
 alias mongostart='mongod —config /usr/local/etc/mongod.conf'
 
