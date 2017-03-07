@@ -1,27 +1,6 @@
 #!/usr/local/bin/node
-var request = require('superagent');
-var program = require('commander');
-
-function post(url, param) {
-    return new Promise((resolve, reject) => {
-        const req = request
-        .post(url)
-        .set({
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-        })
-        .send(param);
-
-        req.end((error, res) => {
-            if (error) {
-                console.error('recv error:', error);
-                reject();
-            } else {
-                resolve(res.text);
-            }
-        });
-    });
-}
+const request = require('superagent');
+const program = require('commander');
 
 program
 .version('0.0.1')
@@ -29,9 +8,19 @@ program
 .option('-d, --data <json>', 'data must be json format', (v)=>eval('v='+v), {})
 .parse(process.argv);
 
-let { url, data } = program;
+const { url, data } = program;
 
-var body = JSON.stringify(data);
-post(url, data).then((result)=>{
-    console.log("recv:", JSON.stringify(result, null, 2));
+request
+.post(url)
+.set({
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+})
+.send(data)
+.end((error, res) => {
+    if (error) {
+        console.error('recv error:', error);
+    } else {
+        console.log(JSON.stringify(res.body, null, 2));
+    }
 });
