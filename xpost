@@ -1,52 +1,37 @@
 #!/usr/local/bin/node
-var http=require('http');
+var request = require('superagent');
 var program = require('commander');
+
+function post(url, param) {
+    return new Promise((resolve, reject) => {
+        const req = request
+        .post(url)
+        .set({
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+        })
+        .send(param);
+
+        req.end((error, res) => {
+            if (error) {
+                console.error('recv error:', error);
+                reject();
+            } else {
+                resolve(res.text);
+            }
+        });
+    });
+}
 
 program
 .version('0.0.1')
-.option('-s, --host [127.0.0.1]', 'server host', '127.0.0.1')
-.option('-p, --port [3000]', 'server port', '3000')
-.option('-t, --path [/test]', 'server get path', '/test')
-.option('-u, --url [http://127.0.0.1:3000/test]', 'url=[host+\":\"+port+path], if use url, not set host etc.')
+.option('-u, --url [http://127.0.0.1:3000/test]', 'url of api')
 .option('-d, --data <json>', 'data must be json format', (v)=>eval('v='+v), {})
 .parse(process.argv);
 
-let { host, port, path, url, data } = program;
-
-if (url) {
-    host = url.replace(/http:\/\//, '').replace(/:.*/, '');
-    port = url.replace(/.*:/, '').replace(/\/.*/, '');
-    path = url.replace(/.*:\d+/, '');
-}
+let { url, data } = program;
 
 var body = JSON.stringify(data);
-var headers = {
-    'Content-Type': 'application/json',
-    //'Content-Type': 'text/plain',
-    'Content-Length': body.length,
-};
-var options = {
-    host: host,
-    port: port,
-    path: path,
-    method: 'POST',
-    headers: headers
-};
-
-console.log('options: ', options);
-var req=http.request(options, function(res){
-    // console.log(res.headers);
-    res.setEncoding('utf-8');
-    var chunk = '';
-    res.on('data', function(data) {
-        chunk += data;
-    });
-    res.on('end', function() {
-        console.log('recv: ', chunk);
-    });
-    req.on('error', function(e) {
-        console.log('error: ', e.message);
-    });
+post(url, data).then((result)=>{
+    console.log("recv:", JSON.stringify(result, null, 2));
 });
-req.write(body);
-req.end();
