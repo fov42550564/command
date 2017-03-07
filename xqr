@@ -507,11 +507,12 @@ function showQRCode(correctLevel, text) {
         panel += renderRow(oQRCode, row, nCount);
     }
     const fontSize = 288/nCount;
-    require('child_process').exec(`osascript -l JavaScript -e "Application('Terminal').windows[0].selectedTab.fontSize=${fontSize}"`);
+    require('child_process').exec(`osascript -l JavaScript -e "window=Application('Terminal').windows[0];frame=window.frame();window.selectedTab.fontSize=${fontSize};window.frame=frame"`);
+    console.log(panel);
 }
 var args = process.argv.splice(2);
 if (!args[0] || args[1]) {
-    require('child_process').exec(`osascript -l JavaScript -e "Application('Terminal').windows[0].selectedTab.fontSize=18"`);
+    require('child_process').exec(`osascript -l JavaScript -e "window=Application('Terminal').windows[0];frame=window.frame();window.selectedTab.fontSize=18;window.frame=frame"`);
     process.exit();
 }
 
