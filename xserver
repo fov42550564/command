@@ -1,6 +1,47 @@
 #!/usr/local/bin/node
 
+var os = require('os');
 var express = require('express');
+var qrcode = require('./js/qrcode.js');
+
+function getIPAdress() {
+    var interfaces = os.networkInterfaces();
+    for(var devName in interfaces){
+        var iface = interfaces[devName];
+        for(var i=0;i<iface.length;i++){
+            var alias = iface[i];
+            if(alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal){
+                return alias.address;
+            }
+        }
+    }
+}
+
+function startServer(port) {
+    var server = app.listen(port);
+    server.on('listening', function () {
+        console.log(`http://${ip}:${port}`);
+        var file = process.argv.splice(2)[0];
+        if (typeof file !== 'undefined') {
+            const url = `http://${ip}:${port}/${file}`;
+            console.log(url);
+            qrcode.showCode(`xqr ${url}`);
+        }
+
+        process.on('SIGINT', ()=>{
+            if (typeof file !== 'undefined') {
+                qrcode.resetScreen();
+            }
+             process.exit(0);
+        })
+    });
+    server.on('error', function (err) {
+        startServer(port+1);
+    })
+}
+
+var ip = getIPAdress();
+var port = 3000;
 var app = express();
 app.use(express.static('.'));
 app.get("/mz/*", function (req, res) {
@@ -26,4 +67,5 @@ app.get("/mz/*", function (req, res) {
     `;
     res.send(html);
 });
-var server = app.listen(3001, function() {console.log('http://localhost:3001');});
+
+startServer(port);
