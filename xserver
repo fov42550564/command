@@ -24,8 +24,7 @@ function startServer(port) {
         var file = process.argv.splice(2)[0];
         if (typeof file !== 'undefined') {
             const url = `http://${ip}:${port}/${file}`;
-            console.log(url);
-            qrcode.showCode(`xqr ${url}`);
+            qrcode.showCode(url);
         }
 
         process.on('SIGINT', ()=>{
