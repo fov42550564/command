@@ -630,11 +630,7 @@ function __clear()
 ########################################
 #Usage:__clear
 ########################################
-	local i
-	for ((i=0; i<1000; i++));do
-		echo
-	done
-	clear
+    printf '\33c\e[3J'
 }
 function __read_file()
 {
