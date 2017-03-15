@@ -511,7 +511,7 @@ function showCode(text) {
 }
 
 function resetScreen() {
-    require('child_process').exec(`osascript -l JavaScript -e "window=Application('Terminal').windows[0];frame=window.frame();window.selectedTab.fontSize=18;window.frame=frame"`);
+    require('child_process').exec(`osascript -l JavaScript -e "window=Application('Terminal').windows[0];frame=window.frame();window.selectedTab.fontSize=18;window.frame=frame;Application('System Events').keystroke('k', {using: 'command down'});"`);
 }
 
 
