@@ -18,11 +18,10 @@ function getIPAdress() {
     }
 }
 
-function startServer(port) {
+function startServer(port, file) {
     var server = app.listen(port);
     server.on('listening', function () {
         console.log(`http://${ip}:${port}`);
-        var file = process.argv[2];
         if (typeof file !== 'undefined') {
             const url = `http://${ip}:${port}/${file}`;
             qrcode.showCode(url);
@@ -36,28 +35,28 @@ function startServer(port) {
         })
     });
     server.on('error', function (err) {
-        startServer(port+1);
+        startServer(port+1, file);
     })
 }
 
 function createServerFile(filename) {
-    code = "var express = require('express');";
-    code += "\nvar bodyParser = require('body-parser');";
-    code += "\nvar fs = require('fs');";
-    code += "\n";
-    code += "\napp.use(express.static(__dirname + '/public'));";
-    code += "\napp.use(bodyParser.urlencoded({ extended: false }));";
-    code += "\napp.use(bodyParser.json());";
-    code += "\napp.use(bodyParser.text());";
-    code += "\n";
-    code += "\napp.get('/test', (req, res)=>{";
-    code += "\n    console.log(req.body);";
-    code += "\n    res.send('hello');";
-    code += "\n});";
-    code += "\n";
-    code += "\napp.listen(3000, function() {";
-    code += "\n    console.log('server listen on: http://localhost:3000');";
-    code += "\n});";
+    code = 'var express = require("express");';
+    code += '\nvar bodyParser = require("body-parser");';
+    code += '\nvar fs = require("fs");';
+    code += '\n';
+    code += '\napp.use(express.static(__dirname + "/public"));';
+    code += '\napp.use(bodyParser.urlencoded({ extended: false }));';
+    code += '\napp.use(bodyParser.json());';
+    code += '\napp.use(bodyParser.text());';
+    code += '\n';
+    code += '\napp.get("/test", (req, res)=>{';
+    code += '\n    console.log(req.body);';
+    code += '\n    res.send("hello");';
+    code += '\n});';
+    code += '\n';
+    code += '\napp.listen(3000, function() {';
+    code += '\n    console.log("server listen on: http://localhost:3000");';
+    code += '\n});';
     fs.writeFileSync(filename, code);
 }
 
@@ -65,7 +64,7 @@ var ip = getIPAdress();
 var port = 3000;
 var app = express();
 app.use(express.static('.'));
-app.get("/mz/*", function (req, res) {
+app.get('/mz/*', function (req, res) {
     var img = req.url.replace('/mz/', '');
     var html = `
     <!DOCTYPE html>
@@ -81,16 +80,30 @@ app.get("/mz/*", function (req, res) {
             }
         </style>
     </head>
-    <body style="background:red;">
-        <img src="../${img}" class="img">
+    <body style='background:red;'>
+        <img src='../${img}' class='img'>
     </body>
     </html>
     `;
     res.send(html);
 });
 
-if (process.argv[2] === '--create') {
+var param = process.argv[2];
+var param1 = process.argv[3];
+if (param === '-h' || param === '--help') {
+    console.log('');
+    console.log('xserver opts');
+    console.log('');
+    console.log('   -h|--help: show help');
+    console.log('   -c|--create: create a app.js file for nodejs server');
+    console.log('   -i|--image [name]: show iphone6 size for image');
+    console.log('   file: show download qrcode for file');
+    console.log('');
+} else if (param === '-c' || param === '--create') {
     createServerFile('app.js');
-} else {
+} else if (param === '-i' || param === '--image') {
+    console.log('http:'+ip+':'+port+'//'+param1);
     startServer(port);
+} else {
+    startServer(port, param);
 }
