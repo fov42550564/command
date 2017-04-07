@@ -44,8 +44,8 @@ function post(api, param) {
 }
 
 function writeItem(content, callback) {
-    var param = encrypt(JSON.stringify({userID: USER_ID, workDate: moment().format('YYYY-MM-DD'), content}), DES_KEY);
-    post('addActualCompleteWork', param).then((base64)=>{
+    var param = encrypt(JSON.stringify({userID: USER_ID, planDate: moment().format('YYYY-MM-DD'), addContent: content, weekNum: moment().format('e')}), DES_KEY);
+    post('addTodayPlan', param).then((base64)=>{
         var json = decrypt(base64, DES_KEY);
         var obj = JSON.parse(json);
         var param1 = encrypt(JSON.stringify({userID: USER_ID, id: obj.context.actualWork.id}), DES_KEY);
@@ -63,5 +63,31 @@ function writeAll(list, level) {
     writeItem(list[level], writeAll.bind(null, list, level+1));
 }
 
+function submitDaySummary(context) {
+    var param = encrypt(JSON.stringify({userID: USER_ID, planDate: moment().format('YYYY-MM-DD'), context}), DES_KEY);
+    post('submitDaySummary', param).then((base64)=>{
+        var json = decrypt(base64, DES_KEY);
+        console.log("完成今日总结");
+    });
+}
+
+
+function addProblemAnswer() {
+    var param = encrypt(JSON.stringify({userID: USER_ID, date: moment().format('YYYY-MM-DD')}), DES_KEY);
+    var contents = ['认真积极的分析问题，修改应该修改的bug,为项目认真思考逻辑和优化', '修改已知的bug，优化部分功能，跟进react-native的新变化，编写或修改组件', '每天使用赢销截拳道特种兵编写记录工作计划和总结对工作帮助很大，快乐工作'];
+    post('getFixedProblem', param).then((base64)=>{
+        var json = decrypt(base64, DES_KEY);
+        var fixedProblem = JSON.parse(json).context.fixedProblem;
+        for (let i in fixedProblem) {
+            let param1 = encrypt(JSON.stringify({userID: USER_ID, date: moment().format('YYYY-MM-DD'), problemId: fixedProblem[i].problemId, problemContent: contents[i]}), DES_KEY);
+            post('addProblemAnswer', param1).then((base64)=>{
+                console.log("完成"+fixedProblem[i].problemTitle);
+            });
+        }
+    });
+}
+
 var args = process.argv.splice(2);
 writeAll(args, 0);
+submitDaySummary(args.join(';'));
+addProblemAnswer();
