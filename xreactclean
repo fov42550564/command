@@ -5,6 +5,5 @@ find -name "*.iml" -exec rm -fr {} \;
 find -name "*xcuser*" -exec rm -fr {} \;
 find -name "*xcshared*" -exec rm -fr {} \;
 find -name ".DS_*" -exec rm -f {} \;
-find -name "*.iml" -exec rm -fr {} \;
 find -name ".gradle" -exec rm -fr {} \;
 find -name ".idea" -exec rm -fr {} \;
