@@ -9,6 +9,7 @@
 
 source ~/command/common
 file=~/.daily
+his=~/.daily_history
 
 if [ "$1" = "" ];then
     cat ${file} 2>/dev/null
@@ -16,6 +17,7 @@ if [ "$1" = "" ];then
 fi
 
 if [ "$1" = "clear" ];then
+    cat ${file} >> ${his}
     echo -n > ${file}
     echo "clear success"
     exit
