@@ -1,34 +1,63 @@
+#!/usr/bin/env phantomjs
+
 'use strict';
-var page = require('webpage').create(),
-server = require('webserver').create();
-
-var createChart = function(inputOption, width, height) {
-    var script= document.createElement('script');
-    script.setAttribute('type', 'text/javascript');
-    script.innerHTML = 'var options = ' + JSON.stringify(inputOption);
-    document.getElementsByTagName('head')[0].appendChild(script);
-
-    document.body.style.backgroundColor = 'white';
-    var container = document.getElementById('container');
-    container.style.width = width+'px';
-    container.style.height = height+'px';
-    var chart = echarts.init(container);
-    chart.setOption(options);
-};
-
-
-page.open('tpl.html', function(status) {
-    server.listen(3003, function (request, response) {
-        try {
-            var data = JSON.parse(request.post);
-            var width = data.width;
-            var height = data.height;
-            var options = data.options;
-            console.log(options, width, height);
-            page.evaluate(createChart, options, width, height);
-            page.clipRect = {top: 0, left: 0, width: width, height: height };
-            response.write(page.renderBase64());
-            response.close();
-        } catch(e) {}
+var args = require('system').args;
+if ( "-h" === args[1] || "--help" === args[1] ) {
+    console.log("");
+    console.log("xphantomjs Usage:");
+    console.log("");
+    console.log("    1. use command `xphantomjs` to start server, then post as follows:");
+    console.log("    xpost -u http://localhost:3003 -f text -d '{\"width\":200,\"height\":200,\"options\":{\"animation\":false,\"title\":{\"text\":\"世界人口总量\",\"subtext\":\"数据来自网络\"},\"tooltip\":{\"trigger\":\"axis\"},\"legend\":{\"data\":[\"2011年\",\"2012年\"]},\"calculable\":true,\"xAxis\":[{\"type\":\"value\",\"boundaryGap\":[0,0.01]}],\"yAxis\":[{\"type\":\"category\",\"data\":[\"巴西\",\"印尼\",\"美国\",\"印度\",\"中国\",\"世界人口(万)\"]}],\"series\":[{\"name\":\"2011年\",\"type\":\"bar\",\"data\":[18203,23489,29034,104970,131744,630230]},{\"name\":\"2012年\",\"type\":\"bar\",\"data\":[19325,23438,31000,121594,134141,681807]}]}}'");
+    console.log("");
+    console.log("    2. use command `xphantomjs url file width height` to get " );
+    console.log("");
+    console.log("");
+    phantom.exit();
+} else if ( /https?:\/\//.test(args[1]) ) {
+    var page = require('webpage').create();
+    var url = args[1];
+    var file = args[2] || 'render.png';
+    var width = args[3] || 800;
+    var height = args[4] || 600;
+    page.viewportSize = { width: width, height: height };
+    page.clipRect = { top: 0, left: 0, width: width, height: height };
+    page.open(url, function() {
+        page.render(file);
+        phantom.exit();
     });
-});
+} else {
+    var page = require('webpage').create();
+    var server = require('webserver').create();
+
+    var createChart = function(inputOption, width, height) {
+        var script= document.createElement('script');
+        script.setAttribute('type', 'text/javascript');
+        script.innerHTML = 'var options = ' + JSON.stringify(inputOption);
+        document.getElementsByTagName('head')[0].appendChild(script);
+
+        document.body.style.backgroundColor = 'white';
+        var container = document.getElementById('container');
+        container.style.width = width+'px';
+        container.style.height = height+'px';
+        var chart = echarts.init(container);
+        chart.setOption(options);
+    };
+
+
+    page.open('tpl.html', function(status) {
+        console.log("http://localhost:3003");
+        server.listen(3003, function (request, response) {
+            try {
+                var data = JSON.parse(request.post);
+                var width = data.width;
+                var height = data.height;
+                var options = data.options;
+                console.log(options, width, height);
+                page.evaluate(createChart, options, width, height);
+                page.clipRect = {top: 0, left: 0, width: width, height: height };
+                response.write(page.renderBase64());
+                response.close();
+            } catch(e) {}
+        });
+    });
+}
