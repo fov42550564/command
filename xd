@@ -11,8 +11,31 @@ source ~/command/common
 file=~/.daily
 his=~/.daily_history
 
+if [ "$1" = "-h" -o "$1"  = "--help" ];then
+    echo ""
+    echo "xd Usage:"
+    echo ""
+    echo "  xd"
+    echo "  xd send"
+    echo "  xd clear"
+    echo "  xd history"
+    echo "  xd summary"
+    echo ""
+    exit
+fi
+
 if [ "$1" = "" ];then
     cat ${file} 2>/dev/null
+    exit
+fi
+
+if [ "$1" = "history" ];then
+    cat ${his} 2>/dev/null
+    exit
+fi
+
+if [ "$1" = "summary" ];then
+    echo "--summary" >> ${file}
     exit
 fi
 
