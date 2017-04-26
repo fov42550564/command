@@ -15,11 +15,20 @@ function cygwin_kill()
  	__checkbox "" "taskkill /f /im ~~" "yes" "taskkill" "select bellow tasks to kill"
 }
 
+function kill_process() {
+    local process
+    process=${1%%]:*}
+    echo kill -9 ${process##[}
+    kill -9 ${process##[}
+}
+
 function mac_kill()
 {
-	ps|grep -i ".*$1.*"
-	_list_=($(ps|grep -i ".*$1.*"|awk '{print $1}'))
-	echo ${_list_[@]}
+    oldIFS=$IFS
+    IFS=$'\n'
+    _list_=($(ps|grep ttys|grep -i ".*$1.*"|grep -v "xps\|grep" |sed 's/\([0-9]*\).*[0-9][0-9].[0-9][0-9] \(.*\)/[\1]: \2\n/'))
+    IFS=$oldIFS
+ 	__checkbox "" "kill_process ~~" "yes" "taskkill" "select bellow tasks to kill"
 }
 
 function main()
