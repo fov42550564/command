@@ -35,6 +35,15 @@ Object.defineProperty(server.context, 'moment', {
     }
 });
 
+var shell = require('shelljs');
+Object.defineProperty(server.context, 'shell', {
+    'configurable': true,
+    'enumerable': false,
+    'get': function () {
+        return shell;
+    }
+});
+
 var events = server.rli._events;
 events.line = _.wrap(events.line, function (line, cmd) {
     if (/_\s*=|moment\s*=/.test(cmd)) {
