@@ -1,6 +1,6 @@
 #!/usr/local/bin/node
 const request = require('superagent');
-const program = require('commander');
+const program = require('./js/dialog').commander();
 
 program
 .version('0.0.1')
