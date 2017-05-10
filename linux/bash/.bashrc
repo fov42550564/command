@@ -159,9 +159,14 @@ alias mhcd='cd /Volumes/home/方运江'
 alias mhopen='open /Volumes/home/方运江'
 alias mhmv='cp /Volumes/home/方运江/*'
 
+#ImageMagick
+#export MAGICK_HOME="$HOME/tools/ImageMagick-7.0.5"
+#export PATH="$MAGICK_HOME/bin:$PATH"
+#export DYLD_LIBRARY_PATH="$MAGICK_HOME/lib/"
 
 #set_path
 export PATH=$PATH:~/command:/usr/local/lib/node_modules/cordova/bin:/Users/fang/tools/phantomjs-2.1.1-macosx/bin:~/tools/wasm:~/tools/wabt
+
 
 #ndk
 alias ndk='ndk-build'
