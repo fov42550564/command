@@ -22,6 +22,7 @@
     uphead = "commit --amend -m"
 	rshead = "reset --hard HEAD"
 	rs = "reset --hard"
+	rsmaster = "reset --hard origin/master"
     noadd = "rm -r --cached"
     noaddall = "rm -r --cached ."
     bare="init --bare"
