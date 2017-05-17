@@ -16,65 +16,6 @@ colors.setTheme({
     DEBUG_COLOR: 'green',
 });
 
-function isAsc(code) {
-    return code >= 0 && code <= 256;
-}
-function isAscWord(code) {
-    return (code >= 48 && code <= 57) || (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || code === 95; //数字、字母、下划线
-}
-function getRealCutText(text, n) {
-    let realLength = 0, len = text.length, charCode = -1;
-    for (let i = 0; i < len; i++) {
-        charCode = text.charCodeAt(i);
-        if (isAsc(charCode)) {
-            realLength += 1;
-        } else {
-            realLength += 2;
-        }
-    }
-    return text+_.repeat(' ', n-realLength);
-}
-function cutLimitText (list, text, n) {
-    let realLength = 0, len = text.length, preLen = -1, charCode = -1, needCut = false;
-    for (let i = 0; i < len; i++) {
-        charCode = text.charCodeAt(i);
-        if (isAsc(charCode)) {
-            realLength += 1;
-        } else {
-            realLength += 2;
-        }
-        if (preLen === -1 && realLength >= n) {
-            preLen = i + 1;
-        } else if (realLength > n) {
-            needCut = true;
-            break;
-        }
-    }
-    if (needCut) {
-        let cutText = text.substr(0, preLen);
-        let lastCode = cutText.charCodeAt(cutText.length-1);
-        let nextCode = text.charCodeAt(preLen);
-
-        if (isAscWord(lastCode) && isAscWord(nextCode)) {
-            for (var j = 0; j < cutText.length; j++) {
-                if (!isAscWord(cutText.charCodeAt(cutText.length-1-j))) {
-                    break;
-                }
-            }
-            if (j < cutText.length) {
-                preLen -= j;
-            }
-        }
-        list.push(getRealCutText(text.substr(0, preLen), n));
-        text = text.substr(preLen);
-        if (text) {
-            cutLimitText(list, text, n);
-        }
-    } else {
-        list.push(getRealCutText(text, n));
-    }
-}
-
 class Dialog {
     constructor () {
         this.CTAG = '+';
@@ -101,46 +42,63 @@ class Dialog {
         process.stdin.resume();
         process.stdin.on('data', process.stdin.pause.bind(process.stdin));
     }
-    commander () {
-        var _self = this;
-        program.optionHelp = function () {
-            var ret = [];
-            ret[0] = 'Usage: ' + this.usage();
-            ret[1] = ' ';
-            for (var i = 0; i < this.options.length; i++) {
-                ret[i + 2] = '  '+this.options[i].flags + ': ' + this.options[i].description;
+    isAsc(code) {
+        return code >= 0 && code <= 256;
+    }
+    isAscWord(code) {
+        return (code >= 48 && code <= 57) || (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || code === 95; //数字、字母、下划线
+    }
+    getRealCutText(text, n) {
+        let realLength = 0, len = text.length, charCode = -1;
+        for (let i = 0; i < len; i++) {
+            charCode = text.charCodeAt(i);
+            if (this.isAsc(charCode)) {
+                realLength += 1;
+            } else {
+                realLength += 2;
             }
-            ret[i + 2] = '  -h, --help:show help';
-            return ret;
-        };
-        program.commandHelp = function () {
-            var ret = [];
-            if (!this.commands.length) return ret;
+        }
+        return text+_.repeat(' ', n-realLength);
+    }
+    cutLimitText (list, text, n) {
+        let realLength = 0, len = text.length, preLen = -1, charCode = -1, needCut = false;
+        for (let i = 0; i < len; i++) {
+            charCode = text.charCodeAt(i);
+            if (this.isAsc(charCode)) {
+                realLength += 1;
+            } else {
+                realLength += 2;
+            }
+            if (preLen === -1 && realLength >= n) {
+                preLen = i + 1;
+            } else if (realLength > n) {
+                needCut = true;
+                break;
+            }
+        }
+        if (needCut) {
+            let cutText = text.substr(0, preLen);
+            let lastCode = cutText.charCodeAt(cutText.length-1);
+            let nextCode = text.charCodeAt(preLen);
 
-            ret[0] = 'Commands: ';
-            ret[1] = ' ';
-            for (var i = 0; i < this.commands.length; i++) {
-                var cmd = this.commands[i];
-                var args = cmd._args.map((arg) => arg.required ? '<' + arg.name + '>' : '[' + arg.name + ']').join(' ');
-                ret[i + 2] = '  '+cmd._name + (cmd.options.length ? '[options]' : '') + ' ' + args + ': ' + (cmd.description() ? cmd.description() : '');
+            if (this.isAscWord(lastCode) && this.isAscWord(nextCode)) {
+                for (var j = 0; j < cutText.length; j++) {
+                    if (!this.isAscWord(cutText.charCodeAt(cutText.length-1-j))) {
+                        break;
+                    }
+                }
+                if (j < cutText.length) {
+                    preLen -= j;
+                }
             }
-            return ret;
-        };
-        program.helpInformation = function () {
-            var name = this._name;
-            var commandHelp = this.commandHelp();
-            var optionHelp = this.optionHelp();
-            var options = optionHelp;
-            if (commandHelp.length) {
-                options = options.concat(' ', commandHelp);
+            list.push(this.getRealCutText(text.substr(0, preLen), n));
+            text = text.substr(preLen);
+            if (text) {
+                this.cutLimitText(list, text, n);
             }
-            return { name, options };
-        };
-        program.outputHelp = function () {
-            var args = this.helpInformation();
-            _self.msgbox(args.name, args.options);
-        };
-        return program;
+        } else {
+            list.push(this.getRealCutText(text, n));
+        }
     }
     getBoder (width, isStart, isEnd) {
         width = width || this.DIALOG_WIDTH;
@@ -171,23 +129,29 @@ class Dialog {
     }
     showBoxDiscription (disp, width) {
         width = width || this.DIALOG_WIDTH;
-        this.showBoxString('[Usage]:' + disp, width);
+        this.showBoxString({head: '[Usage]:', text: disp}, width);
     }
-    showBoxString (str, width) {
+    showBoxString (item, width) {
+        var {head = '', text = ''} = item;
+        text = ' ' + text;
         width = width || this.DIALOG_WIDTH;
         var in_width = width - 3;
         var list = [];
-        cutLimitText(list, str, in_width);
+        this.cutLimitText(list, head+text, in_width);
         for (var i in list) {
-            console.log(this.VTAG.BORDER_COLOR + ' ' + list[i].STRING_COLOR + this.VTAG.BORDER_COLOR);
+            if (i == 0) {
+                console.log(this.VTAG.BORDER_COLOR + ' ' + head.INDEX_COLOR + list[i].replace(head, '').STRING_COLOR + this.VTAG.BORDER_COLOR);
+            } else {
+                console.log(this.VTAG.BORDER_COLOR + ' ' + list[i].STRING_COLOR + this.VTAG.BORDER_COLOR);
+            }
         }
     }
-    msgbox (title, msg, width) {
+    msgbox (title, list, width) {
         width = width || this.DIALOG_WIDTH;
-        var len = msg.length;
+        var len = list.length;
         this.showBoxTitle(title, width);
         for (var i = 0; i < len; i++) {
-            this.showBoxString(msg[i], width);
+            this.showBoxString(list[i], width);
         }
         this.showLineBoder(width);
     }
@@ -215,7 +179,7 @@ class Dialog {
         this.showBoxDiscription(disp, width);
         this.showLineBoder(width);
         for (var i = 0; i < len; i++) {
-            this.showBoxString(i + ': ' + list[i], width);
+            this.showBoxString({head: i + ':', text: list[i]}, width);
         }
         this.showLineBoder(width);
     }
@@ -224,7 +188,7 @@ class Dialog {
         var len = list.length;
         while (true) {
             if (len == 0) {
-                this.msgbox('complete', ['have done all'], this.MSGBOX_WIDTH);
+                this.msgbox('complete', [{text: 'have done all'}], this.MSGBOX_WIDTH);
                 return;
             }
             this.listbox(title, disp, list, width);
@@ -362,14 +326,14 @@ class Dialog {
     menuitembox (disp, items, width) {
         width = width || this.DIALOG_WIDTH;
         this.showBoxTitle('menu', width);
-        this.showBoxString(disp, width);
-        this.showBoxString('please input follows to do your work', width);
+        this.showBoxString({text: disp}, width);
+        this.showBoxString({text: 'please input follows to do your work'}, width);
         this.showLineBoder(width);
 
         for (var tag in items) {
-            this.showBoxString('[' + tag + ']: ' + items[tag].disp, width);
+            this.showBoxString({head: '[' + tag + ']: ', text: items[tag].disp}, width);
         }
-        this.showBoxString('[q]: exit', width);
+        this.showBoxString({head: '[q]:', text: 'exit'}, width);
         this.showLineBoder(width);
     }
     async menubox (disp, items, width) {
@@ -393,6 +357,47 @@ class Dialog {
                 disp = item.disp;
             }
         }
+    }
+    commander () {
+        var _self = this;
+        program.optionHelp = function () {
+            var ret = [];
+            ret[0] = {head: 'Usage:', text: this.usage()};
+            ret[1] = {};
+            for (var i = 0; i < this.options.length; i++) {
+                ret[i + 2] = {head: '   '+this.options[i].flags + ': ',  text: this.options[i].description};
+            }
+            ret[i + 2] = {head: '   -h, --help:',  text:'show help'};
+            return ret;
+        };
+        program.commandHelp = function () {
+            var ret = [];
+            if (!this.commands.length) return ret;
+
+            ret[0] = {head: 'Commands:'};
+            ret[1] = {};
+            for (var i = 0; i < this.commands.length; i++) {
+                var cmd = this.commands[i];
+                var args = cmd._args.map((arg) => arg.required ? '<' + arg.name + '>' : '[' + arg.name + ']').join(' ');
+                ret[i + 2] = {head: '   '+cmd._name + (cmd.options.length ? '[options]' : '') + ' ' + args + ': ',  text: (cmd.description() ? cmd.description() : '')};
+            }
+            return ret;
+        };
+        program.helpInformation = function () {
+            var name = this._name;
+            var commandHelp = this.commandHelp();
+            var optionHelp = this.optionHelp();
+            var options = optionHelp;
+            if (commandHelp.length) {
+                options = options.concat({}, commandHelp);
+            }
+            return { name, options };
+        };
+        program.outputHelp = function () {
+            var args = this.helpInformation();
+            _self.msgbox(args.name, args.options);
+        };
+        return program;
     }
 };
 
