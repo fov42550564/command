@@ -1,4 +1,4 @@
-
+var _ = require('lodash');
 var colors = require('colors');
 var printf = require('printf');
 var fs = require('fs');
@@ -15,6 +15,65 @@ colors.setTheme({
     WARN_COLOR: 'yellow',
     DEBUG_COLOR: 'green',
 });
+
+function isAsc(code) {
+    return code >= 0 && code <= 256;
+}
+function isAscWord(code) {
+    return (code >= 48 && code <= 57) || (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || code === 95; //数字、字母、下划线
+}
+function getRealCutText(text, n) {
+    let realLength = 0, len = text.length, charCode = -1;
+    for (let i = 0; i < len; i++) {
+        charCode = text.charCodeAt(i);
+        if (isAsc(charCode)) {
+            realLength += 1;
+        } else {
+            realLength += 2;
+        }
+    }
+    return text+_.repeat(' ', n-realLength);
+}
+function cutLimitText (list, text, n) {
+    let realLength = 0, len = text.length, preLen = -1, charCode = -1, needCut = false;
+    for (let i = 0; i < len; i++) {
+        charCode = text.charCodeAt(i);
+        if (isAsc(charCode)) {
+            realLength += 1;
+        } else {
+            realLength += 2;
+        }
+        if (preLen === -1 && realLength >= n) {
+            preLen = i + 1;
+        } else if (realLength > n) {
+            needCut = true;
+            break;
+        }
+    }
+    if (needCut) {
+        let cutText = text.substr(0, preLen);
+        let lastCode = cutText.charCodeAt(cutText.length-1);
+        let nextCode = text.charCodeAt(preLen);
+
+        if (isAscWord(lastCode) && isAscWord(nextCode)) {
+            for (var j = 0; j < cutText.length; j++) {
+                if (!isAscWord(cutText.charCodeAt(cutText.length-1-j))) {
+                    break;
+                }
+            }
+            if (j < cutText.length) {
+                preLen -= j;
+            }
+        }
+        list.push(getRealCutText(text.substr(0, preLen), n));
+        text = text.substr(preLen);
+        if (text) {
+            cutLimitText(list, text, n);
+        }
+    } else {
+        list.push(getRealCutText(text, n));
+    }
+}
 
 class Dialog {
     constructor () {
@@ -116,47 +175,11 @@ class Dialog {
     }
     showBoxString (str, width) {
         width = width || this.DIALOG_WIDTH;
-
         var in_width = width - 3;
-
-        var pos = 0, len = str.length;
-        var is_head = true;
-        var char_len = 0;
-        while (len > 0)	{
-            var ch = str.charCodeAt(pos);
-            if (ch == 32/* ' ' */ || ch == 47 /* '/' */) {
-                char_len = 0;
-            } else {
-                char_len++;
-            }
-            if (!ch) {
-                char_len = 0;
-            }
-            pos++;
-            if (pos == in_width) {
-                if (str.charCodeAt(pos) != 32/* ' ' */) {
-                    pos -= char_len;
-                }
-                if (is_head) {
-                    var tmp_str = str.substring(0, pos);
-                    var head_str = tmp_str.replace(/:.*/, '') + ':';
-                    var body_str = tmp_str.replace(/.*?:/, '');
-                    if (head_str == tmp_str + ':') {
-                        head_str = '';
-                    }
-                    var head_len = head_str.length;
-                    var body_len = in_width - head_len;
-                    var line = printf('%-' + body_len + 's', body_str);
-                    console.log(this.VTAG.BORDER_COLOR + ' ' + head_str.INDEX_COLOR + line.STRING_COLOR + this.VTAG.BORDER_COLOR);
-                    is_head = false;
-                } else {
-                    var line = printf('%-' + in_width + 's', str.substring(0, pos));
-                    console.log(this.VTAG.BORDER_COLOR + ' ' + line.STRING_COLOR + this.VTAG.BORDER_COLOR);
-                }
-                str = str.substring(pos);
-                pos = 0;
-                len = str.length;
-            }
+        var list = [];
+        cutLimitText(list, str, in_width);
+        for (var i in list) {
+            console.log(this.VTAG.BORDER_COLOR + ' ' + list[i].STRING_COLOR + this.VTAG.BORDER_COLOR);
         }
     }
     msgbox (title, msg, width) {
