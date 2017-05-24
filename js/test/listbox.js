@@ -1,4 +1,4 @@
 var dialog = require('../dialog');
 
 var list = [ "add svn log", "delete svn log"];
-dialog.listbox("xsvn", "do svn command", list);
+dialog.listbox("方运江", "do svn command", list);

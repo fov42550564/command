@@ -17,10 +17,16 @@ colors.setTheme({
 });
 
 class Dialog {
-    constructor () {
-        this.CTAG = '+';
-        this.HTAG = '-';
-        this.VTAG = '|';
+    constructor (simple) {
+        this.HTAG = simple ? '-' : '\u2500';
+        this.VTAG = simple ? '|' : '\u2502';
+        this.TLTAG = simple ? '+' : '\u250c';
+        this.TRTAG = simple ? '+' : '\u2510';
+        this.MLTAG = simple ? '|' : '\u251c';
+        this.MRTAG = simple ? '|' : '\u2524';
+        this.BLTAG = simple ? '+' : '\u2514';
+        this.BRTAG = simple ? '+' : '\u2518';
+
         this.DIALOG_WIDTH = 80;
         this.MSGBOX_WIDTH = 30;
     }
@@ -36,11 +42,18 @@ class Dialog {
         var ret = printf.apply(this, arguments);
         console.log(ret.DEBUG_COLOR);
     }
+    pauseOff() {
+        process.stdin.pause();
+    }
     pause () {
-        console.log('Press any key to continue...');
-        process.stdin.setRawMode(true);
-        process.stdin.resume();
-        process.stdin.on('data', process.stdin.pause.bind(process.stdin));
+        return new Promise(async (resolve) => {
+            console.log('Press any key to continue...');
+            process.stdin.setRawMode(true);
+            process.stdin.resume();
+            process.stdin.on('data', ()=>{
+                resolve();
+            });
+        });
     }
     isAsc(code) {
         return code >= 0 && code <= 256;
@@ -48,7 +61,7 @@ class Dialog {
     isAscWord(code) {
         return (code >= 48 && code <= 57) || (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || code === 95; //数字、字母、下划线
     }
-    getRealCutText(text, n) {
+    getRealLength(text) {
         let realLength = 0, len = text.length, charCode = -1;
         for (let i = 0; i < len; i++) {
             charCode = text.charCodeAt(i);
@@ -58,6 +71,10 @@ class Dialog {
                 realLength += 2;
             }
         }
+        return realLength;
+    }
+    getRealCutText(text, n) {
+        let realLength = this.getRealLength(text);
         return text+_.repeat(' ', n-realLength);
     }
     cutLimitText (list, text, n) {
@@ -100,32 +117,35 @@ class Dialog {
             list.push(this.getRealCutText(text, n));
         }
     }
-    getBoder (width, isStart, isEnd) {
-        width = width || this.DIALOG_WIDTH;
-        isStart = (isStart === undefined) ? true : isStart;
-        isEnd = (isEnd === undefined) ? true : isEnd;
-
-        var headChar = (isStart) ? this.CTAG : this.HTAG;
-        var tailChar = (isEnd) ? this.CTAG : this.HTAG;
-        var buf = new Buffer(width);
-
-        buf.fill(headChar, 0, 1);
-        buf.fill(this.HTAG, 1, width - 1);
-        buf.fill(tailChar, width - 1, width);
-        return buf.toString();
+    getBoder (width, layer = 'top', hasStart = true, hasEnd = true) {
+        var headChar = (hasStart) ? (layer==='top' ? this.TLTAG : layer==='middle' ? this.MLTAG : this.BLTAG ) : this.HTAG;
+        var tailChar = (hasEnd) ? (layer==='top' ? this.TRTAG : layer==='middle' ? this.MRTAG : this.BRTAG ) : this.HTAG;
+        var str = headChar;
+        for (var i=1; i<width; i++) {
+            str += (i === width - 1) ? tailChar : this.HTAG;
+        }
+        return str;
     }
-    showLineBoder (width) {
+    showTopLineBoder (width) {
         width = width || this.DIALOG_WIDTH;
         console.log(this.getBoder(width).BORDER_COLOR);
+    }
+    showMiddleLineBoder (width) {
+        width = width || this.DIALOG_WIDTH;
+        console.log(this.getBoder(width, 'middle').BORDER_COLOR);
+    }
+    showBottomLineBoder (width) {
+        width = width || this.DIALOG_WIDTH;
+        console.log(this.getBoder(width, 'bottom').BORDER_COLOR);
     }
     showBoxTitle (title, width) {
         width = width || this.DIALOG_WIDTH;
 
-        var len = width - title.length;
+        var len = width - this.getRealLength(title) - 2;
         var flen = parseInt(len / 2);
         var flen1 = flen + (len & 1);
 
-        console.log(this.getBoder(flen, true, false).BORDER_COLOR + title.TITLE_COLOR + this.getBoder(flen1, false, true).BORDER_COLOR);
+        console.log(this.getBoder(flen, 'top', true, false).BORDER_COLOR +' '+ title.TITLE_COLOR +' '+ this.getBoder(flen1, 'top', false, true).BORDER_COLOR);
     }
     showBoxDiscription (disp, width) {
         width = width || this.DIALOG_WIDTH;
@@ -153,7 +173,7 @@ class Dialog {
         for (var i = 0; i < len; i++) {
             this.showBoxString(list[i], width);
         }
-        this.showLineBoder(width);
+        this.showBottomLineBoder(width);
     }
     inputbox (info, defaultValue) {
         return new Promise(async (resolve) => {
@@ -177,11 +197,11 @@ class Dialog {
         var len = list.length;
         this.showBoxTitle(title, width);
         this.showBoxDiscription(disp, width);
-        this.showLineBoder(width);
+        this.showMiddleLineBoder(width);
         for (var i = 0; i < len; i++) {
             this.showBoxString({head: i + ':', text: list[i]}, width);
         }
-        this.showLineBoder(width);
+        this.showBottomLineBoder(width);
     }
     async radiobox (title, disp, list, callback, isUpdate, width) {
         width = width || this.DIALOG_WIDTH;
@@ -214,7 +234,7 @@ class Dialog {
                 list.splice(index, 1);
                 len--;
             }
-            this.pause();
+            await this.pause();
         }
     }
     async checkbox (title, disp, list, callback, singleCallback, isUpdate, width) {
@@ -328,13 +348,13 @@ class Dialog {
         this.showBoxTitle('menu', width);
         this.showBoxString({text: disp}, width);
         this.showBoxString({text: 'please input follows to do your work'}, width);
-        this.showLineBoder(width);
+        this.showMiddleLineBoder(width);
 
         for (var tag in items) {
             this.showBoxString({head: '[' + tag + ']: ', text: items[tag].disp}, width);
         }
         this.showBoxString({head: '[q]:', text: 'exit'}, width);
-        this.showLineBoder(width);
+        this.showBottomLineBoder(width);
     }
     async menubox (disp, items, width) {
         width = width || this.DIALOG_WIDTH;

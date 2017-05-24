@@ -1,9 +1,0 @@
-{
-  "name": "command",
-  "version": "0.0.1",
-  "dependencies": {
-    "commander": "^2.9.0",
-    "colors": "^1.1.2",
-    "printf": "^0.2.5"
-  },
-}
