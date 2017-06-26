@@ -1,0 +1,5 @@
+" This file will be loaded at the end of .vimrc.
+" This file is designed to add your own vim scripts or override the exVim's .vimrc settings.
+:set vb t_vb=
+:set mouse-=a
+:set shellcmdflag=-ic
