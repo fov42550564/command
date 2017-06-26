@@ -4,6 +4,7 @@ var request = require('superagent');
 var crypto = require('crypto');
 var _ = require('lodash');
 var moment = require('moment');
+var time = moment();
 
 const USER_ID = '5811d3e8e4b0c0b6030dd492';
 const DES_KEY = 'SV#Y!jAz';
@@ -45,7 +46,7 @@ function post(api, param) {
 }
 
 function writeItem(content, callback) {
-    var param = encrypt(JSON.stringify({userID: USER_ID, planDate: moment().format('YYYY-MM-DD'), addContent: content, weekNum: moment().format('e')}), DES_KEY);
+    var param = encrypt(JSON.stringify({userID: USER_ID, planDate: time.format('YYYY-MM-DD'), addContent: content, weekNum: time.format('e')}), DES_KEY);
     post('addTodayPlan', param).then((base64)=>{
         var json = decrypt(base64, DES_KEY);
         var obj = JSON.parse(json);
@@ -65,7 +66,7 @@ function writeAll(list, level) {
 }
 
 function submitDaySummary(context) {
-    var param = encrypt(JSON.stringify({userID: USER_ID, planDate: moment().format('YYYY-MM-DD'), context}), DES_KEY);
+    var param = encrypt(JSON.stringify({userID: USER_ID, planDate: time.format('YYYY-MM-DD'), context}), DES_KEY);
     post('submitDaySummary', param).then((base64)=>{
         var json = decrypt(base64, DES_KEY);
         console.log("完成今日总结");
@@ -74,13 +75,13 @@ function submitDaySummary(context) {
 
 
 function addProblemAnswer() {
-    var param = encrypt(JSON.stringify({userID: USER_ID, date: moment().format('YYYY-MM-DD')}), DES_KEY);
+    var param = encrypt(JSON.stringify({userID: USER_ID, date: time.format('YYYY-MM-DD')}), DES_KEY);
     var contents = ['认真积极的分析问题，修改应该修改的bug,为项目认真思考逻辑和优化', '修改已知的bug，优化部分功能，跟进react-native的新变化，编写或修改组件', '每天使用赢销截拳道特种兵编写记录工作计划和总结对工作帮助很大，快乐工作'];
     post('getFixedProblem', param).then((base64)=>{
         var json = decrypt(base64, DES_KEY);
         var fixedProblem = JSON.parse(json).context.fixedProblem;
         for (let i in fixedProblem) {
-            let param1 = encrypt(JSON.stringify({userID: USER_ID, date: moment().format('YYYY-MM-DD'), problemId: fixedProblem[i].problemId, problemContent: contents[i]}), DES_KEY);
+            let param1 = encrypt(JSON.stringify({userID: USER_ID, date: time.format('YYYY-MM-DD'), problemId: fixedProblem[i].problemId, problemContent: contents[i]}), DES_KEY);
             post('addProblemAnswer', param1).then((base64)=>{
                 console.log("完成"+fixedProblem[i].problemTitle);
             });
@@ -94,4 +95,3 @@ var summary = _.pullAt(args, summaryIndex,  summaryIndex+1)[1]||'';
 writeAll(args, 0);
 submitDaySummary('今天完成的工作有:'+args.join(';')+'通过今天的工作，我收获很多,'+summary);
 addProblemAnswer();
-
