@@ -41,7 +41,7 @@ function xbrewInstallApps()
 	cnt=${#_apps[@]}
 	__skip_sudo
 	for  ((i=0;i<cnt;i++));do
-		xbrewCheckAppInstalled ${_apps[i]} || echo sudo brew install ${_apps[i]} ${_app_params[i]}
+		xbrewCheckAppInstalled ${_apps[i]} || brew install ${_apps[i]} ${_app_params[i]}
 	done
 }
 
