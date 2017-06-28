@@ -1,0 +1,5 @@
+#!/bin/bash
+
+cp "./snippets/JavaScript (JSX).cson" ~/.atom/packages/react/snippets
+
+echo "done"
