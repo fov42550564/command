@@ -8,7 +8,7 @@
     prefix: "fup"
     body: "forceUpdate(${1:callback});"
 
-  "React: getDefaultProps() { return {...} } ":
+  "React: getDefaultProps() { return {...} }, ":
     prefix: "gdp"
     body: "getDefaultProps() {\n\treturn {\n\t\t${1}\n\t};\n},"
 
@@ -42,27 +42,27 @@
   # React >0.13 (ES6)
   "React: componentDidMount() { ... } (ES6)":
     prefix: "cdm"
-    body: "componentDidMount() {\n\t${1}\n}"
+    body: "componentDidMount() {\n\t${1}\n},"
 
   "React: componentDidUpdate(pp, ps) { ... } (ES6)":
     prefix: "cdup"
-    body: "componentDidUpdate(prevProps, prevState) {\n\t${1}\n}"
+    body: "componentDidUpdate(prevProps, prevState) {\n\t${1}\n},"
 
   "React: componentWillMount() { ... } (ES6)":
     prefix: "cwm"
-    body: "componentWillMount() {\n\t${1}\n}"
+    body: "componentWillMount() {\n\t${1}\n},"
 
   "React: componentWillReceiveProps(np) { ... } (ES6)":
     prefix: "cwr"
-    body: "componentWillReceiveProps(nextProps) {\n\t${1}\n}"
+    body: "componentWillReceiveProps(nextProps) {\n\t${1}\n},"
 
   "React: componentWillUnmount() { ... } (ES6)":
     prefix: "cwun"
-    body: "componentWillUnmount() {\n\t${1}\n}"
+    body: "componentWillUnmount() {\n\t${1}\n},"
 
   "React: componentWillUpdate(np, ns) { ... } (ES6)":
     prefix: "cwu"
-    body: "componentWillUpdate(nextProps, nextState) {\n\t${1}\n}"
+    body: "componentWillUpdate(nextProps, nextState) {\n\t${1}\n},"
 
   "React: static defaultProps = { ... }":
     prefix: "dp"
@@ -70,7 +70,7 @@
 
   "React: this.state = { ... }":
     prefix: "is"
-    body: "this.state = {\n\t${1}: ${2}\n}"
+    body: "this.state = {\n\t${1}: ${2}\n};"
 
   "React: static propTypes = { ... } (ES6)":
     prefix: "pt6"
@@ -82,15 +82,15 @@
 
   "React: component skeleton (ES6)":
     prefix: "rcc6"
-    body: "import React, { PropTypes } from \'react\'\n\nconst $1 = React.createClass({\n\trender () {\n\t\treturn (\n\t\n\t\t)\n\t}\n})\n\nexport default ${1}\n"
+    body: "import React, { PropTypes } from \'react\'\n\nconst $1 = React.createClass({\n\trender () {\n\t\treturn (\n\t\n\t\t)\n\t}\n})\n\nexport default ${1};\n"
 
   "React: stateless component (ES6)":
     prefix: "rcs"
-    body: "import React, { PropTypes } from \'react\'\n\nconst $1 = (${2:props}) => {\n\treturn (\n\t\t${3:<div />}\n\t)\n}\n\nexport default ${1}\n"
+    body: "import React, { PropTypes } from \'react\'\n\nconst $1 = (${2:props}) => {\n\treturn (\n\t\t${3:<div />}\n\t)\n}\n\nexport default ${1};\n"
 
   "React: render() { return ... } (ES6)":
     prefix: "ren"
-    body: "render() {\n\treturn (\n\t\t${1:<div />}\n\t);\n}"
+    body: "render() {\n\treturn (\n\t\t${1:<div />}\n\t);\n},"
 
   "React: setState({ ... }) (ES6)":
     prefix: "sst"
@@ -98,7 +98,7 @@
 
   "React: shouldComponentUpdate(np, ns) { ... } (ES6)":
     prefix: "scu"
-    body: "shouldComponentUpdate(nextProps, nextState) {\n\t${1}\n}"
+    body: "shouldComponentUpdate(nextProps, nextState) {\n\t${1}\n},"
 
   "React: const { props: { ... } } = this (ES6)":
     prefix: "props6"
