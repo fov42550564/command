@@ -1,0 +1,13 @@
+"*":
+  core:
+    disabledPackages: [
+      "ex-mode"
+      "vim-mode"
+    ]
+    telemetryConsent: "no"
+  editor:
+    tabLength: 4
+  "exception-reporting":
+    userId: "bdd30e19-145d-4a9e-8933-d8b941636b2d"
+  welcome:
+    showOnStartup: false

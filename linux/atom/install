@@ -1,5 +1,7 @@
 #!/bin/bash
 
 cp "./snippets/JavaScript (JSX).cson" ~/.atom/packages/react/snippets
+cp ./keymap/keymap.cson ~/.atom/
+cp ./config/config.cson ~/.atom/
 
 echo "done"
