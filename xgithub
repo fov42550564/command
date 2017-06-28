@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 var program = require('commander');
-var jsdom = require("jsdom");
+var jsdom = require("jsdom/lib/old-api");
 var fs = require('fs');
 var https = require('https');
 var path = require('path');
