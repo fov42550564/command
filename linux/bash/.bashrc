@@ -41,7 +41,7 @@ shopt -s nocaseglob
 # alias cp='cp -i'
 # alias mv='mv -i'
 # alias rm='xxrm'
-alias rm='/Users/fang/command/linux/rm-trash/rm.rb'
+alias rm='~/command/linux/rm-trash/rm.rb'
 
 #path
 alias path='echo -e ${PATH//:/\\n}'
@@ -165,7 +165,7 @@ alias mhmv='cp /Volumes/home/方运江/*'
 #export DYLD_LIBRARY_PATH="$MAGICK_HOME/lib/"
 
 #set_path
-export PATH=$PATH:~/command:/usr/local/lib/node_modules/cordova/bin:/Users/fang/tools/phantomjs-2.1.1-macosx/bin:~/tools/wasm:~/tools/wabt
+export PATH=$PATH:~/command:/usr/local/lib/node_modules/cordova/bin:~/tools/phantomjs-2.1.1-macosx/bin:~/tools/wasm:~/tools/wabt
 
 
 #ndk
@@ -249,7 +249,7 @@ alias cnpm="npm --registry=https://registry.npm.taobao.org \
     --userconfig=$HOME/.cnpmrc"
 
 #hadoop
-export HADOOP_HOME=/Users/fang/tools/hadoop-2.7.3
+export HADOOP_HOME=~/tools/hadoop-2.7.3
 export PATH=$PATH:$HADOOP_HOME/bin
 export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
 export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib"
