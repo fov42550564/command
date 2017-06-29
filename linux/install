@@ -32,6 +32,9 @@ function install_single()
 
 function install_bash()
 {
+    sudo chmod 666 /etc/profile
+    sudo sed -i '/\/etc\/bashrc/a\\t[ -r ~/.bashrc ] && . ~/.bashrc' /etc/profile
+    sudo chmod 444 /etc/profile
     install_single bash/.bashrc .bashrc
     install_single bash/.inputrc .inputrc
     install_single bash/.gitconfig .gitconfig
