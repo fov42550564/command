@@ -54,7 +54,7 @@ function installBrew() {
 
 function main()
 {
-	if [ -n `which brew` ];then
+	if [ -z `which brew` ];then
 		installBrew
 	fi
 	xbrewSetInstallApps
