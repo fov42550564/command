@@ -46,9 +46,9 @@ function xbrewInstallApps()
 }
 
 function installBrew() {
-	curl -LsSf http://github.com/mxcl/homebrew/tarball/master | sudo tar xvz -C/usr/local --strip 1\
+	curl -LsSf http://github.com/mxcl/homebrew/tarball/master | sudo tar xvz -C/usr/local --strip 1
 	__skip_sudo
-	sudo chown -R fxp /usr/local
+	sudo chown -R `whoami` /usr/local
 	brew update
 }
 

@@ -175,7 +175,8 @@ export ANDROID_NDK_HOME=~/f/android/android-ndk-r9d
 export ANDROID_SDK_HOME=~/f/android/android-sdk
 else
 export ANDROID_NDK_HOME=~/tools/android-ndk-r10e
-export ANDROID_SDK_HOME=/usr/local/opt/android-sdk
+export ANDROID_SDK_HOME=~/Library/Android/sdk
+#export ANDROID_SDK_HOME=/usr/local/opt/android-sdk
 fi
 export ANDROID_NDK_PREFIX=$ANDROID_NDK_HOME/toolchains/arm-linux-androideabi-4.6/prebuilt/darwin-x86/bin/arm-linux-androideabi
 export ANDROID_SDK_PLATFORM_TOOLS=$ANDROID_SDK_HOME/platform-tools
