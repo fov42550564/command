@@ -17,6 +17,14 @@ _filter=""
 _logfile=""
 _oper=0
 
+function get_full_file()
+{
+	local file filename
+	filename=$(echo $1|sed 's/^\.\.\.\///')
+	file=$(find -name ${filename##*/}|grep ${filename})
+	echo $file|sed 's/^\.\///'
+}
+
 function git_single_command()
 {
 	local command title disp is_update
@@ -129,8 +137,8 @@ function git_get_log_version_files()
 	i=0
 	unset _files
 	for var in $s;do
-        if [ $_OS_ = "cygwin" ];then
-            _files[i]=$(echo $var|sed 's/^\.\.\./windows/')
+		if [ "${var:0:3}" = "..." ];then
+			_files[i]=$(get_full_file $var)
         else
             _files[i]=$var
         fi
@@ -183,6 +191,18 @@ function git_delete_history_force()
     git gc --aggressive --prune=now
 }
 
+function find_root_dir() {
+	dir=$(pwd)
+	while((1));do
+	 	found=$(find ${dir} -name .git)
+		if ! [ "${found}" = "" ];then
+			break
+		fi
+		dir=${dir%/*}
+	done
+	echo ${dir}
+}
+
 function show_help()
 {
 	local -a list
@@ -233,6 +253,8 @@ function main()
     fi
 
 	if ((_oper==5));then
+		dir=$(find_root_dir)
+		cd ${dir}
 		__show_progressbar 0.1 git_get_log_versions
 	elif ((_oper==4));then
 		__show_progressbar 0.1 git_get_add_files
