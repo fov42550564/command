@@ -15,6 +15,7 @@ _backup_path="~/command/gitbackup/"
 _dest_dir=""
 _filter=""
 _logfile=""
+_show_status=""
 _oper=0
 
 function get_full_file()
@@ -87,7 +88,8 @@ function git_edit_vi()
 function git_show_version_diff()
 {
 	ver=$1
-	git_single_command "git diff $ver^ $ver $_TARGET_" "no" "diff" "select bellow _files to show diff with preversion"
+	# git_single_command "git diff $ver^ $ver $_TARGET_" "no" "diff" "select bellow _files to show diff with preversion"
+	git_single_command "git show $ver" "no" "diff" "select bellow _files to show diff with preversion"
 }
 
 function git_log_by_version()
@@ -98,7 +100,9 @@ function git_log_by_version()
 	if [ -z "$ver" ];then
 		return
 	fi
-	if [ -z "$_logfile" ];then
+	if [ -n "$_show_status" ];then
+		git show $ver
+	elif [ -z "$_logfile" ];then
 		__show_progressbar 0.1 git_get_log_version_files "$ver"
 		git_show_version_diff $ver
 		unset _list_
@@ -136,11 +140,11 @@ function git_get_log_version_files()
 	s=`echo $rs|awk '{split($0,tmp)} END {for(i in tmp) print tmp[i]}'`
 	i=0
 	unset _files
-	for var in $s;do
-		if [ "${var:0:3}" = "..." ];then
-			_files[i]=$(get_full_file $var)
-        else
-            _files[i]=$var
+  for var in $s;do
+    if [ "${var:0:3}" = "..." ];then
+      _files[i]=$(get_full_file $var)
+    else
+      _files[i]=$var
         fi
 		let i++
 	done
@@ -210,6 +214,7 @@ function show_help()
 	list=("${list[@]}" "Usage :xgit [OPTIONS]")
 	list=("${list[@]}" "  -p [dest_dir]:copy change files to dest_dir and make dirs")
 	list=("${list[@]}" "  -l :show git log, use -f set file")
+	list=("${list[@]}" "  -s :must use with -l, exec git show version")
 	list=("${list[@]}" "  -t [filter]: set filter")
 	list=("${list[@]}" "  -f [file]: set one log file")
 	list=("${list[@]}" "  -n [version]: show at this version's log")
@@ -228,11 +233,12 @@ function main()
 	local oper_right ver files
 	oper_right=0
 
-	while getopts :p:darvlt:n:f:m:u:h opt;do
+	while getopts :p:darvlst:n:f:m:u:h opt;do
 		oper_right=1
 		case $opt in
 			p)_oper=0;_dest_dir="$OPTARG";;
 			d)_oper=1;;
+			s)_show_status=1;;
 			r)_oper=2;;
 			v)_oper=3;;
 			a)_oper=4;;
@@ -253,8 +259,10 @@ function main()
     fi
 
 	if ((_oper==5));then
-		dir=$(find_root_dir)
-		cd ${dir}
+		if [ -z "$_show_status" ];then
+			dir=$(find_root_dir)
+			cd ${dir}
+		fi
 		__show_progressbar 0.1 git_get_log_versions
 	elif ((_oper==4));then
 		__show_progressbar 0.1 git_get_add_files
