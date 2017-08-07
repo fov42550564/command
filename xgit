@@ -259,7 +259,7 @@ function main()
     fi
 
 	if ((_oper==5));then
-		if [ -z "$_show_status" ];then
+		if [ -z "$_show_status" -a -z "$_logfile" ];then
 			dir=$(find_root_dir)
 			cd ${dir}
 		fi
