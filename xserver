@@ -2,8 +2,12 @@
 
 var os = require('os');
 var fs = require('fs');
+var path = require('path');
 var express = require('express');
+var multer  = require('multer')
 var qrcode = require('./js/qrcode.js');
+var upload = multer({ dest: '.' });
+var shell = require('shelljs');
 
 function getIPAdress() {
     var interfaces = os.networkInterfaces();
@@ -36,6 +40,48 @@ function startServer(port, file) {
     });
     server.on('error', function (err) {
         startServer(port+1, file);
+    })
+}
+
+function startUploadServer(port) {
+    var server = app.listen(port);
+    app.post('/upload', upload.single('file'), function(req, res, next){
+        var file = req.file;
+        var dest = '没有上传任何文件';
+        if (file) {
+            dest = path.join(shell.pwd()+'', file.destination, file.originalname);
+            shell.mv(file.path, dest);
+            console.log(dest);
+        }
+        res.send(dest);
+    });
+    app.get('/*', function(req, res, next){
+        var form = `
+        <body style="display: flex; align-items: center; justify-content: center;">
+            <form action="/upload" method="post" enctype="multipart/form-data" style="transform:scale(3,3);">
+                <h2>文件上传</h2>
+                <input type="file" name="file" >
+                <br>
+                <br>
+                <br>
+                <input type="submit" value="上  传">
+            </form>
+        </body>
+        `;
+        res.send(form);
+    });
+
+    server.on('listening', function () {
+        const url = `http://${ip}:${port}`;
+        console.log(url);
+        qrcode.showCode(url);
+        process.on('SIGINT', ()=>{
+            qrcode.resetScreen();
+             process.exit(0);
+        })
+    });
+    server.on('error', function (err) {
+        startUploadServer(port+1);
     })
 }
 
@@ -91,9 +137,12 @@ if (param === '-h' || param === '--help') {
     console.log('');
     console.log('   -h|--help: show help');
     console.log('   -c|--create: create a app.js file for nodejs server');
+    console.log('   -u|--upload: upload files with multer');
     console.log('   -i|--image [name]: show iphone6 size for image');
     console.log('   file: show download qrcode for file');
     console.log('');
+} else if (param === '-u' || param === '--upload') {
+    startUploadServer(port);
 } else if (param === '-c' || param === '--create') {
     createServerFile('app.js');
 } else if (param === '-i' || param === '--image') {
