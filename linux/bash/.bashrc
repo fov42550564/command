@@ -39,12 +39,13 @@ shopt -s checkwinsize
 shopt -s nocaseglob
 
 #confirm to do command
-# alias rm='rm -i'
-# alias cp='cp -i'
-# alias mv='mv -i'
-# alias rm='xxrm'
+alias cp='cp -i'
+alias mv='mv -i'
+if __mac ;then
 alias rm='~/command/linux/rm-trash/rm.rb'
-
+else
+alias rm='rm -i'
+fi
 #path
 alias path='echo -e ${PATH//:/\\n}'
 alias libpath='echo -e ${LD_LIBRARY_PATH//:/\\n}'  
