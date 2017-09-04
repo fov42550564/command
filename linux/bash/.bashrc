@@ -184,7 +184,7 @@ export ANDROID_SDK_TOOLS=$ANDROID_SDK_HOME/tools
 export PATH="$PATH:$ANDROID_NDK_HOME:$ANDROID_SDK_TOOLS:$ANDROID_SDK_PLATFORM_TOOLS"
 #export NDK_MODULE_PATH=~/Desktop/cocos2d-x-2.2.2/cocos2dx/platform/third_party/android/prebuilt:~/Desktop/cocos2d-x-2.2.2
 #
-export ANDROID_HOME=/usr/local/opt/android-sdk
+export ANDROID_HOME=~/Library/Android/sdk
 #vim
 alias vi='vim'
 alias clearvim='rm -fr ~/.data/swap'
