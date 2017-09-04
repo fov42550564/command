@@ -11,6 +11,8 @@
 
 if [ $(uname) = "Darwin" ];then
     export _OS_=mac
+elif [ $(uname) = "Linux" ];then
+    export _OS_=linux
 else
     export _OS_=cygwin
 fi
@@ -192,17 +194,7 @@ alias viclear='rm -f ~/.data/swap/*.swp'
 
 #go
 alias xgo='go run'
-#node.js
 
-if __mac ;then
-alias nodex='iojs --es_staging --use-strict'
-alias noded='iojs --debug-brk'
-alias nodedd='node-inspector &'
-alias nodedc='xnw -l "http://127.0.0.1:8080/debug?port=5858"'
-export NODE_PATH="/usr/local/lib/node_modules/"
-else
-export NODE_PATH="/cygdrive/c/Documents and Settings/fang/Application Data/npm/node_modules"
-fi
 #atom-shell
 #alias atom='/Users/apple/node/atom-shell/Atom.app/Contents/MacOS/Atom'
 #node-webkit

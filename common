@@ -105,6 +105,14 @@ function __mac()
 ########################################
 	[ "$_OS_" = "mac" ]&&return $_TRUE_||return $_FALSE_
 }
+function __linux()
+{
+########################################
+#Usage:__mac
+#	  check if is linux system
+########################################
+	[ "$_OS_" = "linux" ]&&return $_TRUE_||return $_FALSE_
+}
 function __cygwin()
 {
 ########################################
