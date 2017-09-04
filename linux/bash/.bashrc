@@ -162,14 +162,12 @@ alias mhcd='cd /Volumes/home/方运江'
 alias mhopen='open /Volumes/home/方运江'
 alias mhmv='cp /Volumes/home/方运江/*'
 
-#ImageMagick
-#export MAGICK_HOME="$HOME/tools/ImageMagick-7.0.5"
-#export PATH="$MAGICK_HOME/bin:$PATH"
-#export DYLD_LIBRARY_PATH="$MAGICK_HOME/lib/"
-
 #set_path
+if __cygwin ;then
 export PATH=$PATH:~/command:/usr/local/lib/node_modules/cordova/bin:~/tools/phantomjs-2.1.1-macosx/bin:~/tools/wasm:~/tools/wabt
-
+elif __linux ;then
+export PATH=$PATH:~/command:/root/tools/node-v8.4.0-linux-x64/bin
+fi
 
 #ndk
 alias ndk='ndk-build'
@@ -247,3 +245,4 @@ export HADOOP_HOME=~/tools/hadoop-2.7.3
 export PATH=$PATH:$HADOOP_HOME/bin
 export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
 export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib"
+
