@@ -103,7 +103,7 @@ function __mac()
 #Usage:__mac
 #	  check if is mac system
 ########################################
-	[ "$_OS_" = "mac" ]&&return $_TRUE_||return $_FALSE_
+  [ $(uname) = "Darwin" ]&&return $_TRUE_||return $_FALSE_
 }
 function __linux()
 {
@@ -111,7 +111,7 @@ function __linux()
 #Usage:__mac
 #	  check if is linux system
 ########################################
-	[ "$_OS_" = "linux" ]&&return $_TRUE_||return $_FALSE_
+  [ $(uname) = "Linux" ]&&return $_TRUE_||return $_FALSE_
 }
 function __cygwin()
 {
@@ -119,7 +119,7 @@ function __cygwin()
 #Usage:__cygwin
 #	  check if is cygwin system
 ########################################
-	[ "$_OS_" = "cygwin" ]&&return $_TRUE_||return $_FALSE_
+  [ $(uname) = "cygwin" ]&&return $_TRUE_||return $_FALSE_
 }
 function __debug()
 {

@@ -9,13 +9,6 @@
 
 #source ~/.profile
 
-if [ $(uname) = "Darwin" ];then
-    export _OS_=mac
-elif [ $(uname) = "Linux" ];then
-    export _OS_=linux
-else
-    export _OS_=cygwin
-fi
 shopt -s  expand_aliases
 
 source ~/command/common
@@ -138,7 +131,7 @@ function wh() { cd $(which "$1"); }
 #diffmerge
 function di() {
     local tool first second
-    if [ $_OS_ = "mac" ];then
+    if __mac;then
         tool='diffmerge.sh'
     else
         tool='bcompare'
@@ -163,15 +156,15 @@ alias mhopen='open /Volumes/home/方运江'
 alias mhmv='cp /Volumes/home/方运江/*'
 
 #set_path
-if __cygwin ;then
-export PATH=$PATH:~/command:/usr/local/lib/node_modules/cordova/bin:~/tools/phantomjs-2.1.1-macosx/bin:~/tools/wasm:~/tools/wabt
-elif __linux ;then
-export PATH=$PATH:~/command:/root/tools/node-v8.4.0-linux-x64/bin
+if __mac;then
+  export PATH=$PATH:~/command:/usr/local/lib/node_modules/cordova/bin:~/tools/phantomjs-2.1.1-macosx/bin:~/tools/wasm:~/tools/wabt
+elif __linux;then
+  export PATH=$PATH:~/command:/root/tools/node/bin:/root/tools/mongodb/bin
 fi
 
 #ndk
 alias ndk='ndk-build'
-if [ "$_OS_" = "cygwin" ];then
+if __cygwin;then
 export ANDROID_NDK_HOME=~/f/android/android-ndk-r9d
 export ANDROID_SDK_HOME=~/f/android/android-sdk
 else
