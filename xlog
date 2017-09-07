@@ -100,24 +100,21 @@ function read_pbpaste_data_to_file()
 	[ $_append -eq 0 ] && __backup_file "$file"
 	[ -z "$file" ]&&return
 
-	case $_OS_ in
-		mac)
-			if [ $_append -eq 0 ];then
-				pbpaste > "$file"
-			else
-				echo>>"$file"
-				pbpaste >> "$file"
-			fi
-			;;
-		cygwin) 
-			if [ $_append -eq 0 ];then
-				cat /dev/clipboard > "$file"
-			else
-				echo>>"$file"
-				cat /dev/clipboard >> "$file"
-			fi
-			;;
-	esac
+  if __mac;then
+    if [ $_append -eq 0 ];then
+      pbpaste > "$file"
+    else
+      echo>>"$file"
+      pbpaste >> "$file"
+    fi
+  elif __cygwin;then
+    if [ $_append -eq 0 ];then
+      cat /dev/clipboard > "$file"
+    else
+      echo>>"$file"
+      cat /dev/clipboard >> "$file"
+    fi
+  fi
 
 	edit_with_vi "$file"
 
@@ -127,7 +124,7 @@ function read_pbpaste_data_to_file()
 function log_for_android()
 {
 	local file
-	
+
 	#__backup_file "$file"
 	file=$1
 	[ -f $file ] && rm "$file"
@@ -243,4 +240,4 @@ function main()
 	esac
 }
 
-main "$@" 
+main "$@"

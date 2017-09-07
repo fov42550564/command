@@ -89,6 +89,7 @@ function createServerFile(filename) {
     code = 'var express = require("express");';
     code += '\nvar bodyParser = require("body-parser");';
     code += '\nvar fs = require("fs");';
+    code += '\nvar app = express();';
     code += '\n';
     code += '\napp.use(express.static(__dirname + "/public"));';
     code += '\napp.use(bodyParser.urlencoded({ extended: false }));';

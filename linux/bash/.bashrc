@@ -100,9 +100,9 @@ alias md='mkdir -p'
 
 
 #show grep color
-alias grep='grep --color' 
+alias grep='grep --color'
 alias egrep='egrep --color=auto'
-alias fgrep='fgrep --color=auto'    
+alias fgrep='fgrep --color=auto'
 
 alias dt='__set_dest_path'
 alias pcs='xpcs'
