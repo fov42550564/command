@@ -15,7 +15,7 @@ function xssh_enter()
 		spawn ssh root@${ip};
 		expect {
             \"*password:\" {send \"${password}\r\"; exp_continue}
-            \"*#\" {send \" cd  ${remote_root}\rPS1=\'\\\u@\\\w\\\n$\'\r\"}
+            \"*#\" {send \" cd  ${remote_root}\r\"}
 		}
 		interact
 	"
