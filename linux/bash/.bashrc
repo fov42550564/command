@@ -32,8 +32,8 @@ shopt -s checkwinsize
 shopt -s nocaseglob
 
 #confirm to do command
-alias cp='cp -i'
-alias mv='mv -i'
+#alias cp='cp -i'
+#alias mv='mv -i'
 if __mac ;then
 alias rm='~/command/linux/rm-trash/rm.rb'
 else

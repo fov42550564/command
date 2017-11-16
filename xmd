@@ -1,0 +1,101 @@
+#!/bin/bash
+
+#初始化：在目录~/command/js/markdown中执行：git clone https://github.com/fov42550564/api .github
+
+# api.md制作规则
+# '#'用来定制目录
+# '##' 用来定制分类
+# '###' 用来定制api
+# '#####' 用来定制目录api
+# '######' 用来定制类型
+#
+source ~/command/common
+_github_dir="$HOME/command/js/markdown/.github"
+_url="https://github.com/fov42550564/api/blob/master/api.md"
+_src_file=''
+_dest_file=`pwd`/api.html
+
+function genCatalog() {
+    file=${_src_file}
+    tmpfile=${_github_dir}/.__tmp.md
+
+    if ! [ -f "${_src_file}" ];then
+        echo "src file: ${_src_file} is not exist"
+        exit
+    fi
+
+    cp ${file} ${tmpfile}
+    vim -e -s -c ":g/^# 目录/, /---/d" -c "v/^### \|^## \|\(^### .*\n\)\@<=- \`.*\`/d"  -c ":%s/.*\[\(.*\)\].*/\1/" -c ":%s/\n- \`\(.*\)\`/@\1/" -c ":let i=1|g!/^##/s/\(.*\)@\(.*\)/\='##### '.i.'. ['.submatch(1).'('.submatch(2).')](#'.i.'-'.submatch(1).')'/|let i+=1" -c ":wq" ${tmpfile}
+
+    echo >> ${tmpfile}
+    echo --- >> ${tmpfile}
+    echo >> ${tmpfile}
+
+    vim -e -s -c ":g/^# 目录/, /---/d" -c "1s/^/# 目录/" -c ":r ${tmpfile}" -c ":wq" ${file}
+
+    cp ${file} ${tmpfile}
+    vim -e -s -c "v/^### \|\(^### .*\n\)\@<=- \`.*\`/d"  -c ":%s/.*\[\(.*\)\].*/\1/" -c ":%s/\n- \`\(.*\)\`/@\1/" -c "%s/\(.*\)@\(.*\)/\='%s;^### .*\\\\['.submatch(1).'\\\\].*;### '.line('.').'. ['.submatch(1).'](#'.line('.').'-'.submatch(1).tolower(submatch(2)).');'/" -c ":wq" ${tmpfile}
+
+    cat ${tmpfile} | xargs -I bbbb vim -e -s -c "bbbb" -c "wq" ${file}
+
+    rm -f ${tmpfile}
+}
+
+function getHtml() {
+    if ! [ -f "${_src_file}" ];then
+        echo "src file: ${_src_file} is not exist"
+        exit
+    fi
+    mkdir -p `dirname "${_dest_file}"`
+    cp "${_src_file}" "${_github_dir}/api.md"
+    pushd ${_github_dir}
+    git ci -m "fix"
+    git pu
+    popd
+    node ${_github_dir}/../lib/getHtml.js "${_url}"
+    mv ${_github_dir}/../lib/api.html ${_dest_file}
+    open ${_dest_file}
+}
+
+function openHtmlOnline() {
+    open "${_url}"
+}
+
+function show_help()
+{
+	local -a list
+	list="help"
+	list=("${list[@]}" "Usage :xapi [OPTIONS]")
+	list=("${list[@]}" "  -c [md file]:gen catalog")
+	list=("${list[@]}" "  -i [md file]:get md.html and open it")
+	list=("${list[@]}" "  -d :set dest file [default: `pwd`/api.html]")
+	list=("${list[@]}" "  -l :open online html")
+	list=("${list[@]}" "  -h :show help ")
+	__msgbox "${list[@]}"
+}
+
+function main()
+{
+    local oper oper_right=0
+	while getopts :c:i:d:lh opt;do
+		oper_right=1
+		case $opt in
+            d)_dest_file="$OPTARG";;
+			c)oper=0;_src_file="$OPTARG";;
+			i)oper=1;_src_file="$OPTARG";;
+			l)oper=2;;
+			h)show_help;exit;;
+			*)show_help;exit;;
+		esac
+	done
+
+	[ $oper_right -eq 0 ] && show_help && exit
+
+	case $oper in
+		0)genCatalog;;
+		1)getHtml;;
+		2)openHtmlOnline;;
+	esac
+}
+
+main "$@"
