@@ -1,6 +1,15 @@
 #!/bin/bash
 
-cp "./snippets/JavaScript (JSX).cson" ~/.atom/packages/react/snippets
+if [ "$1" = "--help" -o  "$1" = "-h" ];then
+  echo ./install [--es6]
+  exit
+fi
+
+if [ "$1" = "--es6" ];then
+  cp "./snippets/JavaScript (JSX6).cson" "$HOME/.atom/packages/react/snippets/JavaScript (JSX).cson"
+else
+  cp "./snippets/JavaScript (JSX).cson" "$HOME/.atom/packages/react/snippets/JavaScript (JSX).cson"
+fi
 cp ./keymap/keymap.cson ~/.atom/
 cp ./config/config.cson ~/.atom/
 
