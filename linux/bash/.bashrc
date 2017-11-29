@@ -159,7 +159,7 @@ alias mhmv='cp /Volumes/home/方运江/*'
 if __mac;then
   export PATH=$PATH:~/command:/usr/local/lib/node_modules/cordova/bin:~/tools/phantomjs-2.1.1-macosx/bin:~/tools/wasm:~/tools/wabt
 elif __linux;then
-  export PATH=$PATH:~/command:/root/tools/node/bin:/root/tools/node/lib/node_modules/npm/node_modules/node-gyp/bin:/root/tools/mongodb/bin
+  export PATH=$PATH:~/command:/root/tools/node/bin:/root/tools/node/lib/node_modules/npm/bin/node-gyp-bin:/root/tools/mongodb/bin
   export JAVA_HOME=~/tools/jdk1.8.0_144
 fi
 
