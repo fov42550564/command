@@ -122,10 +122,10 @@ function showHelp() {
 }
 function main() {
     var args = process.argv.splice(2);
-    if ( args[0] === '-h' ||  args[0]==='--help' ) {
+    const n = args[0]*1;
+    if ( args[0] === '-h' ||  args[0]==='--help' || !(n>2) || !_.isInteger(n)) {
         showHelp();
     }
-    const n = args[0]*1;
     const result = !(n & 3) ? magic4nTimes(n) : !(n & 1) ? magic4n2Times(n) : magicOdd(n);
     printResult(result, n);
     magicValidate(result, n);
