@@ -3,8 +3,9 @@
 var args = process.argv.slice(2);
 try {
     var params = args.join('');
-    var res=eval(params.replace('[', '(').replace(']', ')'));
-    console.log(res);
+    params = params.replace('[', '(').replace(']', ')');
+    params = params.replace('m.', 'Math.')
+    console.log(eval(params));
 } catch (e) {
     console.log('长度:'+params.length);
 }
