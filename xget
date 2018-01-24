@@ -2,6 +2,7 @@
 
 const request = require('superagent');
 const program = require('commander');
+const _ = require('lodash');
 
 program
 .version('0.0.1')
@@ -16,6 +17,12 @@ request.get(url)
     if (error) {
         console.error('recv error:', error);
     } else {
-        console.log(res.text);
+        if (res.text) {
+            console.log(res.text);
+        } else if (_.size(res.body)) {
+            console.log(res.body);
+        } else {
+            console.log(res.res.headers);
+        }
     }
 });
