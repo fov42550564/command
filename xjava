@@ -45,7 +45,7 @@ function xjavaGetFileName()
 	local class_name file_name package
 	package="$1"
 	class_name="$2"
-	if [ -n "$package" ];then 
+	if [ -n "$package" ];then
 		mkdir -p "src/${package//.//}"
 		file_name="src/${package//.//}/$class_name.java"
 	else
@@ -57,7 +57,7 @@ function xjavaGetFileName()
 function xjavaCreateClass()
 {
 	local class_name file_name package
-	
+
 	class_name=${_full_class_name##*.}
 	package=$(xjavaGetPackage "$class_name")
 	file_name=$(xjavaGetFileName "$package" "$class_name")
@@ -109,14 +109,14 @@ function xjavaCompileJava()
 	else
 		javac -d bin/classes -bootclasspath $android_skd_jar $file_name || return $_FALSE_
 	fi
-	
+
 	xjavaGetJniFlag "$file_name"
 	if [ $_jni -eq 1 -a -f "jni/$class_name"jni.c ];then
 		mkdir -p libs
 		gcc -g -dynamiclib -undefined suppress -flat_namespace jni/"$class_name"jni.c -o libs/lib"$class_name"jni.dylib -I/System/Library/Frameworks/JavaVM.framework/Headers||return $_FALSE_
 		echo gcc -dynamiclib -undefined suppress -flat_namespace jni/"$class_name"jni.c -o libs/lib"$class_name"jni.dylib -I/System/Library/Frameworks/JavaVM.framework/Headers
 	fi
-	
+
 	return $_TRUE_
 }
 
@@ -160,10 +160,10 @@ function xjavaCompressionJar()
 	[ -d ../libs ] && cp -r ../libs libs
 
 	echo "Manifest-Version: 1.0" > manifest.mf
-	echo "Created-By: $author" >> manifest.mf 
+	echo "Created-By: $author" >> manifest.mf
 	echo "Class-Path: classes" >> manifest.mf
 	echo "Main-Class: $_full_class_name" >> manifest.mf
-	echo "create manifest.mf complete ... " 
+	echo "create manifest.mf complete ... "
 
   	list=`ls`
     list=${list/manifest.mf/}
@@ -194,10 +194,11 @@ function xjavaCreateJniNativeFile()
 
 	javah -classpath bin/classes -o $header_file -jni $_full_class_name||return $_FALSE_
 
-	__backup_file "$src_file"	
-	echo "#include \""$class_name"jni.h\"" > $src_file
+	__backup_file "$src_file"
+	echo "#include <stdio.h>" > $src_file
+	echo "#include \""$class_name"jni.h\"" >> $src_file
 	echo  >> $src_file
-	$_SED_ -n '/JNIEXPORT/,/);/p' $header_file|$_SED_ 'N;s/\n//'|$_SED_ 's/  (/(/;s/;/{\r\n}/;s/JNIEnv \*/JNIEnv *env/;s/jobject/jobject obj/;s/jclass/jclass cls/' >> $src_file
+	$_SED_ -n '/JNIEXPORT/,/);/p' $header_file|$_SED_ 'N;s/\n//'|$_SED_ 's/  (/(/;s/;/{\n\tprintf("hello jni\\n");\n}/;s/JNIEnv \*/JNIEnv *env/;s/jobject/jobject obj/;s/jclass/jclass cls/' >> $src_file
 	echo  >> $src_file
 	return $_TRUE_
 }
@@ -219,7 +220,19 @@ function xjavaShowHelp()
 	list=("${list[@]}" "-j :has native jni functions,only with -c")
 	list=("${list[@]}" "-h :show help")
 	list=("${list[@]}" "")
-	list=("${list[@]}" "Author:fangyunjiang@longmaster.com.cn")
+	list=("${list[@]}" "without jni:")
+	list=("${list[@]}" "xjava -n com.xx.name -c")
+	list=("${list[@]}" "xjava -n com.xx.name -b")
+	list=("${list[@]}" "xjava -n com.xx.name -e")
+	list=("${list[@]}" "")
+	list=("${list[@]}" "with jni:")
+	list=("${list[@]}" "xjava -n com.xx.name -c -j")
+	list=("${list[@]}" "xjava -n com.xx.name -b")
+	list=("${list[@]}" "xjava -n com.xx.name -f")
+	list=("${list[@]}" "xjava -n com.xx.name -b")
+	list=("${list[@]}" "xjava -n com.xx.name -e")
+	list=("${list[@]}" "")
+	list=("${list[@]}" "Author:fangyunjiang")
 	list=("${list[@]}" "Version:V1.0")
 
 	__msgbox "${list[@]}"
@@ -254,4 +267,3 @@ function main()
 }
 
 main "$@"
-
