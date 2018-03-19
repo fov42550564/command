@@ -240,3 +240,7 @@ export PATH=$PATH:$HADOOP_HOME/bin
 export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
 export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib"
 
+
+export EMSDK=~/tools/emsdk-portable
+export PATH=$PATH:$EMSDK/emscripten/1.37.35
+
