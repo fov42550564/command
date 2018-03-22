@@ -218,6 +218,7 @@ alias st='svn st|grep -v node_modules'
 #pod
 alias pinstall='pod install --no-repo-update'
 alias xandroid='react-native run-android'
+alias xandroidinstall='xserver android/app/build/outputs/apk/app-debug.apk'
 
 #phantomjs
 alias pt='~/tools/phantomjs-2.1.1-macosx/bin/phantomjs'
