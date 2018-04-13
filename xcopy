@@ -22,6 +22,8 @@ if (($# < 2));then
     echo "  xcopy oldname newname [-s]"
     echo "  规则：名称采用驼峰格式或者火箭式, 如: xcopy shopMemberModel ClientModel 或者 xcopy ShopMemberModel ClientModel"
     echo "  命令执行修改： shopMemberModel->clientModel; ShopMemberModel->ClientModel; SHOP_MEMBER_MODEL->CLIENT_MODEL"
+    echo ""
+    echo "  同时也可以当做replace工具，直接在某个文件夹走执行提替换"
     exit
 fi
 
@@ -53,8 +55,8 @@ fi
 _oldname2=`echo $_oldname|sed 's/[A-Z]/_&/g'|sed 's/[a-z]/\u&/g'`
 _newname2=`echo $_newname|sed 's/[A-Z]/_&/g'|sed 's/[a-z]/\u&/g'`
 
-cp -r $1 $2
-cd $2
+cp -r $1 $2 2>/dev/null
+cd $2 2>/dev/null
 
 echo xfind -n "*${_oldname}*" -r "${_oldname}:${_newname}"
 xfind -n "*${_oldname}*" -r "${_oldname}:${_newname}"
