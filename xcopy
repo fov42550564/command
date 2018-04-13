@@ -2,7 +2,7 @@
 #############################################
 # author:fang
 # version : v1.0
-# name  : xrep
+# name  : xcopy
 # dispcripe: replace folder and file
 # CopyRight@fangyunjiang[42550564@qq.com]
 #############################################
@@ -14,16 +14,14 @@ _oldname1=""
 _newname1=""
 _oldname2=""
 _newname2=""
-_strict=""
 _oldnameFlag=0
 _newnameFlag=0
 
 if (($# < 2));then
     echo "Usage:"
-    echo "  xrep oldname newname [-s]"
-    echo "  规则：名称采用驼峰格式或者火箭式, 如: xrep shopMemberModel ClientModel 或者 xrep ShopMemberModel ClientModel"
+    echo "  xcopy oldname newname [-s]"
+    echo "  规则：名称采用驼峰格式或者火箭式, 如: xcopy shopMemberModel ClientModel 或者 xcopy ShopMemberModel ClientModel"
     echo "  命令执行修改： shopMemberModel->clientModel; ShopMemberModel->ClientModel; SHOP_MEMBER_MODEL->CLIENT_MODEL"
-    echo "  如果第三个参数是 -s, 则只修改完全匹配, 只修改：shopMemberModel->clientModel"
     exit
 fi
 
