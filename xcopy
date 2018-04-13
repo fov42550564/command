@@ -56,11 +56,17 @@ _newname2=`echo $_newname|sed 's/[A-Z]/_&/g'|sed 's/[a-z]/\u&/g'`
 cp -r $1 $2
 cd $2
 
+echo xfind -n "*${_oldname}*" -r "${_oldname}:${_newname}"
 xfind -n "*${_oldname}*" -r "${_oldname}:${_newname}"
+echo xfind -v "-c \"%s/${_oldname}/${_newname}/g\""
 xfind -v "-c \"%s/${_oldname}/${_newname}/g\""
 
+echo xfind -n "*${_oldname1}*" -r "${_oldname1}:${_newname1}"
 xfind -n "*${_oldname1}*" -r "${_oldname1}:${_newname1}"
+echo xfind -v "-c \"%s/${_oldname1}/${_newname1}/g\""
 xfind -v "-c \"%s/${_oldname1}/${_newname1}/g\""
 
+echo xfind -n "*${_oldname2}*" -r "${_oldname2}:${_newname2}"
 xfind -n "*${_oldname2}*" -r "${_oldname2}:${_newname2}"
+echo xfind -v "-c \"%s/${_oldname2}/${_newname2}/g\""
 xfind -v "-c \"%s/${_oldname2}/${_newname2}/g\""

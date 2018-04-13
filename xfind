@@ -114,9 +114,9 @@ function find_rename()
 			return
 		fi
 		if [ -z "$_str" ];then
-			find "$_dir" -"$_iname"name "*$_name*"|awk '{oldname=$1;sub(/'$old_s'/,"'$new_s'");print oldname, $1}'|xargs -t -n2 mv
+			find "$_dir" -"$_iname"name "*$_name*"|awk '{oldname=$1;sub(/'$old_s'/,"'$new_s'");print oldname, $1}'|xargs -t -n2 mv 2>/dev/null
 		else
-			find "$_dir" -type f -"$_iname"name "*$_name*"|xargs egrep -l $_ignorcase "$_str"|awk '{oldname=$1;sub(/'$old_s'/,"'$new_s'");print oldname, $1}'|xargs -t -n2 mv
+			find "$_dir" -type f -"$_iname"name "*$_name*"|xargs egrep -l $_ignorcase "$_str"|awk '{oldname=$1;sub(/'$old_s'/,"'$new_s'");print oldname, $1}'|xargs -t -n2 mv 2>/dev/null
 		fi
 	fi
 }
