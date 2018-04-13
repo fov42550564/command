@@ -1,9 +1,68 @@
 #!/bin/bash
+#############################################
+# author:fang
+# version : v1.0
+# name  : xrep
+# dispcripe: replace folder and file
+# CopyRight@fangyunjiang[42550564@qq.com]
+#############################################
 
-oldname=$1
-newname=$2
 
-[ -z "$newname" ]&&echo "input oldname newname"&&exit
+_oldname=""
+_newname=""
+_oldname1=""
+_newname1=""
+_oldname2=""
+_newname2=""
+_strict=""
+_oldnameFlag=0
+_newnameFlag=0
 
-xfind -n "*${oldname}*" -r "${oldname}:${newname}"
-xfind -v "-c \"%s/${oldname}/${newname}/g\""
+if (($# < 2));then
+    echo "Usage:"
+    echo "  xrep oldname newname [-s]"
+    echo "  规则：名称采用驼峰格式或者火箭式, 如: xrep shopMemberModel ClientModel 或者 xrep ShopMemberModel ClientModel"
+    echo "  命令执行修改： shopMemberModel->clientModel; ShopMemberModel->ClientModel; SHOP_MEMBER_MODEL->CLIENT_MODEL"
+    echo "  如果第三个参数是 -s, 则只修改完全匹配, 只修改：shopMemberModel->clientModel"
+    exit
+fi
+
+echo $1 | grep '^[A-Z]' > /dev/null
+if [ $? -ne 0 ];then
+    _oldnameFlag=1;
+fi
+
+echo $2 | grep '^[A-Z]' > /dev/null
+if [ $? -ne 0 ];then
+    _newnameFlag=1;
+fi
+
+if [ $_oldnameFlag = 1 ];then
+    _oldname="$1"
+    _oldname1=`echo $1|sed 's/^[a-z]/\u&/'`
+else
+    _oldname1="$1"
+    _oldname=`echo $1|sed 's/^[A-Z]/\l&/'`
+fi
+
+if [ $_newnameFlag = 1 ];then
+    _newname="$2"
+    _newname1=`echo $2|sed 's/^[a-z]/\u&/'`
+else
+    _newname1="$2"
+    _newname=`echo $2|sed 's/^[A-Z]/\l&/'`
+fi
+_oldname2=`echo $_oldname|sed 's/[A-Z]/_&/g'|sed 's/[a-z]/\u&/g'`
+_newname2=`echo $_newname|sed 's/[A-Z]/_&/g'|sed 's/[a-z]/\u&/g'`
+
+cp -r $1 $2
+cd $2
+
+xfind -n "*${_oldname}*" -r "${_oldname}:${_newname}"
+xfind -v "-c \"%s/${_oldname}/${_newname}/g\""
+
+xfind -n "*${_oldname1}*" -r "${_oldname1}:${_newname1}"
+xfind -v "-c \"%s/${_oldname1}/${_newname1}/g\""
+
+xfind -n "*${_oldname2}*" -r "${_oldname2}:${_newname2}"
+xfind -v "-c \"%s/${_oldname2}/${_newname2}/g\""
