@@ -1,11 +1,20 @@
-// DBQuery.prototype._prettyShell = true;
-
 Object.defineProperty(this, "ls", {
     get: function() {
         const collections = db.getCollectionNames();
         collections.forEach(function(value) {
             print(value);
         });
+    },
+});
+
+Object.defineProperty(this, "_", {
+    get: function() {
+        if (DBQuery.prototype._prettyShell) {
+            DBQuery.prototype._prettyShell = false;
+        } else {
+            DBQuery.prototype._prettyShell = true;
+        }
+        print('pretty format change to ' + DBQuery.prototype._prettyShell);
     },
 });
 
