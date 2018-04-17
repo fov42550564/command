@@ -38,6 +38,7 @@ function install_bash()
     install_single bash/.bashrc .bashrc
     install_single bash/.inputrc .inputrc
     install_single bash/.gitconfig .gitconfig
+    install_single bash/.mongorc.js .mongorc.js
     if (($_platforms&$platforms_cygwin));then
         install_single bash/.minttyrc .minttyrc
     fi
