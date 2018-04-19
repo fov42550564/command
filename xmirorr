@@ -1,0 +1,51 @@
+#!/bin/bash
+
+projects=(
+PDClient
+pdshop
+PDSalesman
+PDDriver
+pdshopserver
+pdshop_client_pc
+pdshop_shop_pc
+)
+username=42550564@qq.com
+password=$1
+
+function clone_mirror() {
+	expect -c "
+	set timeout 30000;
+	spawn git clone --mirror https://gitee.com/simiantong/${1}.git;
+	expect {
+		\"Username for*:\" {send \"${username}\r\"; exp_continue}
+		\"Password for*:\" {send \"${password}\r\"}
+	}
+	interact
+	"
+}
+
+function update_mirror() {
+	expect -c "
+	set timeout 30000;
+	spawn git push --mirror https://gitee.com/simiantong/${1}.git;
+	expect {
+		\"Username for*:\" {send \"${username}\r\"; exp_continue}
+		\"Password for*:\" {send \"${password}\r\"}
+	}
+	interact
+	"
+}
+
+function clone_all_mirror() {
+	for project in ${projects[@]};do
+		clone_mirror ${project}
+	done
+}
+
+function update_all_mirror() {
+	for project in ${projects[@]};do
+		update_mirror ${project}
+	done
+}
+
+clone_all_mirror
