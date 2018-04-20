@@ -18,6 +18,13 @@ function showList(list) {
     line && print(line);
 }
 
+function id(s) {
+    if (/[a-z0-9]{24}/.test(s)) {
+        return ObjectId(s);
+    }
+    return s;
+}
+
 Object.defineProperty(this, "ls", {
     get: function() {
         const collections = db.getCollectionNames();
@@ -91,10 +98,16 @@ DBCollection.prototype.find = function (query, fields, limit, skip, batchSize, o
 
     if (typeof query === 'string') {
         if (/[a-z0-9]{24}/.test(query)) {
-            query = {_id: ObjectId(query)};
+            query = {$or: keys.concat('_id').map(o=>({[o]: ObjectId(query)}))};
         } else {
             query = new RegExp(query);
         }
+    } else if (typeof query === 'object' && !(query instanceof RegExp)) {
+        Object.keys(query).map(k=>{
+            if (/[a-z0-9]{24}/.test(query[k])) {
+                query[k] = ObjectId(query[k]);
+            }
+        });
     }
     if (query instanceof RegExp) {
          query = {$or: keys.map(o=>({[o]: query}))};
