@@ -80,14 +80,21 @@ const defaultFind = DBCollection.prototype.find;
 DBCollection.prototype.find = function (query, fields, limit, skip, batchSize, options) {
     let obj = {};
     let keys = Object.keys(defaultFind.call(this, {}, {_id: 0, __v: 0}, 1, 0).toArray()[0]||{});
-    if (typeof fields === 'string' || fields instanceof RegExp) {
-        fields = [ fields ];
+    if (typeof fields === 'string') {
+        fields = fields.split(' ').filter(o=>!!o);
     }
     if (fields instanceof Array) {
-        fields = fields.map(o=>new RegExp(o));
+        fields = fields.map(o=>{
+            let unmatch = false;
+            if (o[0] === '-') {
+                unmatch = true;
+                o = o.slice(1);
+            }
+            return { unmatch, reg: new RegExp(o)};
+        });
         keys.filter(o => {
             for (let f of fields) {
-                if (f.test(o)) {
+                if (f.reg.test(o)) {
                     return true;
                 }
             }
@@ -100,17 +107,14 @@ DBCollection.prototype.find = function (query, fields, limit, skip, batchSize, o
         if (/[a-z0-9]{24}/.test(query)) {
             query = {$or: keys.concat('_id').map(o=>({[o]: ObjectId(query)}))};
         } else {
-            query = new RegExp(query);
+            query = {$or: keys.map(o=>({[o]: new RegExp(query)}))};
         }
-    } else if (typeof query === 'object' && !(query instanceof RegExp)) {
+    } else if (typeof query === 'object') {
         Object.keys(query).map(k=>{
             if (/[a-z0-9]{24}/.test(query[k])) {
                 query[k] = ObjectId(query[k]);
             }
         });
-    }
-    if (query instanceof RegExp) {
-         query = {$or: keys.map(o=>({[o]: query}))};
     }
 
     return defaultFind.call(this, query, obj, limit, skip, batchSize, options);
