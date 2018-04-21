@@ -7,9 +7,9 @@ String.prototype.padRight = function(total, pad) {
 }
 
 function showList(list) {
-    var cnt = 0;
-    var line = '';
-    for (var i in list) {
+    let cnt = 0;
+    let line = '';
+    for (let i in list) {
         const item = list[i];
         if (cnt++ < 4) {
             line += '    ' + item.padRight(30);
@@ -96,22 +96,27 @@ Object.defineProperty(this, "_189", {
 const defaultFind = DBCollection.prototype.find;
 DBCollection.prototype.find = function (query, fields, limit, skip, batchSize, options) {
     const name = this.getName();
-    var obj = {};
-    var keys = Object.keys(defaultFind.call(this, {}, {_id: 0, __v: 0}, 1, 0).toArray()[0]||{}).filter(o=>{
+    let obj = {};
+    let keys = Object.keys(defaultFind.call(this, {}, {_id: 0, __v: 0}, 1, 0).toArray()[0]||{}).filter(o=>{
         if (!FILTERS[name] || FILTERS[name].indexOf(o) === -1) {
             return true;
         }
     });
 
-    if (fields && typeof fields === 'string') {
+    if (!fields) {
+        obj['__v'] = 0;
+        if (FILTERS[name]) {
+            FILTERS[name].forEach(o=>obj[o] = 0);
+        }
+    } else if (fields && typeof fields === 'string') {
         fields = fields.split(' ').filter(o=>!!o);
-        var match = true;
+        let match = true;
         if (fields[0][0] === '-') {
             fields[0] = fields[0].slice(1);
             match = false;
         }
         keys.filter(o => {
-            for (var f of fields) {
+            for (let f of fields) {
                 if (new RegExp(f).test(o)) {
                     return true;
                 }
