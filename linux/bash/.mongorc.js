@@ -38,7 +38,7 @@ Object.defineProperty(this, "_h", {
         print('     _host:  show host');
         print('     _189:   switch to 189 server');
         print('     find:   find(id/str/obj, \'[-]xx xx ...\'/{xx:1, ...})');
-        print('     update: find(id/obj, {xx:xx, ...})');
+        print('     update: find(id/obj, {xx:xx, ...}), unset can be { $unset: { xx: 1 } } or { xx: \'$unset\' }');
     },
 });
 
@@ -158,7 +158,7 @@ DBCollection.prototype.update = function (query, obj, upsert, multi) {
     if (!obj['$set'] || !obj['$unset']) {
         const newObj = {};
         Object.keys(obj).forEach((k)=>{
-            if (obj[k] !== 'unset') {
+            if (obj[k] !== '$unset') {
                 !newObj['$set'] &&( newObj['$set'] = {});
                 newObj['$set'][k] = obj[k];
             } else {
