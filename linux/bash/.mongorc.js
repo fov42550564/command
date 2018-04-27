@@ -33,6 +33,7 @@ Object.defineProperty(this, "_h", {
     get: function() {
         print('show self defined command:');
         print('     ls:     show databases and collections');
+        print('     id:     wrapper ObjectId only if like 24 bit _id');
         print('     _:      switch pretty shell');
         print('     _n:     set shellBatchSize, e.g: _n=10');
         print('     _host:  show host');
@@ -139,11 +140,7 @@ DBCollection.prototype.find = function (query, fields, limit, skip, batchSize, o
             query = {$or: keys.map(o=>({[o]: new RegExp(query)}))};
         }
     } else if (typeof query === 'object') {
-        Object.keys(query).map(k=>{
-            if (/[a-z0-9]{24}/.test(query[k])) {
-                query[k] = ObjectId(query[k]);
-            }
-        });
+        Object.keys(query).forEach(k=>query[k]=id(query[k]));
     }
 
     return defaultFind.call(this, query, obj, limit, skip, batchSize, options);
@@ -154,13 +151,15 @@ const defaultUpdate =  DBCollection.prototype.update;
 DBCollection.prototype.update = function (query, obj, upsert, multi) {
     if (typeof query === 'string') {
         query = {_id: ObjectId(query)};
+    } else if (typeof query === 'object') {
+        Object.keys(query).forEach(k=>query[k]=id(query[k]));
     }
     if (!obj['$set'] || !obj['$unset']) {
         const newObj = {};
         Object.keys(obj).forEach((k)=>{
             if (obj[k] !== '$unset') {
                 !newObj['$set'] &&( newObj['$set'] = {});
-                newObj['$set'][k] = obj[k];
+                newObj['$set'][k] = id(obj[k]);
             } else {
                 !newObj['$unset'] &&( newObj['$unset'] = {});
                 newObj['$unset'][k] = 1;
