@@ -1,4 +1,5 @@
-const FILTERS = {
+const REJECTS = {
+    __all: ['salt', 'hash'],
     roadmaps: ['sendDoorList'],
 };
 
@@ -35,9 +36,9 @@ Object.defineProperty(this, "_h", {
         print('     ls:     show databases and collections');
         print('     id:     wrapper ObjectId only if like 24 bit _id');
         print('     _:      switch pretty shell');
-        print('     _n:     set shellBatchSize, e.g: _n=10');
+        print('     _n:     get/set shellBatchSize, e.g: _n=10');
         print('     _host:  show host');
-        print('     _189:   switch to 189 server');
+        print('     _189:   switch 189 and localhost server');
         print('     find:   find(id/str/obj, \'[-]xx xx ...\'/{xx:1, ...})');
         print('     update: find(id/obj, {xx:xx, ...}), unset can be { $unset: { xx: 1 } } or { xx: \'$unset\' }');
     },
@@ -70,6 +71,9 @@ Object.defineProperty(this, "_", {
 });
 
 Object.defineProperty(this, "_n", {
+    get: function() {
+        print('DBQuery.shellBatchSize = ' + DBQuery.shellBatchSize);
+    },
     set: function(n) {
         DBQuery.shellBatchSize = n;
         print('set DBQuery.shellBatchSize to ');
@@ -98,16 +102,13 @@ const defaultFind = DBCollection.prototype.find;
 DBCollection.prototype.find = function (query, fields, limit, skip, batchSize, options) {
     const name = this.getName();
     let obj = {};
-    let keys = Object.keys(defaultFind.call(this, {}, {_id: 0, __v: 0}, 1, 0).toArray()[0]||{}).filter(o=>{
-        if (!FILTERS[name] || FILTERS[name].indexOf(o) === -1) {
-            return true;
-        }
-    });
+    let keys = Object.keys(defaultFind.call(this, {}, {_id: 0, __v: 0}, 1, 0).toArray()[0]||{}).filter(o=>!((REJECTS.__all.indexOf(o) !== -1) || (REJECTS[name] && REJECTS[name].indexOf(o) !== -1)));
 
     if (!fields) {
         obj['__v'] = 0;
-        if (FILTERS[name]) {
-            FILTERS[name].forEach(o=>obj[o] = 0);
+        REJECTS.__all.forEach(o=>obj[o] = 0);
+        if (REJECTS[name]) {
+            REJECTS[name].forEach(o=>obj[o] = 0);
         }
     } else if (fields && typeof fields === 'string') {
         fields = fields.split(' ').filter(o=>!!o);
@@ -125,8 +126,9 @@ DBCollection.prototype.find = function (query, fields, limit, skip, batchSize, o
         }).forEach(o=>obj[o]= match ? 1 : 0);
         if (!match) {
             obj['__v'] = 0;
-            if (FILTERS[name]) {
-                FILTERS[name].forEach(o=>obj[o] = 0);
+            REJECTS.__all.forEach(o=>obj[o] = 0);
+            if (REJECTS[name]) {
+                REJECTS[name].forEach(o=>obj[o] = 0);
             }
         }
     } else {
