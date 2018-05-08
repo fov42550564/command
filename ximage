@@ -7,7 +7,7 @@ var args = process.argv.slice(2), imagefile, destPath;
 
 if (args.length < 2) {
     console.log("Usage:");
-    console.log("base64 imagefile destPath");
+    console.log("base64 imagefile destPath (html/js)");
     process.exit();
 }
 

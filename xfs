@@ -1,12 +1,23 @@
 #!/usr/bin/env node
-var express = require('express'),
-    http = require('http')
-    path = require('path'),
-    fs = require('fs'),
-	child_process = require('child_process'),
-    JSZip = require('jszip');
+var express = require('express');
+var os = require('os');
+var path = require('path');
+var fs = require('fs');
+var child_process = require('child_process');
+var JSZip = require('jszip');
 
-var app = express();
+function getIPAdress() {
+    var interfaces = os.networkInterfaces();
+    for(var devName in interfaces){
+        var iface = interfaces[devName];
+        for(var i=0;i<iface.length;i++){
+            var alias = iface[i];
+            if(alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal){
+                return alias.address;
+            }
+        }
+    }
+}
 
 function zipRecurse(zip, dir, zipDir) {
     var dirList = fs.readdirSync(dir);
@@ -81,18 +92,8 @@ function paste(callback) {
 	}
 }
 
-app.configure(function(){
-    app.set('port', 3001);
-    app.use(express.favicon());
-    app.use(express.logger('dev'));
-    app.use(express.bodyParser());
-    app.use(express.methodOverride());
-    app.use(app.router);
-});
-
-app.configure('development', function(){
-    app.use(express.errorHandler());
-});
+var ip = getIPAdress();
+var app = express();
 
 app.post('/postfile', function(req, res){
     req.pipe(require('unzip').Extract({path: "."}));
@@ -141,7 +142,14 @@ app.get('/disconnect', function(req, res){
     setTimeout(function(){process.exit();}, 100);
 });
 
+function startServer(port) {
+    var server = app.listen(port);
+    server.on('listening', function () {
+        console.log(`http://${ip}:${port}`);
+    });
+    server.on('error', function (err) {
+        startServer(port+1);
+    })
+}
 
-http.createServer(app).listen(app.get('port'), function(){
-    console.log("Express server http://localhost:" + app.get('port'));
-});
+startServer(4000);

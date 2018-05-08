@@ -1,12 +1,10 @@
 #!/usr/bin/env node
-var http = require('http'),
-    path = require('path'),
-    fs = require('fs'),
-    child_process = require('child_process'),
-    JSZip = require('jszip'),
-    IP = "192.168.211.107",
-    PORT = "3001",
-    finish_cnt = 0;
+var http = require('http');
+var path = require('path');
+var fs = require('fs');
+var child_process = require('child_process');
+var JSZip = require('jszip');
+var finish_cnt = 0;
 
 
 function zipRecurse(zip, dir, zipDir) {
@@ -82,10 +80,10 @@ function paste(callback) {
 	}
 }
 
-function postFileToServer(file, cnt) {
+function postFileToServer(file, cnt, hostname, port) {
     var options = {
-        hostname: IP,
-        port: PORT,
+        hostname,
+        port,
         path: '/postfile',
         method: 'POST'
     };
@@ -107,23 +105,23 @@ function postFileToServer(file, cnt) {
                 console.log('success');
                 finish_cnt++;
                 if (finish_cnt>=cnt) {
-                    disconnectServer();
+                    disconnectServer(hostname, port);
                 }
             }).on('error', function(e) {
                 console.log('error: ' + e.message);
-                disconnectServer();
+                disconnectServer(hostname, port);
             });
         }).end(zipData, "binary");
     } else {
         console.log("error: no file");
-        disconnectServer();
+        disconnectServer(hostname, port);
     }
 }
 
-function getFileFromServer(file, cnt) {
+function getFileFromServer(file, cnt, hostname, port) {
     var options = {
-        hostname: IP,
-        port: PORT,
+        hostname,
+        port,
         path: "/getfile?file="+file,
         agent: false
     };
@@ -133,19 +131,19 @@ function getFileFromServer(file, cnt) {
            console.log("get "+file+" success");
             finish_cnt++;
             if (finish_cnt>=cnt) {
-                disconnectServer();
+                disconnectServer(hostname, port);
             }
         });
     }).on('error', function(e) {
         console.log("error: " + e.message);
-        disconnectServer();
+        disconnectServer(hostname, port);
     });
 }
 
-function putTextToServer(text) {
+function putTextToServer(text, hostname, port) {
 	var options = {
-        hostname: IP,
-        port: PORT,
+        hostname,
+        port,
         path: "/puttext?text="+text,
         agent: false
     };
@@ -154,18 +152,18 @@ function putTextToServer(text) {
         res.on('data', function(){
         }).on('end', function(){
 			 console.log("success");
-            disconnectServer();
+            disconnectServer(hostname, port);
         });
     }).on('error', function(e) {
         console.log("error: " + e.message);
-        disconnectServer();
+        disconnectServer(hostname, port);
     });
 }
 
-function getTextFromServer() {
+function getTextFromServer(hostname, port) {
 	var options = {
-        hostname: IP,
-        port: PORT,
+        hostname,
+        port,
         path: "/gettext?text="+text,
         agent: false
     };
@@ -176,18 +174,18 @@ function getTextFromServer() {
 		}).on('end', function(){
 			console.log(text);
 			copy(text);
-            disconnectServer();
+            disconnectServer(hostname, port);
         });
     }).on('error', function(e) {
         console.log("error: " + e.message);
-        disconnectServer();
+        disconnectServer(hostname, port);
     });
 }
 
-function disconnectServer() {
+function disconnectServer(hostname, port) {
     var options = {
-        hostname: IP,
-        port: PORT,
+        hostname,
+        port,
         path: "/disconnect",
         agent: false
     };
@@ -200,32 +198,44 @@ function disconnectServer() {
     });
 }
 
+function showHelp() {
+    console.log("Usage: put/get files folders");
+    console.log("     xf ip:port put xx.txt xx");
+    console.log("     xf ip:port get xx.txt xx");
+    console.log("     xf ip:port puttext text");
+    console.log("     xf ip:port gettext");
+}
+
 var params = process.argv.slice(2);
+if (!/^((25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))\.){3}(25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d))):[1-9]\d*$/.test(params[0])) {
+    showHelp();
+    process.exit(0);
+}
+var ip = params[0].split(':')[0];
+var port = params[0].split(':')[1];
+
+params = params.slice(1);
 if (params[0] == 'put') {
     var files = params.slice(1);
     for (var i in files) {
-        postFileToServer(files[i], files.length);
+        postFileToServer(files[i], files.length, ip, port);
     }
 } else if (params[0] == 'get') {
     var files = params.slice(1);
     for (var i in files) {
-        getFileFromServer(files[i], files.length);
+        getFileFromServer(files[i], files.length, ip, port);
     }
 } else if (params[0] == 'puttext') {
     var text = params.slice(1);
 	if (!text || !text.length) {
 		paste(function(t) {
-			putTextToServer(t);
+			putTextToServer(t, ip, port);
 		});
 	} else {
-		putTextToServer(text);
+		putTextToServer(text, ip, port);
 	}
 } else if (params[0] == 'gettext') {
-    getTextFromServer();
+    getTextFromServer(ip, port);
 } else {
-    console.log("Usage: put/get files folders");
-    console.log("     xf put xx.txt xx");
-    console.log("     xf get xx.txt xx");
-    console.log("     xf puttext text");
-    console.log("     xf gettext");
+    showHelp();
 }
