@@ -24,8 +24,17 @@ function showList(list) {
 }
 
 function id(s) {
-    if (/[a-z0-9]{24}/.test(s)) {
+    if (/^[a-z0-9]{24}$/.test(s)) {
         return ObjectId(s);
+    }
+    if (typeof s === 'object') {
+        if (s instanceof Array) {
+            return s.map(o => id(o));
+        } else {
+            const ret = {};
+            Object.keys(s).forEach(k => ret[k] = id(s[k]));
+            return ret;
+        }
     }
     return s;
 }
