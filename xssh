@@ -5,19 +5,41 @@ ip="192.168.1.189"
 password=simiantong
 remote_root=/root/simiantong/
 _oper=0
+_name=""
 _localpath="./"
-_remotepath="${remote_root}"
+_remotepath="${_remote_root}"
 
 function xssh_enter()
 {
 	expect -c "
-    set timeout 30000;
-		spawn ssh root@${ip};
-		expect {
-            \"*password:\" {send \"${password}\r\"; exp_continue}
-            \"*#\" {send \" cd  ${remote_root}\r\"}
-		}
-		interact
+	set timeout 30000;
+	spawn ssh root@${ip};
+	expect {
+		\"*password:\" {send \"${password}\r\"; exp_continue}
+		\"*#\" {send \" cd  ${_remote_root}\r\"}
+	}
+	interact
+	"
+}
+
+function xssh_update_code()
+{
+	expect -c "
+	set timeout 30000;
+	spawn scp -r "~/simiantong/PDShopServer/tools/dist/${_name}.tar.gz" "root@${ip}:${_remote_root}${_name}/${_name}.tar.gz"
+	expect {
+		\"*password:\" {send \"${password}\r\"}
+	}
+	interact
+	"
+	expect -c "
+	set timeout 30000;
+	spawn ssh root@${ip};
+	expect {
+		\"*password:\" {send \"${password}\r\"; exp_continue}
+		\"*#\" {send \" cd  ${_remote_root}${_name}\rrm -fr public\rtar zxf ${_name}.tar.gz\rrm -f ${_name}.tar.gz\rpm2 restart ${_name} --update-env\rexit\r\"}
+	}
+	interact
 	"
 }
 
@@ -25,12 +47,12 @@ function xssh_push()
 {
 	[ -z "${_localpath}" ]&&return
 	expect -c "
-    set timeout 30000;
-		spawn scp -r "${_localpath}" "root@${ip}:${_remotepath}"
-		expect {
-			\"*password:\" {send \"${password}\r\"}
-		}
-		interact
+	set timeout 30000;
+	spawn scp -r "${_localpath}" "root@${ip}:${_remotepath}"
+	expect {
+		\"*password:\" {send \"${password}\r\"}
+	}
+	interact
 	"
 }
 
@@ -38,12 +60,12 @@ function xssh_pull()
 {
 	[ -z "${_localpath}" ]&&return
 	expect -c "
-    set timeout 30000;
-		spawn scp -r "root@${ip}:${_remotepath}" "${_localpath}"
-		expect {
-			\"*password:\" {send \"${password}\r\"}
-		}
-		interact
+	set timeout 30000;
+	spawn scp -r "root@${ip}:${_remotepath}" "${_localpath}"
+	expect {
+		\"*password:\" {send \"${password}\r\"}
+	}
+	interact
 	"
 }
 
@@ -51,10 +73,12 @@ function show_help()
 {
 	local -a list
 	list="xssh"
-	list=("${list[@]}" "Usage :xssh [-s|-l|-i|-h]")
+	list=("${list[@]}" "Usage :xssh [-s|-l|-u|-h]")
 	list=("${list[@]}" "xssh:login ssh")
+	list=("${list[@]}" "xssh -u [name]: update project code [server/shop/client]")
 	list=("${list[@]}" "xssh -s [local:remote]:push local file/dir to ssh server")
 	list=("${list[@]}" "xssh -l [remote:local]:pull remote file/dir from ssh server to local")
+	list=("${list[@]}" "xssh -c [config file]:set config file")
 	list=("${list[@]}" "xssh -h:show help")
 	__msgbox "${list[@]}"
 }
@@ -62,24 +86,35 @@ function show_help()
 
 function main()
 {
-	while getopts :s:l:h opt;do
+	while getopts :s:l:u:c:h opt;do
 		case ${opt} in
-			s)_oper=1;_localpath="${OPTARG%%:*}";_remotepath="${OPTARG##*:}";;
-			l)_oper=2;_remotepath="${OPTARG%%:*}";_localpath="${OPTARG##*:}";;
+			u)_oper=1; _name="$OPTARG";;
+			s)_oper=2;_localpath="${OPTARG%%:*}";_remotepath="${OPTARG##*:}";;
+			l)_oper=3;_remotepath="${OPTARG%%:*}";_localpath="${OPTARG##*:}";;
+			c)_config_file="$OPTARG";;
 			*)show_help;exit;;
 		esac
 	done
-    if ! [ "${_localpath:0:1}" = "/" -o "${_localpath:0:1}" = "~" ];then
-        _localpath="./${_localpath}"
-    fi
-    if ! [ "${_remotepath:0:1}" = "/" -o "${_remotepath:0:1}" = "~" ];then
-        _remotepath="${remote_root}${_remotepath}"
+	if ! [ "${_localpath:0:1}" = "/" -o "${_localpath:0:1}" = "~" ];then
+		_localpath="./${_localpath}"
+	fi
+	if ! [ "${_remotepath:0:1}" = "/" -o "${_remotepath:0:1}" = "~" ];then
+		_remotepath="${_remote_root}${_remotepath}"
+	fi
+
+    if [ -n "${_config_file}" ];then
+	    ip=`sed '/^public_ip=/!d;s/.*=//' ${_config_file}`
+	    password=`sed '/^password=/!d;s/.*=//' ${_config_file}`
     fi
 
+    echo $ip
+    echo $password
+    exit
 	case ${_oper} in
 		0)xssh_enter;;
-		1)xssh_push;;
-		2)xssh_pull;;
+		1)xssh_update_code;;
+		2)xssh_push;;
+		3)xssh_pull;;
 	esac
 }
 

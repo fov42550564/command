@@ -25,6 +25,7 @@ function clone_mirror() {
 }
 
 function update_mirror() {
+    pushd ${1}.git
 	expect -c "
 	set timeout 30000;
 	spawn git push --mirror https://gitee.com/simiantong/${1}.git;
@@ -34,6 +35,7 @@ function update_mirror() {
 	}
 	interact
 	"
+    popd
 }
 
 function clone_all_mirror() {
