@@ -26,7 +26,7 @@ function xssh_update_code()
 {
 	expect -c "
 	set timeout 30000;
-	spawn scp -r "/Users/fang/simiantong/PDShopServer/tools/dist/${_name}.tar.gz" "root@${ip}:${_remote_root}${_name}/${_name}.tar.gz"
+    spawn scp -r "/Users/$(whoami)/simiantong/PDShopServer/tools/dist/${_name}.tar.gz" "root@${ip}:${_remote_root}${_name}/${_name}.tar.gz"
 	expect {
 		\"*password:\" {send \"${password}\r\"}
 	}
