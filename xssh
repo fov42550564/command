@@ -3,7 +3,7 @@
 source ~/command/common
 ip="192.168.1.189"
 password=simiantong
-remote_root=/root/simiantong/
+_remote_root=/root/simiantong/
 _oper=0
 _name=""
 _localpath="./"
@@ -26,7 +26,7 @@ function xssh_update_code()
 {
 	expect -c "
 	set timeout 30000;
-	spawn scp -r "~/simiantong/PDShopServer/tools/dist/${_name}.tar.gz" "root@${ip}:${_remote_root}${_name}/${_name}.tar.gz"
+	spawn scp -r "/Users/fang/simiantong/PDShopServer/tools/dist/${_name}.tar.gz" "root@${ip}:${_remote_root}${_name}/${_name}.tar.gz"
 	expect {
 		\"*password:\" {send \"${password}\r\"}
 	}
@@ -107,9 +107,6 @@ function main()
 	    password=`sed '/^password=/!d;s/.*=//' ${_config_file}`
     fi
 
-    echo $ip
-    echo $password
-    exit
 	case ${_oper} in
 		0)xssh_enter;;
 		1)xssh_update_code;;
