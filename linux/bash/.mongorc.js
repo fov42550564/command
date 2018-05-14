@@ -108,6 +108,7 @@ Object.defineProperty(this, "_189", {
 });
 
 const defaultFind = DBCollection.prototype.find;
+DBCollection.prototype._find = defaultFind;
 DBCollection.prototype.find = function (query, fields, limit, skip, batchSize, options) {
     const name = this.getName();
     let obj = {};
@@ -159,6 +160,7 @@ DBCollection.prototype.find = function (query, fields, limit, skip, batchSize, o
 
 
 const defaultUpdate =  DBCollection.prototype.update;
+DBCollection.prototype._update = defaultUpdate;
 DBCollection.prototype.update = function (query, obj, upsert, multi) {
     if (typeof query === 'string') {
         query = {_id: ObjectId(query)};
