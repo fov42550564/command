@@ -85,6 +85,40 @@ function startUploadServer(port) {
     })
 }
 
+function getHtmlInDir(path) {
+    var html = '<body style="display:flex; flex-direction: row;"><ul style="width: 240px; height: 95%; overflow: scroll;">';
+    var pa = fs.readdirSync(path);
+    pa.forEach(function(ele,index) {
+        var info = fs.statSync(path+"/"+ele)
+        if(info.isDirectory()) {
+            readDirSync(path+"/"+ele);
+        } else {
+            html += `<li style="margin-top: 20px;" onClick="document.getElementById('container').style.backgroundImage='url(images/${ele})'">
+                <a>${ele}</a>
+                <img src="images/${ele}" width="200px" height="140px">
+            </li>`;
+        }
+    });
+    html += '</ul><div id="container" style="flex: 1; margin-left: 20px; background-size: contain; background-repeat:no-repeat;" /></body>';
+    return html;
+}
+
+function startDirServer(port, path) {
+    var html = getHtmlInDir(path);
+    var server = app.listen(port);
+    app.get('/showDirFiles', function(req, res, next){
+        res.send(html);
+    });
+
+    server.on('listening', function () {
+        const url = `http://${ip}:${port}`;
+        console.log(url);
+    });
+    server.on('error', function (err) {
+        startDirServer(port+1);
+    })
+}
+
 function createServerFile(filename) {
     code = 'var express = require("express");';
     code += '\nvar bodyParser = require("body-parser");';
@@ -107,15 +141,15 @@ function createServerFile(filename) {
     fs.writeFileSync(filename, code);
 }
 
-function openChrome(url) {
+function openChrome(url, isMobile) {
     require('child_process').exec(`osascript -e '
         tell application \"Google Chrome\"
             activate
             open location \"${url}\"
-            delay 0.5
+            ${!isMobile ? '' : `delay 0.5
             tell application \"System Events\"
                 keystroke \"j\" using {option down, command down}
-            end tell
+            end tell`}
         end tell
     '`);
 }
@@ -140,6 +174,7 @@ if (param === '-h' || param === '--help') {
     console.log('   -c|--create: create a app.js file for nodejs server');
     console.log('   -u|--upload: upload files with multer');
     console.log('   -i|--image [name]: show iphone6 size for image');
+    console.log('   -d|--dir [name]: show dir file list');
     console.log('   file: show download qrcode for file');
     console.log('');
 } else if (param === '-u' || param === '--upload') {
@@ -148,7 +183,10 @@ if (param === '-h' || param === '--help') {
     createServerFile('app.js');
 } else if (param === '-i' || param === '--image') {
     startServer(port);
-    openChrome('http:'+ip+':'+port+'/'+param1);
+    openChrome('http:'+ip+':'+port+'/'+param1, true);
+} else if (param === '-d' || param === '--dir') {
+    startDirServer(port, param1);
+    openChrome('http:'+ip+':'+port+'/showDirFiles');
 } else {
     startServer(port, param);
 }
