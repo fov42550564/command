@@ -1,4 +1,4 @@
-var dialog = require('../dialog');
+var dialog = require('..');
 
 (async function() {
     await dialog.pause();

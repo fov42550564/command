@@ -2,7 +2,7 @@
 * Module dependencies.
 */
 
-var dialog = require('../dialog');
+var dialog = require('..');
 var program = dialog.commander();
 
 function range(val) {

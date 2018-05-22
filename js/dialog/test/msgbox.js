@@ -1,4 +1,4 @@
-var dialog = require('../dialog');
+var dialog = require('..');
 
 var msg = [
     {head: "Usage :", text: "xfind [OPTIONS]"},

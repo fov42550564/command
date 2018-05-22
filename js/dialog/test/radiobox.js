@@ -1,4 +1,4 @@
-var dialog = require('../dialog');
+var dialog = require('..');
 
 var list = [ "add svn log", "delete svn log"];
 

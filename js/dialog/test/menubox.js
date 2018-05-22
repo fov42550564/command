@@ -1,4 +1,4 @@
-var dialog = require('../dialog');
+var dialog = require('..');
 
 function callback1(x) {
 	console.log(x);
