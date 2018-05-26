@@ -27,7 +27,7 @@ function id(s) {
     if (/^[a-z0-9]{24}$/.test(s)) {
         return ObjectId(s);
     }
-    if (typeof s === 'object') {
+    if (s && typeof s === 'object') {
         if (s instanceof Array) {
             return s.map(o => id(o));
         } else {

@@ -525,7 +525,7 @@ function __backup_file()
 		else
 			mv "$1" "$path/$file"
 		fi
-	fi	
+	fi
 }
 function __get_full_path()
 {
@@ -538,7 +538,7 @@ function __get_full_path()
 	if ! [ -a "$1" ];then
 		return
 	fi
-	
+
 	if [ -f "$1" ];then
 		path=$(dirname "$1")
 		file=$(basename "$1")
@@ -580,7 +580,7 @@ function __extend_cd()
 	[ -f "$the_new_dir" ]&&df=$(basename "$the_new_dir")&&the_new_dir=$(dirname "$the_new_dir")
 
 	if [[ "${the_new_dir:0:1}" == "-" ]]; then
-		
+
 		# Extract dir N from dirs
 		index=${the_new_dir:1}
 		[[ -z $index ]] && index=1
@@ -617,7 +617,7 @@ function __extend_cd()
 
 	return $_TRUE_
 }
-function __folder_cd() 
+function __folder_cd()
 {
 ########################################
 #Usage:__folder_cd
@@ -654,7 +654,7 @@ function __read_file()
 
 	sed -n $start_line','$end_line'p' "$file"|while read line;do echo "$line";done
 }
-function __set_dest_path() 
+function __set_dest_path()
 {
 ########################################
 #Usage:__set_dest_path -h
@@ -684,25 +684,25 @@ function __set_dest_path()
 		ret=$(echo "$param"|sed -r -n '/^-[0-9]+[d|c|o|l|m]?$/p'|sed -r 's/^-([0-9]+[d|c|o]?)/\1/')
 		len=${#ret}
 		if [ $len -gt 0 ];then
-			if [ "${ret:$len-1}" = "d" ];then 
+			if [ "${ret:$len-1}" = "d" ];then
 				line=${ret:0:$len-1}
 				_dp=$(sed -n $line'p' $file)
 				cd $_dp
-			elif [ "${ret:$len-1}" = "l" ];then 
+			elif [ "${ret:$len-1}" = "l" ];then
 				line=${ret:0:$len-1}
 				_dp=$(sed -n $line'p' $file)
 				ls -l $_dp
-			elif [ "${ret:$len-1}" = "c" ];then 
+			elif [ "${ret:$len-1}" = "c" ];then
 				line=${ret:0:$len-1}
 				echo "remove $(sed -n $line'p' $file) success"
 				sed -i  $line'd' $file
 				return
-			elif [ "${ret:$len-1}" = "o" ];then 
+			elif [ "${ret:$len-1}" = "o" ];then
 				line=${ret:0:$len-1}
 				_dp=$(sed -n $line'p' $file)
 				open $_dp
 				return
-			elif [ "${ret:$len-1}" = "m" ];then 
+			elif [ "${ret:$len-1}" = "m" ];then
 				line=${ret:0:$len-1}
 				if [ $line -gt 1 ];then
 					if [ $line -le $tline ];then
@@ -719,7 +719,7 @@ function __set_dest_path()
 			fi
 		fi
 	else
-		if [ -d "$param" ];then 
+		if [ -d "$param" ];then
 			param=$(__get_full_path "$param")
 			if ! [ -z "$param" ];then
 				echo "$param" >> $file
@@ -767,66 +767,121 @@ function __echo_line()
 function __echo_title()
 {
 ########################################
-#Usage:__echo_title title width
+#Usage:__echo_title title
 ########################################
-	local title len flen flen1
+	local title utitle len flen flen1
 
 	title="$1"
-	[ -z "$2" ] && width=$_DIALOG_WIDTH_ || width=$2
+	utitle="${title//[[:space:][:punct:][:alnum:]]/}"
 
-	((len=width-${#title}))
+	((len=_DIALOG_WIDTH_-${#title}-${#utitle}))
 	((flen=len/2))
 	((flen1=flen+(len&1)))
 
 	__echo_line "$flen" "yes" "no"
 	echo -e -n "$_TITLE_COLOR_"
-	echo -n $title
+	echo -n "$title"
 	echo -e -n "$NONE"
 	__echo_line "$flen1" "no" "yes"
 }
-function __echo_center()
+function __print_string()
 {
 ########################################
-#Usage:__echo_center str width color
+#Usage:__print_string head text width
 ########################################
-	local str len flen flen1 color
+	local head uhead text body ubody
+	head="$1"
+	text="$2"
+	n="$3"
 
-	str="$1"
-	[ -z "$2" ] && width=${#str} || width=$2
-	color="$3"
-
-
-	((len=width-${#str}))
-	((flen=len/2))
-	((flen1=flen+(len&1)))
-
-	[ -n "$color" ] && printf "$color"
-	printf %-"$flen"s
-	printf "%s" "$str"
-	printf %-"$flen1"s
-	[ -n "$color" ] && printf $NONE
+	if [ -z "$head" ];then
+		utext="${text//[[:space:][:punct:][:alnum:]]/}"
+		((n=n+${#utext}))
+		printf "$_BORDER_COLOR_$_VTAG_$_STRING_COLOR_ %-"$n"s$_BORDER_COLOR_$_VTAG_$NONE\n" "$text"
+	else
+		body=${text#"$head"}
+		uhead="${head//[[:space:][:punct:][:alnum:]]/}"
+		ubody="${body//[[:space:][:punct:][:alnum:]]/}"
+		((n=n+${#ubody}-${#head}-${#uhead}))
+		printf "$_BORDER_COLOR_$_VTAG_ $_INDEX_COLOR_%s$_STRING_COLOR_%-"$n"s$_BORDER_COLOR_$_VTAG_$NONE\n" "$head" "$body"
+	fi
 }
-function __echo_string()
+function __echo_string_unicode()
 {
 ########################################
-#Usage:__echo_string info width
-#		width must large than single str len
+#Usage:__echo_string_unicode head text
+########################################
+	local head text n realLength len preLen char needCut i needCut cutText lastChar nextChar cutTextLen
+
+	head="$1"
+	text="$1$2"
+
+	realLength=0
+	len=${#text}
+	preLen=-1
+	needCut=0
+	((n=_DIALOG_WIDTH_-3))
+
+	for ((i=0;i<len;i++));do
+		char="${text:i:1}"
+		if [ -z "${char//[[:space:][:punct:][:alnum:]]/}" ];then
+			((realLength+=1))
+		else
+			((realLength+=2))
+		fi
+		if ((preLen == -1 && realLength >= n));then
+			((preLen=realLength==n?i+1:i))
+		elif ((realLength > n));then
+			needCut=1
+			break
+		fi
+	done
+
+	if ((needCut==1));then
+		cutText="${text:0:preLen}"
+		lastChar="${cutText:${#cutText}-1:1}"
+		nextChar="${text:preLen:1}"
+
+		if [ -z "${lastChar//[[:alnum:]_]/}" -a -z "${nextChar//[[:alnum:]_]/}" ];then
+			cutTextLen=${#cutText}
+			for ((j=0;j<cutTextLen;j++));do
+				if [ -n "${cutText:${#cutText}-1-j:1}" ];then
+					break;
+				fi
+			done
+			if ((j<cutTextLen));then
+				((preLen-=j))
+			fi
+		fi
+		__print_string "$head" "${text:0:preLen}" "$n"
+		text="${text:preLen}"
+		if [ -n "$text" ];then
+			__echo_string_unicode "" "$text"
+		fi
+	else
+		__print_string "$head" "$text" "$n"
+	fi
+}
+function __echo_string_ascii()
+{
+########################################
+#Usage:__echo_string_ascii info
+#		in_width must large than single str len
 ########################################
     local str len char_len width in_width ch is_head tmp_str head_str body_str head_len body_len
 
-	[ -z "$1" ] && str=" "|| str="$1"
-	[ -z "$2" ] && width=$_DIALOG_WIDTH_ || width=$2
-	((in_width=$width-3))
+	str="$1"
+	((in_width=_DIALOG_WIDTH_-3))
 
 	len=0
 	is_head=0
     while ((${#str}>0));do
-		ch="${str:$len:1}"	
+		ch="${str:$len:1}"
         if [ "$ch " = "  " -o "$ch " = "/ " ];then
             char_len=0;
 		else
             ((char_len++))
-        fi   
+        fi
 		[ "$ch" = "" ] && char_len=0
         ((len++))
         if ((len==in_width));then
@@ -849,46 +904,33 @@ function __echo_string()
 		fi
 	done
 }
-function __echo_string_indent()
+
+function __echo_string()
 {
 ########################################
-#Usage:__echo_string_indent info width
-#		width must large than single str len
-#		it will indent two and more space to one
+#Usage:__echo_string text
 ########################################
-	local -a list
-	local str width in_width i n len
+	local str unicode head text
 
-	list=($1)
-	len=${#list[@]}
-	[ -z "$2" ] && width=$_DIALOG_WIDTH_ || width=$2
-	((in_width=$width-3))
+	str="$1"
+	unicode="${str//[[:space:][:punct:][:alnum:]]/}"
 
-	if [ $len -eq 0 ];then
-		printf "$_BORDER_COLOR_$_VTAG_$_STRING_COLOR_ %-"$in_width"s$_BORDER_COLOR_$_VTAG_$NONE\n" "$str"
-		return
+	if [ -z "$unicode" ];then
+		__echo_string_ascii "$str"
+	else
+		head="${str%%:*}:"
+		text=${str#*:}
+		[ "$head" = "$str:" ] && head=""
+		__echo_string_unicode "$head" "$text"
 	fi
-
-	i=0
-	while [ $i -lt $len ];do
-		str=""
-		n=0
-		while (( $i<$len && $n+${#list[i]}<$in_width ));do
-			str="$str ${list[i]}"
-			((n+=${#list[i]}+1))
-			((i++))
-		done
-		printf "$_BORDER_COLOR_$_VTAG_$_STRING_COLOR_ %-"$in_width"s$_BORDER_COLOR_$_VTAG_$NONE\n" "$str"
-	done
 }
 function __echo_discription()
 {
 ########################################
-#Usage:__echo_discription info width
+#Usage:__echo_discription info
 ########################################
-	local str width
-	str=$1
-	[ -z "$2" ] && width=$_DIALOG_WIDTH_ || width=$2
+	local str
+	str="$1"
 
 	__echo_string "[Usage]:$str" "$width"
 }
@@ -1203,10 +1245,10 @@ function _checkbox_console__()
 					return
 				fi
 				for ((i=$begin; i<=$end; i++));do
-					tmp="$tmp $i"	
+					tmp="$tmp $i"
 				done
 			else
-				tmp="$tmp $m"	
+				tmp="$tmp $m"
 			fi
 		done
 		list=$tmp
@@ -1262,13 +1304,13 @@ function _checkbox_console__()
 		if ! [ -z "$callback_single" ];then
 			__exec_target "$callback_single" "${_list_[${rfi[$i]}]}"
 		fi
-	done	
+	done
 
 	if ! [ -z "$callback" ];then
 		tar=""
 		for ((i=0; i<rfi_len-1; i++));do
 			tar="$tar${_list_[${rfi[$i]}]} "
-		done	
+		done
 		tar="$tar${_list_[${rfi[$i]}]}"
 		__exec_target "$callback" "$tar"
 	fi
@@ -1315,7 +1357,7 @@ function _checkbox_window__()
 				if ! [ -z "$callback_single" ];then
 					__exec_target "$callback_single" "${_list_[${ids[$i]}]}"
 				fi
-			done	
+			done
 
 			if [ "$is_update" == "yes" ];then
 				_remove_list_index__ "${ids[@]}"
@@ -1545,7 +1587,7 @@ function _msgbox_window__()
 function __msgbox()
 {
 	########################################
-	#Usage:__msgbox title info 
+	#Usage:__msgbox title info
 	########################################
 	if [ "$_WINDOW_" = "1" ];then
 		_msgbox_window__ "$@"
@@ -1609,7 +1651,6 @@ function __init()
 
 	if ! [ -f $_setting_file_ ];then
 		echo "rm:system" > $_setting_file_
-	fi 
+	fi
 }
 __init
-

@@ -19,11 +19,11 @@ _newnameFlag=0
 
 if (($# < 2));then
     echo "Usage:"
-    echo "  xcopy oldname newname [-s]"
+    echo "  xcopy oldname newname"
     echo "  规则：名称采用驼峰格式或者火箭式, 如: xcopy shopMemberModel ClientModel 或者 xcopy ShopMemberModel ClientModel"
     echo "  命令执行修改： shopMemberModel->clientModel; ShopMemberModel->ClientModel; SHOP_MEMBER_MODEL->CLIENT_MODEL"
     echo ""
-    echo "  同时也可以当做replace工具，直接在某个文件夹走执行提替换"
+    echo "  同时也可以当做replace工具，直接在某个文件夹执行替换, 如：cd xx; xcopy shopMemberModel ClientModel"
     exit
 fi
 

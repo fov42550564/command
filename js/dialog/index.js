@@ -87,7 +87,7 @@ class Dialog {
                 realLength += 2;
             }
             if (preLen === -1 && realLength >= n) {
-                preLen = i + 1;
+                preLen =  realLength === n ? i + 1 : i;
             } else if (realLength > n) {
                 needCut = true;
                 break;

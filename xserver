@@ -93,9 +93,9 @@ function getHtmlInDir(path) {
         if(info.isDirectory()) {
             readDirSync(path+"/"+ele);
         } else {
-            html += `<li style="margin-top: 20px;" onClick="document.getElementById('container').style.backgroundImage='url(images/${ele})'">
+            html += `<li style="margin-top: 20px;" onClick="document.getElementById('container').style.backgroundImage='url(${path}/${ele})'">
                 <a>${ele}</a>
-                <img src="images/${ele}" width="200px" height="140px">
+                <img src="${path}/${ele}" width="200px" height="140px">
             </li>`;
         }
     });
