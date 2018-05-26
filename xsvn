@@ -179,7 +179,7 @@ function xsvnLogSelectVersion()
 	__match_num "$ver"
     n=$?
 	if [ $n -ne 0 ];then
-		_result_="q" 
+		_result_="q"
 		return
 	fi
 	_result_=$ver
@@ -192,7 +192,7 @@ function xsvnLogShowDiff()
 	ver=$1
 	__exec_command svn log -r $ver -v
 	xsvnLogSelectVersion $ver
-	comp_ver=$_result_	
+	comp_ver=$_result_
 	if [ "$comp_ver" = "q" ];then
 		return
 	fi
@@ -204,15 +204,15 @@ function xsvnLogGetFiles()
 	local ver rs var i
 
 	ver=$1
-   	#rs=$(svn log -r $ver -v|grep "/trunk"|sed 's#.*/trunk#~/work/phoneplus_app/trunk#') 
-   	rs=$(svn log -r $ver -v|grep "/trunk"|sed 's#.*/trunk#~/work/stone/trunk#') 
+   	#rs=$(svn log -r $ver -v|grep "/trunk"|sed 's#.*/trunk#~/work/phoneplus_app/trunk#')
+   	rs=$(svn log -r $ver -v|grep "/trunk"|sed 's#.*/trunk#~/work/stone/trunk#')
 
-	i=0 
+	i=0
 	unset _files
-	for var in $rs;do 
+	for var in $rs;do
 	  	_files[i]=$var
-	    let i++  
-	done 
+	    let i++
+	done
 }
 
 function xsvnLogByVersion()
@@ -272,7 +272,7 @@ function xsvnLogMain()
 function xsvnFileShowDiff()
 {
 	local ver last_ver file
-	
+
 	ver=$1
 	ver=${ver%%:*}
 	file=$2
@@ -315,19 +315,19 @@ function xsvnShowHelp()
 	local -a list
 
 	list="help"
-	list=("${list[@]}" "Usage:xsvn [-l|-f file|-d path|-n name|-t filter|-r ver|-w|-h]")
+	list=("${list[@]}" "Usage: xsvn [-l|-f file|-d path|-n name|-t filter|-r ver|-w|-h]")
 	list=("${list[@]}" "xsvn can do [svn diff|revert|commit|delete note|vi]")
 	list=("${list[@]}" "-l: show svn log")
-	list=("${list[@]}" "-f file:can be regex")
-	list=("${list[@]}" "-d path:svn current path/file")
-	list=("${list[@]}" "-n name:svn commmiter's name")
-	list=("${list[@]}" "-r ver:versions[1000|1000:1002] ")
-	list=("${list[@]}" "-t filter:limit filter, same as -l 5")
+	list=("${list[@]}" "-f file: can be regex")
+	list=("${list[@]}" "-d path: svn current path/file")
+	list=("${list[@]}" "-n name: svn commmiter's name")
+	list=("${list[@]}" "-r ver: versions[1000|1000:1002] ")
+	list=("${list[@]}" "-t filter: limit filter, same as -l 5")
 	list=("${list[@]}" "-w: show with lxdialog")
 	list=("${list[@]}" "-h: show help")
 	list=("${list[@]}" "")
-	list=("${list[@]}" "Author:fangyunjiang@longmaster.com.cn")
-	list=("${list[@]}" "Version:V3.0")
+	list=("${list[@]}" "Author: fangyunjiang@longmaster.com.cn")
+	list=("${list[@]}" "Version: V3.0")
 
 	__msgbox "${list[@]}"
 }
@@ -357,4 +357,3 @@ function main()
 }
 
 main "$@"
-

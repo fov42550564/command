@@ -68,15 +68,15 @@ function show_help()
 {
 	local -a list
 	list="help"
-	list=("${list[@]}" "Usage :xnw [OPTIONS]")
-	list=("${list[@]}" "  -d [path] :set dest path")
-	list=("${list[@]}" "  -n :new html file and package file")
-	list=("${list[@]}" "  -p :new package file")
-	list=("${list[@]}" "  -m :create mobile package file")
-	list=("${list[@]}" "  -l [url]:open nw for a url")
-	list=("${list[@]}" "  -k [file]:new package file with a html name")
+	list=("${list[@]}" "Usage: xnw [OPTIONS]")
+	list=("${list[@]}" "  -d [path]: set dest path")
+	list=("${list[@]}" "  -n: new html file and package file")
+	list=("${list[@]}" "  -p: new package file")
+	list=("${list[@]}" "  -m: create mobile package file")
+	list=("${list[@]}" "  -l [url]: open nw for a url")
+	list=("${list[@]}" "  -k [file]: new package file with a html name")
 	list=("${list[@]}" "  -s [-i dir[defult:.]|-o port[defult:3001]]: create server file for express")
-	list=("${list[@]}" "  -h :show help ")
+	list=("${list[@]}" "  -h: show help ")
 	__msgbox "${list[@]}"
 }
 
@@ -112,4 +112,3 @@ function main()
 }
 
 main "$@"
-

@@ -888,10 +888,11 @@ function __echo_string_ascii()
             [ "${str:$len:1}" = " " ]|| ((len-=char_len));
 			if [ $is_head -eq 0 ];then
 				tmp_str=${str:0:$len}
-				head_str="${tmp_str%%:*}:"
-				body_str=${tmp_str#*:}
+				head_str="${tmp_str%%: *}:"
+				body_str="${tmp_str#*: }"
 				[ "$head_str" = "$tmp_str:" ] && head_str=""
 				head_len=${#head_str}
+				[ -n "$head_str" ] && body_str=" ${body_str}"
 
 				((body_len=$in_width-$head_len))
 				printf "$_BORDER_COLOR_$_VTAG_ $_INDEX_COLOR_%s$_STRING_COLOR_%-"$body_len"s$_BORDER_COLOR_$_VTAG_$NONE\n" "$head_str" "$body_str"
@@ -918,9 +919,10 @@ function __echo_string()
 	if [ -z "$unicode" ];then
 		__echo_string_ascii "$str"
 	else
-		head="${str%%:*}:"
-		text=${str#*:}
+		head="${str%%: *}:"
+		text=${str#*: }
 		[ "$head" = "$str:" ] && head=""
+		[ -n "$head" ] && text=" ${text}"
 		__echo_string_unicode "$head" "$text"
 	fi
 }

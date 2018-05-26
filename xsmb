@@ -29,10 +29,10 @@ function show_help()
 {
 	local -a list
 	list="xsmb"
-	list=("${list[@]}" "Usage :xsmb [OPTIONS]")
-	list=("${list[@]}" "  -m :mount myhome to /Volumes/home")
-	list=("${list[@]}" "  -u :umount /Volumes/home ")
-	list=("${list[@]}" "  -h :show help ")
+	list=("${list[@]}" "Usage: xsmb [OPTIONS]")
+	list=("${list[@]}" "  -m: mount myhome to /Volumes/home")
+	list=("${list[@]}" "  -u: umount /Volumes/home ")
+	list=("${list[@]}" "  -h: show help ")
 	__msgbox "${list[@]}"
 }
 
@@ -48,7 +48,3 @@ function main()
 }
 
 main "$@"
-
-
-
-

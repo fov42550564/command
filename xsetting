@@ -3,7 +3,7 @@
 # author:fang
 # version : v1.0
 # name  : xsetting.sh
-# dispcripe: Settings 
+# dispcripe: Settings
 # CopyRight@fangyunjiang[42550564@qq.com]
 #############################################
 source ~/command/common
@@ -124,10 +124,10 @@ function set_node()
 	node_type=$(__get_setting "node")
 	if [ $_opsite_oper -eq 1 ];then
 		if [ "$node_type" = "32" ];then
-			__set_setting "node:64"	
+			__set_setting "node:64"
 			set_node64
 		else
-			__set_setting "node:32"	
+			__set_setting "node:32"
 			set_node32
 		fi
 	else
@@ -195,14 +195,14 @@ function show_help()
 {
 	local -a list
 	list="help"
-	list=("${list[@]}" "Usage:xsetting [OPTIONS]")
-	list=("${list[@]}" "  -s [name:val] :set_settting name to val")
-	list=("${list[@]}" "      rm:system|recycle ")
-	list=("${list[@]}" "      nodelib:nodejs|appjs")
-	list=("${list[@]}" "  -l :show settings")
-	list=("${list[@]}" "  -e :eval settings")
-	list=("${list[@]}" "  -u :[name]set single setting opsite")
-	list=("${list[@]}" "  -h :show help ")
+	list=("${list[@]}" "Usage: xsetting [OPTIONS]")
+	list=("${list[@]}" "  -s [name:val]: set_settting name to val")
+	list=("${list[@]}" "      rm: system|recycle ")
+	list=("${list[@]}" "      nodelib: nodejs|appjs")
+	list=("${list[@]}" "  -l: show settings")
+	list=("${list[@]}" "  -e: eval settings")
+	list=("${list[@]}" "  -u: [name]set single setting opsite")
+	list=("${list[@]}" "  -h: show help ")
 	__msgbox "${list[@]}"
 }
 
@@ -221,6 +221,3 @@ function main()
 }
 
 main "$@"
-
-
-

@@ -100,20 +100,20 @@ function show_help()
 {
 	local -a list
 	list="help"
-	list=("${list[@]}" "Usage:xfile [OPTIONS]")
-	list=("${list[@]}" "  -s [src_prefix] :set src prefix[default:jpg]")
-	list=("${list[@]}" "  -d [dst_prefix] :set src prefix[default:jpg]")
-	list=("${list[@]}" "  -c [_cur_dir] :set current dir[default:.]")
-	list=("${list[@]}" "  -w [n]:swap files with randow n ts in cur_dir/src_prefix file")
-	list=("${list[@]}" "  -i [start_num]:set file to index from start_num in cur_dir/src_prefix file")
-	list=("${list[@]}" "  -a [from_dir]:add files in from_dir/src_prefix to cur_dir/dst_prefix")
-	list=("${list[@]}" "  -h :show help ")
+	list=("${list[@]}" "Usage: xfile [OPTIONS]")
+	list=("${list[@]}" "  -s [src_prefix]: set src prefix[default:jpg]")
+	list=("${list[@]}" "  -d [dst_prefix]: set src prefix[default:jpg]")
+	list=("${list[@]}" "  -c [_cur_dir]: set current dir[default:.]")
+	list=("${list[@]}" "  -w [n]: swap files with randow n ts in cur_dir/src_prefix file")
+	list=("${list[@]}" "  -i [start_num]: set file to index from start_num in cur_dir/src_prefix file")
+	list=("${list[@]}" "  -a [from_dir]: add files in from_dir/src_prefix to cur_dir/dst_prefix")
+	list=("${list[@]}" "  -h: show help ")
 	__msgbox "${list[@]}"
 }
 
 function main()
 {
-	local ts start_num from_dir 
+	local ts start_num from_dir
 	while getopts :s:d:w:i:a:c: opt;do
 		case $opt in
 			s)_src_prefix="$OPTARG";;
@@ -136,5 +136,3 @@ function main()
 }
 
 main "$@"
-
-

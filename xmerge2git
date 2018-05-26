@@ -5,7 +5,7 @@ _bemerged=""
 _bemergeto=""
 _tempbrach="tempbrach"
 
-function merge() 
+function merge()
 {
     cd $_bemergeto
     #将$_bemerged作为远程仓库，添加到$_bemergeto中，设置别名为other
@@ -26,11 +26,11 @@ function show_help()
 {
     local -a list
     list="help"
-    list=("${list[@]}" "Usage :xmerge2git [OPTIONS]")
-    list=("${list[@]}" "  -d :dir to be merge to")
-    list=("${list[@]}" "  -s :dir to be merged")
-    list=("${list[@]}" "  -b :set tempbrach name")
-    list=("${list[@]}" "  -h :show help ")
+    list=("${list[@]}" "Usage: xmerge2git [OPTIONS]")
+    list=("${list[@]}" "  -d: dir to be merge to")
+    list=("${list[@]}" "  -s: dir to be merged")
+    list=("${list[@]}" "  -b: set tempbrach name")
+    list=("${list[@]}" "  -h: show help ")
     __msgbox "${list[@]}"
     exit
 }
@@ -57,5 +57,3 @@ function main()
 }
 
 main "$@"
-
-

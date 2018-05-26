@@ -120,14 +120,14 @@ function show_help()
 {
 	local -a list
 	list="help"
-	list=("${list[@]}" "Usage:xdir [OPTIONS]")
-	list=("${list[@]}" "  -p [dir]:set root dir,if not set will be \".\"")
-	list=("${list[@]}" "  -d [dir_command]:set command for dir")
-	list=("${list[@]}" "  -f [file_command]:set command for file")
-	list=("${list[@]}" "  -c [dest_path]:copy files to dest_path")
-	list=("${list[@]}" "  -m [ignore_mode]:set mn as 00 01 10 11,[11]both ignore[default]")
+	list=("${list[@]}" "Usage: xdir [OPTIONS]")
+	list=("${list[@]}" "  -p [dir]: set root dir,if not set will be \".\"")
+	list=("${list[@]}" "  -d [dir_command]: set command for dir")
+	list=("${list[@]}" "  -f [file_command]: set command for file")
+	list=("${list[@]}" "  -c [dest_path]: copy files to dest_path")
+	list=("${list[@]}" "  -m [ignore_mode]: set mn as 00 01 10 11,[11]both ignore[default]")
 	list=("${list[@]}" "                   m for file, n for path")
-	list=("${list[@]}" "  -h :show help ")
+	list=("${list[@]}" "  -h: show help ")
 	__msgbox "${list[@]}"
 }
 
@@ -163,6 +163,3 @@ function main()
 }
 
 main "$@"
-
-
-

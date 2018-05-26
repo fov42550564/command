@@ -212,19 +212,19 @@ function show_help()
 	local -a list
 	list="help"
 	list=("${list[@]}" "Usage :xgit [OPTIONS]")
-	list=("${list[@]}" "  -p [dest_dir]:copy change files to dest_dir and make dirs")
-	list=("${list[@]}" "  -l :show git log, use -f set file")
-	list=("${list[@]}" "  -s :must use with -l, exec git show version")
+	list=("${list[@]}" "  -p [dest_dir]: copy change files to dest_dir and make dirs")
+	list=("${list[@]}" "  -l: show git log, use -f set file")
+	list=("${list[@]}" "  -s: must use with -l, exec git show version")
 	list=("${list[@]}" "  -t [filter]: set filter")
 	list=("${list[@]}" "  -f [file]: set one log file")
 	list=("${list[@]}" "  -n [version]: show at this version's log")
-	list=("${list[@]}" "  -d :show git diff")
-	list=("${list[@]}" "  -a :add git file")
-	list=("${list[@]}" "  -r :revert git file")
-	list=("${list[@]}" "  -v :edit file with vim")
-	list=("${list[@]}" "  -m [file;file]:delete history file force")
+	list=("${list[@]}" "  -d: show git diff")
+	list=("${list[@]}" "  -a: add git file")
+	list=("${list[@]}" "  -r: revert git file")
+	list=("${list[@]}" "  -v: edit file with vim")
+	list=("${list[@]}" "  -m [file;file]: delete history file force")
 	list=("${list[@]}" "  -u [url]: download file or directory from github")
-	list=("${list[@]}" "  -h :show help ")
+	list=("${list[@]}" "  -h: show help ")
 	__msgbox "${list[@]}"
 }
 

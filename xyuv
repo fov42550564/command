@@ -21,21 +21,21 @@ function show_help()
 {
 	local -a list
 	list="help"
-	list=("${list[@]}" "Usage :xyuv [OPTIONS]")
-	list=("${list[@]}" "  -i [file] :input file")
-	list=("${list[@]}" "  -o [file] :output file, not set will cover input file")
-	list=("${list[@]}" "  -s [seconds] :seconds in newfile")
-	list=("${list[@]}" "  -w [width] :width in newfile")
-	list=("${list[@]}" "  -h [height] :height in newfile")
-	list=("${list[@]}" "  -f [frames] :frames in newfile")
-	list=("${list[@]}" "  -h :show help")
+	list=("${list[@]}" "Usage: xyuv [OPTIONS]")
+	list=("${list[@]}" "  -i [file]: input file")
+	list=("${list[@]}" "  -o [file]: output file, not set will cover input file")
+	list=("${list[@]}" "  -s [seconds]: seconds in newfile")
+	list=("${list[@]}" "  -w [width]: width in newfile")
+	list=("${list[@]}" "  -h [height]: height in newfile")
+	list=("${list[@]}" "  -f [frames]: frames in newfile")
+	list=("${list[@]}" "  -h: show help")
 	__msgbox "${list[@]}"
 }
 
 function do_split()
 {
 	local bytes
-	
+
 	bytes=$((_width*_height*3/2*_frames*_seconds))
 
 	split -b $bytes "$_infile" "$_tmpfile"
@@ -72,4 +72,3 @@ function main()
 }
 
 main "$@"
-
