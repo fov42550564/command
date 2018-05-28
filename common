@@ -673,6 +673,8 @@ function __set_dest_path()
 		echo "Usage:dt[--][-n[d:cd|o:open|m:move|c:clean|l:ls]]"
 	elif [ "$param" = "-d" ];then
 		cd $(sed -n '1p' $file)
+	elif [ "$param" = "-o" ];then
+		open $(sed -n '1p' $file)
 	elif [ "$param" = "-l" ];then
 		_dp=$(sed -n '1p' $file)
 		ls -l $_dp
@@ -784,6 +786,28 @@ function __echo_title()
 	echo -n "$title"
 	echo -e -n "$NONE"
 	__echo_line "$flen1" "no" "yes"
+}
+function __echo_center()
+{
+########################################
+#Usage:__echo_center str width color
+########################################
+	local str len flen flen1 color
+
+	str="$1"
+	[ -z "$2" ] && width=${#str} || width=$2
+	color="$3"
+
+
+	((len=width-${#str}))
+	((flen=len/2))
+	((flen1=flen+(len&1)))
+
+	[ -n "$color" ] && printf "$color"
+	printf %-"$flen"s
+	printf "%s" "$str"
+	printf %-"$flen1"s
+	[ -n "$color" ] && printf $NONE
 }
 function __print_string()
 {
