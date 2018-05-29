@@ -21,12 +21,63 @@ function xssh_enter()
 	interact
 	"
 }
-
+function xssh_push()
+{
+	[ -z "${_localpath}" ]&&return
+	expect -c "
+	set timeout 30000;
+	spawn scp -r "${_localpath}" "root@${ip}:${_remotepath}"
+	expect {
+		\"*password:\" {send \"${password}\r\"}
+	}
+	interact
+	"
+}
+function xssh_pull()
+{
+	[ -z "${_localpath}" ]&&return
+	expect -c "
+	set timeout 30000;
+	spawn scp -r "root@${ip}:${_remotepath}" "${_localpath}"
+	expect {
+		\"*password:\" {send \"${password}\r\"}
+	}
+	interact
+	"
+}
 function xssh_update_code()
+{
+	case ${_name} in
+		server)xssh_update_server;;
+		shop|client)xssh_update_web;;
+		website|protocals|resource)xssh_update_source;;
+	esac
+}
+function xssh_update_server()
 {
 	expect -c "
 	set timeout 30000;
-    spawn scp -r "/Users/$(whoami)/simiantong/PDShopServer/tools/dist/${_name}.tar.gz" "root@${ip}:${_remote_root}${_name}/${_name}.tar.gz"
+	spawn scp -r "/Users/$(whoami)/simiantong/PDShopServer/tools/dist/${_name}.tar.gz" "root@${ip}:${_remote_root}${_name}/${_name}.tar.gz"
+	expect {
+		\"*password:\" {send \"${password}\r\"}
+	}
+	interact
+	"
+	expect -c "
+	set timeout 30000;
+	spawn ssh root@${ip};
+	expect {
+		\"*password:\" {send \"${password}\r\"; exp_continue}
+		\"*#\" {send \" cd  ${_remote_root}${_name}\rtar zxf ${_name}.tar.gz\rrm -f ${_name}.tar.gz\rpm2 restart ${_name} --update-env\rexit\r\"}
+	}
+	interact
+	"
+}
+function xssh_update_web()
+{
+	expect -c "
+	set timeout 30000;
+	spawn scp -r "/Users/$(whoami)/simiantong/PDShopServer/tools/dist/${_name}.tar.gz" "root@${ip}:${_remote_root}${_name}/${_name}.tar.gz"
 	expect {
 		\"*password:\" {send \"${password}\r\"}
 	}
@@ -42,40 +93,44 @@ function xssh_update_code()
 	interact
 	"
 }
-
-function xssh_push()
+function xssh_update_source()
 {
-	[ -z "${_localpath}" ]&&return
 	expect -c "
 	set timeout 30000;
-	spawn scp -r "${_localpath}" "root@${ip}:${_remotepath}"
+	spawn ssh root@${ip};
 	expect {
-		\"*password:\" {send \"${password}\r\"}
+		\"*password:\" {send \"${password}\r\"; exp_continue}
+		\"*#\" {send \"rm -fr ${_remote_root}server/public/${_name}\rexit\r\"}
 	}
 	interact
 	"
+	if [ "${_name}" = "website" ];then
+		expect -c "
+		set timeout 30000;
+		spawn scp -r "/Users/$(whoami)/simiantong/PDShopServer/tools/dist/${_name}" "root@${ip}:${_remote_root}server/public/${_name}"
+		expect {
+			\"*password:\" {send \"${password}\r\"}
+		}
+		interact
+		"
+	else
+		expect -c "
+		set timeout 30000;
+		spawn scp -r "../project/public/${_name}" "root@${ip}:${_remote_root}server/public/${_name}"
+		expect {
+			\"*password:\" {send \"${password}\r\"}
+		}
+		interact
+		"
+	fi
 }
-
-function xssh_pull()
-{
-	[ -z "${_localpath}" ]&&return
-	expect -c "
-	set timeout 30000;
-	spawn scp -r "root@${ip}:${_remotepath}" "${_localpath}"
-	expect {
-		\"*password:\" {send \"${password}\r\"}
-	}
-	interact
-	"
-}
-
 function show_help()
 {
 	local -a list
 	list="xssh"
 	list=("${list[@]}" "Usage: xssh [-s|-l|-u|-h]")
 	list=("${list[@]}" "xssh: login ssh")
-	list=("${list[@]}" "xssh -u [name]: update project code [server/shop/client]")
+	list=("${list[@]}" "xssh -u [name]: update project code [server/shop/client/website/protocals/resource]")
 	list=("${list[@]}" "xssh -s [local:remote]: push local file/dir to ssh server")
 	list=("${list[@]}" "xssh -l [remote:local]: pull remote file/dir from ssh server to local")
 	list=("${list[@]}" "xssh -c [config file]: set config file")
