@@ -30,6 +30,8 @@ function id(s) {
     if (s && typeof s === 'object') {
         if (s instanceof Array) {
             return s.map(o => id(o));
+        } else if (s instanceof Date) {
+            return s;
         } else {
             const ret = {};
             Object.keys(s).forEach(k => ret[k] = id(s[k]));
