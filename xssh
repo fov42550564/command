@@ -50,7 +50,7 @@ function xssh_update_code()
 	case ${_name} in
 		server)xssh_update_server;;
 		shop|client)xssh_update_web;;
-		website|protocals|resource)xssh_update_source;;
+		website|pdclient_wx|protocals|resource)xssh_update_static;;
 	esac
 }
 function xssh_update_server()
@@ -93,7 +93,7 @@ function xssh_update_web()
 	interact
 	"
 }
-function xssh_update_source()
+function xssh_update_static()
 {
 	expect -c "
 	set timeout 30000;
@@ -104,7 +104,7 @@ function xssh_update_source()
 	}
 	interact
 	"
-	if [ "${_name}" = "website" ];then
+	if [ "${_name}" = "website" -o "${_name}" = "pdclient_wx" ];then
 		expect -c "
 		set timeout 30000;
 		spawn scp -r "/Users/$(whoami)/simiantong/PDShopServer/tools/dist/${_name}" "root@${ip}:${_remote_root}server/public/${_name}"
@@ -130,7 +130,7 @@ function show_help()
 	list="xssh"
 	list=("${list[@]}" "Usage: xssh [-s|-l|-u|-h]")
 	list=("${list[@]}" "xssh: login ssh")
-	list=("${list[@]}" "xssh -u [name]: update project code [server/shop/client/website/protocals/resource]")
+	list=("${list[@]}" "xssh -u [name]: update project code [server/shop/client/website/pdclient_wx/protocals/resource]")
 	list=("${list[@]}" "xssh -s [local:remote]: push local file/dir to ssh server")
 	list=("${list[@]}" "xssh -l [remote:local]: pull remote file/dir from ssh server to local")
 	list=("${list[@]}" "xssh -c [config file]: set config file")
