@@ -230,10 +230,7 @@ export NVM_DIR="/Users/apple/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
 
 #npm
-alias cnpm="npm --registry=https://registry.npm.taobao.org \
-    --cache=$HOME/.npm/.cache/cnpm \
-    --disturl=https://npm.taobao.org/dist \
-    --userconfig=$HOME/.cnpmrc"
+alias cnpm="npm --registry=https://registry.npm.taobao.org"
 
 #hadoop
 export HADOOP_HOME=~/tools/hadoop-2.7.3
