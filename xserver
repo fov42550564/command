@@ -86,20 +86,38 @@ function startUploadServer(port) {
 }
 
 function getHtmlInDir(path) {
-    var html = '<body style="display:flex; flex-direction: row;"><ul style="width: 240px; height: 95%; overflow: scroll;">';
+    var html = `<html><head>
+    <title>${path}的文件</title>
+    <link rel="stylesheet" href="viewer/viewer.min.css" />
+    <script type="text/javascript" src="viewer/viewer.min.js"></script>
+    </head><body style="display:flex; flex-direction: row; flex-wrap: wrap;">`;
     var pa = fs.readdirSync(path);
     pa.forEach(function(ele,index) {
         var info = fs.statSync(path+"/"+ele)
         if(info.isDirectory()) {
             readDirSync(path+"/"+ele);
         } else {
-            html += `<li style="margin-top: 20px;" onClick="document.getElementById('container').style.backgroundImage='url(${path}/${ele})'">
-                <a>${ele}</a>
-                <img src="${path}/${ele}" width="200px" height="140px">
-            </li>`;
+            html += `<div style="position:relative; width:144px; height: 144px; display: flex; justify-content: center; align-items: center; margin: 10px; padding:2px; background-color: #EBEBEB">
+            <img src="${path}/${ele}" style="max-width: 140px; max-height: 140px;">
+            <span style="position: absolute; font-size: 10px; max-width: 140px; height: 12px; overflow: hidden; top: 150px;">${ele}</span>
+            </div>`;
         }
     });
-    html += '</ul><div id="container" style="flex: 1; margin-left: 20px; background-size: contain; background-repeat:no-repeat;" /></body>';
+    html += `</body>
+    <script>
+    var viewer = new Viewer(document.body, {
+        toolbar: {
+            prev: 1,
+            zoomOut: 1,
+            oneToOne: 1,
+            play: 1,
+            reset: 1,
+            zoomIn: 1,
+            next: 1,
+        },
+    })
+    </script>
+    </html>`;
     return html;
 }
 
@@ -111,11 +129,12 @@ function startDirServer(port, path) {
     });
 
     server.on('listening', function () {
-        const url = `http://${ip}:${port}`;
+        const url = `http://${ip}:${port}/showDirFiles`;
         console.log(url);
+        openChrome(url);
     });
     server.on('error', function (err) {
-        startDirServer(port+1);
+        startDirServer(port+1, path);
     })
 }
 
@@ -163,6 +182,7 @@ app.all('*', (req, res, next) => {
     next();
 });
 app.use(express.static('.'));
+app.use(express.static(__dirname+'/static'));
 
 var param = process.argv[2];
 var param1 = process.argv[3];
@@ -186,7 +206,6 @@ if (param === '-h' || param === '--help') {
     openChrome('http:'+ip+':'+port+'/'+param1, true);
 } else if (param === '-d' || param === '--dir') {
     startDirServer(port, param1);
-    openChrome('http:'+ip+':'+port+'/showDirFiles');
 } else {
     startServer(port, param);
 }
