@@ -146,14 +146,6 @@ function di() {
     ${tool} $first $second
 }
 
-function git_() {
-    if [ "$1" = "pl" ];then
-        git pull origin roadmap
-    elif [ "$1" = "pu" ];then
-        git push --set-upstream origin roadmap
-    fi
-}
-
 #copy
 alias mhon='xsmb -m'
 alias mhoff='xsmb -u'
