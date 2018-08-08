@@ -27,8 +27,8 @@
     noaddall = "rm -r --cached ."
     bare="init --bare"
     remoteadd="remote add origin"
-    brpu="git push --set-upstream origin roadmap"
-    brpl="git pull origin roadmap roadmap"
+    brpu="push --set-upstream origin roadmap"
+    brpl="pull origin roadmap roadmap"
 [core]
 	pager = 
 	autocrlf = false
