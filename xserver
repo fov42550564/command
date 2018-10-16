@@ -95,7 +95,7 @@ function getHtmlInDir(path) {
     pa.forEach(function(ele,index) {
         var info = fs.statSync(path+"/"+ele)
         if(info.isDirectory()) {
-            readDirSync(path+"/"+ele);
+            getHtmlInDir(path+"/"+ele);
         } else {
             html += `<div style="position:relative; width:144px; height: 144px; display: flex; justify-content: center; align-items: center; margin: 10px; padding:2px; background-color: #EBEBEB">
             <img src="${path}/${ele}" style="max-width: 140px; max-height: 140px;">
