@@ -163,7 +163,12 @@ DBCollection.prototype.find = function (query, fields, limit, skip, batchSize, o
 
 const defaultUpdate =  DBCollection.prototype.update;
 DBCollection.prototype._update = defaultUpdate;
-DBCollection.prototype.update = function (query, obj, upsert, multi) {
+DBCollection.prototype.update = function (query, obj, options) {
+    if (typeof obj !== 'object') {
+        options = obj;
+        obj = query;
+        query = {};
+    }
     if (typeof query === 'string') {
         query = {_id: ObjectId(query)};
     } else if (typeof query === 'object') {
@@ -182,7 +187,10 @@ DBCollection.prototype.update = function (query, obj, upsert, multi) {
         });
         obj = newObj;
     }
-    return defaultUpdate.call(this, query, obj, upsert, multi);
+    if (options === 1){
+        options = { multi: true };
+    }
+    return defaultUpdate.call(this, query, obj, options);
 };
 
 // 登录直接进入pdshop

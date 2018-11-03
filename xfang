@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if [ -z "$1" ];then
+    old=smt
+    new=fang
+else
+    old=fang
+    new=smt
+fi
+
+vim -e -s -c ":%s/${old}/${new}/" -c ":wq" ~/simiantong/PDShop/project/android/local.properties
+vim -e -s -c ":%s/${old}/${new}/" -c ":wq" ~/simiantong/PDClient/project/android/local.properties
+vim -e -s -c ":%s/${old}/${new}/" -c ":wq" ~/simiantong/PDSalesman/project/android/local.properties
+vim -e -s -c ":%s/${old}/${new}/" -c ":wq" ~/simiantong/PDDriver/project/android/local.properties
