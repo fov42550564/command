@@ -1,0 +1,42 @@
+#!/usr/bin/env electron
+
+const { app, globalShortcut, Menu, BrowserWindow } = require('electron');
+
+function createWindow() {
+    const rootWindow = new BrowserWindow({
+        minWidth: 300,
+        minHeight: 300,
+        width: 300,
+        height: 300,
+        webPreferences: {
+            plugins: true,
+            nodeIntegration: false
+        }
+    });
+    const url = process.argv[2];
+    if (!url) {
+        console.log('Usage:');
+        console.log('   xdouyu url');
+        return app.quit();
+    }
+    Menu.setApplicationMenu(null);
+    rootWindow.loadURL(
+        `https://v.douyu.com/show/${url.replace(
+            'https://v.douyu.com/show/',
+            ''
+        )}`
+    );
+    app.on('window-all-closed', () => {
+        app.quit();
+    });
+    globalShortcut.register('CmdOrCtrl+Alt+I', () => {
+        rootWindow.webContents.toggleDevTools();
+    });
+}
+
+app.commandLine.appendSwitch(
+    'ppapi-flash-path',
+    '/Users/fang/Library/Application Support/Google/Chrome/PepperFlash/31.0.0.153/PepperFlashPlayer.plugin'
+);
+app.commandLine.appendSwitch('ppapi-flash-version', '31.0.0.153');
+app.on('ready', createWindow);

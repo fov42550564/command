@@ -85,22 +85,25 @@ function startUploadServer(port) {
     })
 }
 
-function getHtmlInDir(path) {
+function getHtmlInDir(dir) {
     var html = `<html><head>
-    <title>${path}的文件</title>
+    <title>${dir}的文件列表</title>
     <link rel="stylesheet" href="viewer/viewer.min.css" />
     <script type="text/javascript" src="viewer/viewer.min.js"></script>
     </head><body style="display:flex; flex-direction: row; flex-wrap: wrap;">`;
-    var pa = fs.readdirSync(path);
-    pa.forEach(function(ele,index) {
-        var info = fs.statSync(path+"/"+ele)
+    fs.readdirSync(dir).forEach(function(file, index) {
+        var fullname = path.join(dir, file);
+        var info = fs.statSync(fullname);
         if(info.isDirectory()) {
-            getHtmlInDir(path+"/"+ele);
+            html += getHtmlInDir(fullname);
         } else {
-            html += `<div style="position:relative; width:144px; height: 144px; display: flex; justify-content: center; align-items: center; margin: 10px; padding:2px; background-color: #EBEBEB">
-            <img src="${path}/${ele}" style="max-width: 140px; max-height: 140px;">
-            <span style="position: absolute; font-size: 10px; max-width: 140px; height: 12px; overflow: hidden; top: 150px;">${ele}</span>
-            </div>`;
+            html += `<div style="position:relative; width:144px; height: 144px; display: flex; justify-content: center; align-items: center; margin: 10px; padding:2px; background-color: #EBEBEB">`;
+            if (['.png', '.jpg', '.gif', 'jpeg'].indexOf(path.extname(file)) !== -1) {
+                html += `<img src="${fullname}" style="max-width: 140px; max-height: 140px;">`;
+            } else {
+                html += `<a href="${fullname}" style="max-width: 140px; max-height: 140px;">${file}</a>`;
+            }
+            html += `<span style="position: absolute; font-size: 10px; max-width: 140px; height: 12px; overflow: scroll; word-break: keep-all; top: 150px;">${fullname}</span></div>`;
         }
     });
     html += `</body>
@@ -121,8 +124,8 @@ function getHtmlInDir(path) {
     return html;
 }
 
-function startDirServer(port, path) {
-    var html = getHtmlInDir(path);
+function startDirServer(port, dir) {
+    var html = getHtmlInDir(dir);
     var server = app.listen(port);
     app.get('/showDirFiles', function(req, res, next){
         res.send(html);
@@ -134,7 +137,7 @@ function startDirServer(port, path) {
         openChrome(url);
     });
     server.on('error', function (err) {
-        startDirServer(port+1, path);
+        startDirServer(port+1, dir);
     })
 }
 
