@@ -129,22 +129,7 @@ function xecho() { echo $(pbpaste)|pbcopy; }
 function wh() { cd $(which "$1"); }
 
 #diffmerge
-function di() {
-    local tool first second
-    if __mac;then
-        tool='diffmerge.sh'
-    else
-        tool='bcompare'
-    fi
-    if [ "$1" = "-r" ];then
-        first=$3
-        second=$2
-    else
-        first=$1
-        second=$2
-    fi
-    ${tool} $first $second
-}
+alias di='__diff'
 
 #copy
 alias mhon='xsmb -m'

@@ -360,6 +360,43 @@ function __ask()
 		*)return $_FALSE_;;
 	esac
 }
+function __diff() {
+########################################
+#Usage:__diff [-r|-d|-rd] path1|file1 path2|file2
+#e.g: __diff f1 f2
+#	  __diff -r f1 f2
+#	  __diff -d d2 f1
+#	  __diff -rd d2 f1
+########################################
+    local tool first second
+    if __mac;then
+        tool='diffmerge.sh'
+    else
+        tool='bcompare'
+    fi
+	if [ "$1" = "-h" ];then
+		echo "Usage:__diff [-r|-d|-rd] path1|file1 path2|file2"
+		echo "  __diff f1 f2"
+		echo "  __diff -r f1 f2"
+		echo "  __diff -d d2 f1"
+		echo "  __diff -rd d2 f1"
+		return;
+	fi
+	if [ "$1" = "-d" ];then
+		first=$3
+		second="$2/$3"
+	elif [ "$1" = "-rd" -o "$1" = "-dr" ];then
+		first="$2/$3"
+		second=$3
+    elif [ "$1" = "-r" ];then
+        first=$3
+        second=$2
+    else
+        first=$1
+        second=$2
+    fi
+    ${tool} $first $second
+}
 function __sudo()
 {
 ########################################
@@ -1027,14 +1064,14 @@ function __exec_target()
 	if [ "${callback:0:14}" = "__exec_command" ];then
 		target="$@"
 		if [ "${callback%%*$_TARGET_*}" = "" ];then
-			${callback/$_TARGET_/$target}
+			${callback//$_TARGET_/$target}
 		else
 			$callback $target
 		fi
 	else
 		target="\"$@\""
 		if [ "${callback%%*$_TARGET_*}" = "" ];then
-			eval "${callback/$_TARGET_/$target}"
+			eval "${callback//$_TARGET_/$target}"
 		else
 			eval "$callback $target"
 		fi
