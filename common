@@ -353,7 +353,7 @@ function __ask()
 ########################################
 	local ans
 
-	echo -n '$@[y/n]:'
+	echo -n "$@[y/n]:"
 	read ans
 	case "$ans" in
 		y*|Y*)return $_TRUE_;;
