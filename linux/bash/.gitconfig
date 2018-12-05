@@ -43,6 +43,7 @@
 	pager =
 	autocrlf = false
 	editor = /usr/bin/vim
+	quotepath = false
 [http]
 	postBuffer = 2077721600
 [filter "lfs"]
