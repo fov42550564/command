@@ -362,20 +362,20 @@ function __ask()
 }
 function __diff() {
 ########################################
-#Usage:__diff [-r|-d|-rd] path1|file1 path2|file2
+#Usage:__diff [-r|-d|-rd] path1|file1 path2|file2 [-a]
 #e.g: __diff f1 f2
 #	  __diff -r f1 f2
 #	  __diff -d d2 f1
 #	  __diff -rd d2 f1
 ########################################
-    local tool first second
+    local tool first second open
     if __mac;then
         tool='diffmerge.sh'
     else
         tool='bcompare'
     fi
 	if [ "$1" = "-h" ];then
-		echo "Usage:__diff [-r|-d|-rd] path1|file1 path2|file2"
+		echo "Usage:__diff [-r|-d|-rd] path1|file1 path2|file2 [-a]"
 		echo "  __diff f1 f2"
 		echo "  __diff -r f1 f2"
 		echo "  __diff -d d2 f1"
@@ -385,17 +385,25 @@ function __diff() {
 	if [ "$1" = "-d" ];then
 		first=$3
 		second="$2/$3"
+        open="$4"
 	elif [ "$1" = "-rd" -o "$1" = "-dr" ];then
 		first="$2/$3"
 		second=$3
+        open="$4"
     elif [ "$1" = "-r" ];then
         first=$3
         second=$2
+        open="$4"
     else
         first=$1
         second=$2
+        open="$3"
     fi
-    ${tool} $first $second
+    if [ "$open" = "-a" ];then
+        atom $first $second
+    else
+        ${tool} $first $second
+    fi
 }
 function __sudo()
 {
