@@ -12,7 +12,7 @@ _backdir=".linux_backup"
 _platforms=0
 _targets=0
 targets_bash=1
-platforms_cygwin=1
+platforms_windows=1
 platforms_macosx=2
 platforms_linux=3
 
@@ -32,15 +32,18 @@ function install_single()
 
 function install_bash()
 {
-    sudo chmod 666 /etc/profile
-    sudo sed -i '/\/etc\/bashrc/a\\t[ -r ~/.bashrc ] && . ~/.bashrc' /etc/profile
-    sudo chmod 444 /etc/profile
+    if ((!$_platforms&$platforms_windows));then
+    	sudo chmod 666 /etc/profile
+    	sudo sed -i '/\/etc\/bashrc/a\\t[ -r ~/.bashrc ] && . ~/.bashrc' /etc/profile
+    	sudo chmod 444 /etc/profile
+    fi
     install_single bash/.bashrc .bashrc
     install_single bash/.inputrc .inputrc
     install_single bash/.gitconfig .gitconfig
     install_single bash/.mongorc.js .mongorc.js
-    if (($_platforms&$platforms_cygwin));then
+    if (($_platforms&$platforms_windows));then
         install_single bash/.minttyrc .minttyrc
+        install_single bash/.dir_colors .dir_colors
     fi
 }
 
@@ -57,9 +60,9 @@ function show_help()
 {
     echo "install [-p[platforms]|-t[targets]]"
     echo "  -p [platforms]:platforms as follows:"
-    echo "      cygwin macosx linux"
-    echo "      uses: -p cygwin"
-    echo "      default: cygwin"
+    echo "      windows macosx linux"
+    echo "      uses: -p windows"
+    echo "      default: windows"
     echo "  -t [targets]:targets as follows:"
     echo "      bash all"
     echo "      uses: -t bash"
@@ -69,10 +72,10 @@ function show_help()
 
 function main()
 {
-    local has_oper all bash cygwin macosx linux
+    local has_oper all bash windows macosx linux
 
     bash=$targets_bash
-    cygwin=$platforms_cygwin
+    windows=$platforms_windows
     macosx=$platforms_macosx
     linux=$platforms_linux
 

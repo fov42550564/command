@@ -113,13 +113,14 @@ function __linux()
 ########################################
   [ $(uname) = "Linux" ]&&return $_TRUE_||return $_FALSE_
 }
-function __cygwin()
+function __windows()
 {
 ########################################
-#Usage:__cygwin
-#	  check if is cygwin system
+#Usage:__windows
+#	  check if is windows system
 ########################################
-  [ $(uname) = "cygwin" ]&&return $_TRUE_||return $_FALSE_
+  local name=$(uname)
+  [ ${name:0:5} = "MINGW" ]&&return $_TRUE_||return $_FALSE_
 }
 function __debug()
 {
@@ -192,7 +193,7 @@ function __change_to_winpath()
 {
 ########################################
 #Usage:__change_to_winpath path
-#	only use in cygwin
+#	only use in windows
 ########################################
     cygpath -C ANSI -w -a "$XPATH"
 }

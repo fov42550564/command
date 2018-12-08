@@ -17,13 +17,14 @@ source ~/command/common
 PS1='\n\[\e[32m\]\u\[\e[34m\]@\[\e[32m\]\t \[\e[33m\]\w\[\e[0m\]\n\$'
 
 # Uncomment to use the terminal colours set in DIR_COLORS
-if __cygwin;then
-eval "$(dircolors -b /etc/DIR_COLORS)"
+if __windows;then
+eval "$(dircolors -b ~/.dir_colors)"
 # ignore return \r\d
 set -o igncr
 export SHELLOPTS
 #open
-alias open='cygstart'
+alias open='explorer'
+alias atom='C:/Users/fang/AppData/Local/atom/atom.exe'
 fi
 
 #set options
@@ -141,16 +142,17 @@ alias mhopen='open /Volumes/home/方运江'
 alias mhmv='cp /Volumes/home/方运江/*'
 
 #set_path
+export PATH=$PATH:~/command
 if __mac;then
-  export PATH=$PATH:~/command:/usr/local/lib/node_modules/cordova/bin:~/tools/phantomjs-2.1.1-macosx/bin:~/tools/wasm:~/tools/wabt
+  export PATH=$PATH:/usr/local/lib/node_modules/cordova/bin:~/tools/phantomjs-2.1.1-macosx/bin:~/tools/wasm:~/tools/wabt
 elif __linux;then
-  export PATH=$PATH:~/command:/root/tools/node/bin:/root/tools/node/lib/node_modules/npm/bin/node-gyp-bin:/root/tools/mongodb/bin
+  export PATH=$PATH:/root/tools/node/bin:/root/tools/node/lib/node_modules/npm/bin/node-gyp-bin:/root/tools/mongodb/bin
   export JAVA_HOME=~/tools/jdk1.8.0_144
 fi
 
 #ndk
 alias ndk='ndk-build'
-if __cygwin;then
+if __windows;then
 export ANDROID_NDK_HOME=~/f/android/android-ndk-r9d
 export ANDROID_SDK_HOME=~/f/android/android-sdk
 else
@@ -173,8 +175,6 @@ alias viclear='rm -f ~/.data/swap/*.swp'
 #go
 alias xgo='go run'
 
-#atom-shell
-#alias atom='/Users/apple/node/atom-shell/Atom.app/Contents/MacOS/Atom'
 #node-webkit
 alias nw='/usr/local/lib/nwjs/nwjs.app/Contents/MacOS/nwjs'
 alias nw-build='nw-gyp build'
