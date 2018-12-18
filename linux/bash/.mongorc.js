@@ -7,6 +7,10 @@ String.prototype.padRight = function(total, pad) {
     return (this+Array(total).join(pad || ' ')).slice(0, total);
 }
 
+function forbidden(){
+	print("forbidden operator");
+};
+
 function showList(list) {
     let cnt = 0;
     let line = '';
@@ -30,12 +34,12 @@ function id(s) {
     if (s && typeof s === 'object') {
         if (s instanceof Array) {
             return s.map(o => id(o));
-        } else if (s instanceof Date) {
-            return s;
         } else {
-            const ret = {};
-            Object.keys(s).forEach(k => ret[k] = id(s[k]));
-            return ret;
+            if (Object.keys(s).length) {
+                const ret = {};
+                Object.keys(s).forEach(k => {ret[k] = id(s[k])});
+                return ret;
+            }
         }
     }
     return s;
@@ -146,7 +150,6 @@ DBCollection.prototype.find = function (query, fields, limit, skip, batchSize, o
     } else {
         obj = fields;
     }
-
     if (typeof query === 'string') {
         if (/[a-z0-9]{24}/.test(query)) {
             query = {$or: keys.concat('_id').map(o=>({[o]: ObjectId(query)}))};
@@ -156,12 +159,11 @@ DBCollection.prototype.find = function (query, fields, limit, skip, batchSize, o
     } else if (typeof query === 'object') {
         Object.keys(query).forEach(k=>query[k]=id(query[k]));
     }
-
     return defaultFind.call(this, query, obj, limit, skip, batchSize, options);
 };
 
 
-const defaultUpdate =  DBCollection.prototype.update;
+const defaultUpdate = DBCollection.prototype.update;
 DBCollection.prototype._update = defaultUpdate;
 DBCollection.prototype.update = function (query, obj, options) {
     if (typeof obj !== 'object') {
@@ -193,6 +195,12 @@ DBCollection.prototype.update = function (query, obj, options) {
     return defaultUpdate.call(this, query, obj, options);
 };
 
-// 登录直接进入pdshop
+//禁止删除数据库
+db.dropDatabase = DB.prototype.dropDatabase = forbidden;
+//禁止删除集合
+DBCollection.prototype.drop = forbidden;
+//禁止 删除索引
+DBCollection.prototype.dropIndex = forbidden;
 
+// 登录直接进入pdshop
 db = db.getMongo().getDB('pdshop');
