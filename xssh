@@ -141,11 +141,13 @@ function show_help()
 
 function main()
 {
-	while getopts :s:l:u:c:h opt;do
+	while getopts :s:l:u:c:ath opt;do
 		case ${opt} in
 			u)_oper=1; _name="$OPTARG";;
 			s)_oper=2;_localpath="${OPTARG%%:*}";_remotepath="${OPTARG##*:}";;
 			l)_oper=3;_remotepath="${OPTARG%%:*}";_localpath="${OPTARG##*:}";;
+            a)_config_file="/Users/$(whoami)/account/ali_yun_config";;
+            t)_config_file="/Users/$(whoami)/account/yilong_config";;
 			c)_config_file="$OPTARG";;
 			*)show_help;exit;;
 		esac
