@@ -2,13 +2,14 @@ const REJECTS = {
     __all: ['salt', 'hash'],
     roadmaps: ['sendDoorList'],
 };
+const STRICT = false;
 
 String.prototype.padRight = function(total, pad) {
     return (this+Array(total).join(pad || ' ')).slice(0, total);
 }
 
 function forbidden(){
-	print("forbidden operator");
+    print("非法操作");
 };
 
 function showList(list) {
@@ -162,7 +163,6 @@ DBCollection.prototype.find = function (query, fields, limit, skip, batchSize, o
     return defaultFind.call(this, query, obj, limit, skip, batchSize, options);
 };
 
-
 const defaultUpdate = DBCollection.prototype.update;
 DBCollection.prototype._update = defaultUpdate;
 DBCollection.prototype.update = function (query, obj, options) {
@@ -195,12 +195,20 @@ DBCollection.prototype.update = function (query, obj, options) {
     return defaultUpdate.call(this, query, obj, options);
 };
 
-//禁止删除数据库
-db.dropDatabase = DB.prototype.dropDatabase = forbidden;
-//禁止删除集合
-DBCollection.prototype.drop = forbidden;
-//禁止 删除索引
-DBCollection.prototype.dropIndex = forbidden;
+if (STRICT) {
+    db.dropDatabase = forbidden;
+    DB.prototype.dropDatabase = forbidden;
+    DBCollection.prototype.drop = forbidden;
+    DBCollection.prototype.dropIndex = forbidden;
+    DBCollection.prototype.dropIndexes = forbidden;
+    DBCollection.prototype.update = forbidden;
+    DBCollection.prototype.remove = forbidden;
+    DBCollection.prototype.findOneAndReplace = forbidden;
+    DBCollection.prototype.findOneAndUpdate = forbidden;
+    DBCollection.prototype.findAndModify = forbidden;
+    DBCollection.prototype.deleteMany = forbidden;
+    DBCollection.prototype.deleteOne = forbidden;
+}
 
 // 登录直接进入pdshop
 db = db.getMongo().getDB('pdshop');
