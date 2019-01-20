@@ -195,6 +195,17 @@ DBCollection.prototype.update = function (query, obj, options) {
     return defaultUpdate.call(this, query, obj, options);
 };
 
+const defaultRemove = DBCollection.prototype.remove;
+DBCollection.prototype._remove = defaultRemove;
+DBCollection.prototype.remove= function (query, justOne) {
+    if (typeof query === 'string') {
+        query = {_id: ObjectId(query)};
+    } else if (typeof query === 'object') {
+        Object.keys(query).forEach(k=>query[k]=id(query[k]));
+    }
+    return defaultRemove.call(this, query, justOne);
+};
+
 if (STRICT) {
     db.dropDatabase = forbidden;
     DB.prototype.dropDatabase = forbidden;

@@ -216,6 +216,18 @@ function find_root_dir() {
 	echo ${dir}
 }
 
+function git_revert_to_version() {
+	local file version
+	version=${1%:*}
+	file=${1#*:}
+
+	git co $version $file
+	cp $file .__file_back
+	git co head $file
+	diffmerge.sh .__file_back $file
+	rm -f .__file_back
+}
+
 function show_help()
 {
 	local -a list
@@ -231,6 +243,7 @@ function show_help()
 	list=("${list[@]}" "  -d [tool]: show git diff with tool, 0: console 1: tool")
 	list=("${list[@]}" "  -a: add git file")
 	list=("${list[@]}" "  -r: revert git file")
+	list=("${list[@]}" "  -e [version:file]: revert git file to a version")
 	list=("${list[@]}" "  -v: edit file with vim")
 	list=("${list[@]}" "  -m [file;file]: delete history file force")
 	list=("${list[@]}" "  -u [url]: download file or directory from github")
@@ -243,7 +256,7 @@ function main()
 	local oper_right ver files
 	oper_right=0
 
-	while getopts :p:d:arvlst:i:n:f:m:u:h opt;do
+	while getopts :p:d:arvlst:i:n:f:m:e:u:h opt;do
 		oper_right=1
 		case $opt in
 			p)_oper=0;_dest_dir="$OPTARG";;
@@ -258,6 +271,7 @@ function main()
 			f)_logfile="$OPTARG";;
 			n)_oper=6;ver="$OPTARG";;
 			m)_oper=7;files="$OPTARG";;
+			e)_oper=8;ver="$OPTARG";;
 			u)xgithub -u "$OPTARG";exit;;
 			*)show_help;exit;;
 		esac
@@ -266,6 +280,9 @@ function main()
 	[ $oper_right -eq 0 ] && show_help && exit
     if ((_oper==7));then
 		git_delete_history_force $files
+        exit
+	elif ((_oper==8));then
+		git_revert_to_version $ver
         exit
     fi
 
