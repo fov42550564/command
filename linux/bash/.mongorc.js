@@ -188,7 +188,7 @@ DBCollection.prototype.findEx = function (query, fields, limit, skip, batchSize,
         const obj = {};
         const keys = Object.keys(item);
         for (let key of keys) {
-            if (/Time$/.test(key) && item[key]) {
+            if (item[key] instanceof Date) {
                 obj[key] = item[key].format('YYYY-MM-DD HH:mm:ss');
             } else {
                 obj[key] = item[key];
