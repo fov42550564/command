@@ -7,6 +7,23 @@ const STRICT = false;
 String.prototype.padRight = function(total, pad) {
     return (this+Array(total).join(pad || ' ')).slice(0, total);
 }
+Date.prototype.format = function(fmt)   {
+    var o = {
+        "M+" : this.getMonth()+1,                 //月份
+        "D+" : this.getDate(),                    //日
+        "H+" : this.getHours(),                   //小时
+        "m+" : this.getMinutes(),                 //分
+        "s+" : this.getSeconds(),                 //秒
+        "q+" : Math.floor((this.getMonth()+3)/3), //季度
+        "S"  : this.getMilliseconds()             //毫秒
+    };
+    if(/(Y+)/.test(fmt))
+    fmt=fmt.replace(RegExp.$1, (this.getFullYear()+"").substr(4 - RegExp.$1.length));
+    for(var k in o)
+    if(new RegExp("("+ k +")").test(fmt))
+    fmt = fmt.replace(RegExp.$1, (RegExp.$1.length==1) ? (o[k]) : (("00"+ o[k]).substr((""+ o[k]).length)));
+    return fmt;
+}
 
 function forbidden(){
     print("非法操作");
@@ -161,7 +178,26 @@ DBCollection.prototype.find = function (query, fields, limit, skip, batchSize, o
         Object.keys(query).forEach(k=>query[k]=id(query[k]));
     }
     return defaultFind.call(this, query, obj, limit, skip, batchSize, options);
+
 };
+DBCollection.prototype.findEx = function (query, fields, limit, skip, batchSize, options) {
+    const it = this.find(query, fields, limit, skip, batchSize, options);
+    const ret = [];
+    while (it.hasNext()) {
+        const item = it.next();
+        const obj = {};
+        const keys = Object.keys(item);
+        for (let key of keys) {
+            if (/Time$/.test(key) && item[key]) {
+                obj[key] = item[key].format('YYYY-MM-DD HH:mm:ss');
+            } else {
+                obj[key] = item[key];
+            }
+        }
+        ret.push(obj);
+    }
+    return ret;
+}
 
 const defaultUpdate = DBCollection.prototype.update;
 DBCollection.prototype._update = defaultUpdate;

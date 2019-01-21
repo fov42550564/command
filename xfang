@@ -1,5 +1,15 @@
 #!/bin/bash
 
+if [ "$1" = "-h" ];then
+    echo "Usage:"
+    echo ""
+    echo xfang -h: show help
+    echo "xfang: smt->fang"
+    echo "xfang -r: fang->smt"
+    echo ""
+    exit
+fi
+
 if [ -z "$1" ];then
     old=smt
     new=fang
