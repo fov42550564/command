@@ -199,50 +199,50 @@ DBCollection.prototype.findEx = function (query, fields, limit, skip, batchSize,
     return ret;
 }
 
-const defaultUpdate = DBCollection.prototype.update;
-DBCollection.prototype._update = defaultUpdate;
-DBCollection.prototype.update = function (query, obj, options) {
-    if (typeof obj !== 'object') {
-        options = obj;
-        obj = query;
-        query = {};
-    }
-    if (typeof query === 'string') {
-        query = {_id: ObjectId(query)};
-    } else if (typeof query === 'object') {
-        Object.keys(query).forEach(k=>query[k]=id(query[k]));
-    }
-    if (!obj['$set'] || !obj['$unset']) {
-        const newObj = {};
-        Object.keys(obj).forEach((k)=>{
-            if (obj[k] !== '$unset') {
-                !newObj['$set'] &&( newObj['$set'] = {});
-                newObj['$set'][k] = id(obj[k]);
-            } else {
-                !newObj['$unset'] &&( newObj['$unset'] = {});
-                newObj['$unset'][k] = 1;
-            }
-        });
-        obj = newObj;
-    }
-    if (options === 1){
-        options = { multi: true };
-    }
-    return defaultUpdate.call(this, query, obj, options);
-};
+if (!STRICT) {
+    const defaultUpdate = DBCollection.prototype.update;
+    DBCollection.prototype._update = defaultUpdate;
+    DBCollection.prototype.update = function (query, obj, options) {
+        if (typeof obj !== 'object') {
+            options = obj;
+            obj = query;
+            query = {};
+        }
+        if (typeof query === 'string') {
+            query = {_id: ObjectId(query)};
+        } else if (typeof query === 'object') {
+            Object.keys(query).forEach(k=>query[k]=id(query[k]));
+        }
+        if (!obj['$set'] || !obj['$unset']) {
+            const newObj = {};
+            Object.keys(obj).forEach((k)=>{
+                if (obj[k] !== '$unset') {
+                    !newObj['$set'] &&( newObj['$set'] = {});
+                    newObj['$set'][k] = id(obj[k]);
+                } else {
+                    !newObj['$unset'] &&( newObj['$unset'] = {});
+                    newObj['$unset'][k] = 1;
+                }
+            });
+            obj = newObj;
+        }
+        if (options === 1){
+            options = { multi: true };
+        }
+        return defaultUpdate.call(this, query, obj, options);
+    };
 
-const defaultRemove = DBCollection.prototype.remove;
-DBCollection.prototype._remove = defaultRemove;
-DBCollection.prototype.remove= function (query, justOne) {
-    if (typeof query === 'string') {
-        query = {_id: ObjectId(query)};
-    } else if (typeof query === 'object') {
-        Object.keys(query).forEach(k=>query[k]=id(query[k]));
-    }
-    return defaultRemove.call(this, query, justOne);
-};
-
-if (STRICT) {
+    const defaultRemove = DBCollection.prototype.remove;
+    DBCollection.prototype._remove = defaultRemove;
+    DBCollection.prototype.remove= function (query, justOne) {
+        if (typeof query === 'string') {
+            query = {_id: ObjectId(query)};
+        } else if (typeof query === 'object') {
+            Object.keys(query).forEach(k=>query[k]=id(query[k]));
+        }
+        return defaultRemove.call(this, query, justOne);
+    };
+} else {
     db.dropDatabase = forbidden;
     DB.prototype.dropDatabase = forbidden;
     DBCollection.prototype.drop = forbidden;
