@@ -260,7 +260,6 @@ function main()
 		oper_right=1
 		case $opt in
 			p)_oper=0;_dest_dir="$OPTARG";;
-			i)_oper=8;_dest_dir="$OPTARG";;
 			d)_oper=1;_tool="$OPTARG";;
 			s)_show_status=1;;
 			r)_oper=2;;
@@ -271,7 +270,8 @@ function main()
 			f)_logfile="$OPTARG";;
 			n)_oper=6;ver="$OPTARG";;
 			m)_oper=7;files="$OPTARG";;
-			e)_oper=8;ver="$OPTARG";;
+			i)_oper=8;_dest_dir="$OPTARG";;
+			e)_oper=9;ver="$OPTARG";;
 			u)xgithub -u "$OPTARG";exit;;
 			*)show_help;exit;;
 		esac
@@ -281,7 +281,7 @@ function main()
     if ((_oper==7));then
 		git_delete_history_force $files
         exit
-	elif ((_oper==8));then
+	elif ((_oper==9));then
 		git_revert_to_version $ver
         exit
     fi
