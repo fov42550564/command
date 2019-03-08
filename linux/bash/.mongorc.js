@@ -73,7 +73,7 @@ Object.defineProperty(this, "_h", {
         print('     _host:  show host');
         print('     _189:   switch 189 and localhost server');
         print('     find:   find(id/str/obj, \'[-]xx xx ...\'/{xx:1, ...})');
-        print('     update: find(id/obj, {xx:xx, ...}), unset can be { $unset: { xx: 1 } } or { xx: \'$unset\' }');
+        print('     update: find(id/obj, {xx:xx, ...}, 1), unset can be { $unset: { xx: 1 } } or { xx: \'$unset\' }, 1 is multi');
     },
 });
 

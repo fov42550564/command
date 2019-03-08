@@ -161,11 +161,16 @@ function git_get_log_versions()
 
 function git_get_add_files()
 {
-	local hasadd
+	local rs s i var
+	rs=$(git status|grep "modified:"|sed 's/.*modified://')
+	s=`echo $rs|awk '{split($0,tmp)} END {for(i in tmp) print tmp[i]}'`
 	unset _files
-	hasadd=$(git st|sed -n '/# Untracked files:/p')
-	[ -z "$hasadd" ]&&return
-	_files=($(git st|sed '0,/# Untracked files:/d;$d;'|sed '1,2d;s/.//'))
+	_files=($(git st|sed '0,/Untracked files:/d;$d;'|sed '1,2d;s/.//'))
+	i=${#files[@]}
+	for var in $s;do
+		_files[i]=$var
+		let i++
+	done
 }
 
 function git_copy_change_to()
