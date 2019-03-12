@@ -63,6 +63,26 @@ function id(s) {
     return s;
 }
 
+function cloneDeep(doc) {
+    if (typeof doc !== 'object') {
+        return doc;
+    }
+    if (doc instanceof Array) {
+        return doc.map(o=>cloneDeep(o));
+    }
+    const keys = Object.keys(doc);
+    if (!keys.length) {
+        return doc;
+    }
+    const obj = {};
+    for (let key of keys) {
+        if (key !== '_id' && key !== '__v') {
+            obj[key] = cloneDeep(doc[key]);
+        }
+    }
+    return obj;
+}
+
 Object.defineProperty(this, "_h", {
     get: function() {
         print('show self defined command:');
@@ -136,7 +156,7 @@ DBCollection.prototype._find = defaultFind;
 DBCollection.prototype.find = function (query, fields, limit, skip, batchSize, options) {
     const name = this.getName();
     let obj = {};
-    let keys = Object.keys(defaultFind.call(this, {}, {_id: 0, __v: 0}, 1, 0).toArray()[0]||{}).filter(o=>!((REJECTS.__all.indexOf(o) !== -1) || (REJECTS[name] && REJECTS[name].indexOf(o) !== -1)));
+    let keys = Object.keys(defaultFind.call(this, {}, {_id: 0, __v: 0}, 100, 0).toArray().reduce((r, n)=>Object.assign(r, n), {})).filter(o=>!((REJECTS.__all.indexOf(o) !== -1) || (REJECTS[name] && REJECTS[name].indexOf(o) !== -1)));
 
     if (!fields) {
         obj['__v'] = 0;
@@ -241,6 +261,15 @@ if (!STRICT) {
             Object.keys(query).forEach(k=>query[k]=id(query[k]));
         }
         return defaultRemove.call(this, query, justOne);
+    };
+
+    DBCollection.prototype.copy = function (query, count = 1) {
+        const it = this.find(query);
+        while (it.hasNext()) {
+            const item = it.next();
+            const obj = cloneDeep(item);
+            this.save(obj);
+        }
     };
 } else {
     db.dropDatabase = forbidden;
