@@ -718,7 +718,7 @@ function __set_dest_path()
 	elif [ "$param" = "-h" ];then
 		echo "Usage:dt[--][-n[d:cd|o:open|m:move|c:clean|l:ls]]"
 	elif [ "$param" = "-d" ];then
-		cd $(sed -n '1p' $file)
+		__extend_cd "$(sed -n '1p' $file)"
 	elif [ "$param" = "-o" ];then
 		open $(sed -n '1p' $file)
 	elif [ "$param" = "-l" ];then
@@ -736,7 +736,7 @@ function __set_dest_path()
 			if [ "${ret:$len-1}" = "d" ];then
 				line=${ret:0:$len-1}
 				_dp=$(sed -n $line'p' $file)
-				cd $_dp
+				__extend_cd "$_dp"
 			elif [ "${ret:$len-1}" = "l" ];then
 				line=${ret:0:$len-1}
 				_dp=$(sed -n $line'p' $file)
