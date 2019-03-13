@@ -86,18 +86,24 @@ function cloneDeep(doc) {
 Object.defineProperty(this, "_h", {
     get: function() {
         print('show self defined command:');
-        print('     ls:     show databases and collections');
+        print('     l:     show databases and collections');
         print('     id:     wrapper ObjectId only if like 24 bit _id');
         print('     _:      switch pretty shell');
         print('     _n:     get/set shellBatchSize, e.g: _n=10');
         print('     _host:  show host');
         print('     _189:   switch 189 and localhost server');
         print('     find:   find(id/str/obj, \'[-]xx xx ...\'/{xx:1, ...})');
-        print('     update: find(id/obj, {xx:xx, ...}, 1), unset can be { $unset: { xx: 1 } } or { xx: \'$unset\' }, 1 is multi');
+        print('     update: update(id/obj, {xx:xx, ...}, 1), 1 is multi');
+        print('             unset can be { $unset: { xx: 1 } } or { xx: \'$unset\' }');
+        print('             inc can be { $inc: { xx: 1 } } or { xx: \'+1\' }');
+        print('     copy:   copy(id/str/obj, {xx:xx, ...}, count)');
+        print('             {xx:xx, ...} is need modify, $$ will be replace to index, index is start at 1');
+        print('             eg: { a: \'-$$*3\' }');
+        print('             count is times');
     },
 });
 
-Object.defineProperty(this, "ls", {
+Object.defineProperty(this, "l", {
     get: function() {
         const collections = db.getCollectionNames();
         if (!collections.length) {
@@ -197,12 +203,8 @@ DBCollection.prototype.find = function (query, fields, limit, skip, batchSize, o
     } else if (typeof query === 'object') {
         Object.keys(query).forEach(k=>query[k]=id(query[k]));
     }
-    return defaultFind.call(this, query, obj, limit, skip, batchSize, options);
-
-};
-DBCollection.prototype.findEx = function (query, fields, limit, skip, batchSize, options) {
-    const it = this.find(query, fields, limit, skip, batchSize, options);
-    const ret = [];
+    const it = defaultFind.call(this, query, obj, limit, skip, batchSize, options);
+    const show = DBQuery.prototype._prettyShell ? printjson : printjsononeline;
     while (it.hasNext()) {
         const item = it.next();
         const obj = {};
@@ -214,10 +216,9 @@ DBCollection.prototype.findEx = function (query, fields, limit, skip, batchSize,
                 obj[key] = item[key];
             }
         }
-        ret.push(obj);
+        show(obj);
     }
-    return ret;
-}
+};
 
 if (!STRICT) {
     const defaultUpdate = DBCollection.prototype.update;
@@ -233,23 +234,27 @@ if (!STRICT) {
         } else if (typeof query === 'object') {
             Object.keys(query).forEach(k=>query[k]=id(query[k]));
         }
-        if (!obj['$set'] || !obj['$unset']) {
-            const newObj = {};
-            Object.keys(obj).forEach((k)=>{
-                if (obj[k] !== '$unset') {
+        const newObj = {};
+        Object.keys(obj).forEach((k)=>{
+            if (k[0] !== '$') {
+                if (obj[k] === '$unset') {
+                    !newObj['$unset'] && (newObj['$unset'] = {});
+                    newObj['$unset'][k] = 1;
+                } else if (/^-|\+\d+$/.test(obj[k])) { // +n | -n
+                    !newObj['$inc'] && (newObj['$inc'] = {});
+                    newObj['$inc'][k] = +obj[k];
+                } else {
                     !newObj['$set'] &&( newObj['$set'] = {});
                     newObj['$set'][k] = id(obj[k]);
-                } else {
-                    !newObj['$unset'] &&( newObj['$unset'] = {});
-                    newObj['$unset'][k] = 1;
                 }
-            });
-            obj = newObj;
-        }
+            } else {
+                newObj[k] = obj[k];
+            }
+        });
         if (options === 1){
             options = { multi: true };
         }
-        return defaultUpdate.call(this, query, obj, options);
+        return defaultUpdate.call(this, query, newObj, options);
     };
 
     const defaultRemove = DBCollection.prototype.remove;
@@ -263,12 +268,32 @@ if (!STRICT) {
         return defaultRemove.call(this, query, justOne);
     };
 
-    DBCollection.prototype.copy = function (query, count = 1) {
+    DBCollection.prototype.copy = function (query, update, count = 1) {
+        if (typeof update === 'number') {
+            count = update;
+            update = undefined;
+        }
         const it = this.find(query);
+        let i = 0;
         while (it.hasNext()) {
             const item = it.next();
             const obj = cloneDeep(item);
-            this.save(obj);
+            while (i++ < count) {
+                obj._id = new ObjectId();
+                this.insert(obj);
+                if (update) {
+                    const newUpdate = {};
+                    Object.keys(update).forEach(k=>{
+                        if (/\$\$/.test(update[k])) {
+                            const value = eval(update[k].replace(/\$\$/, i));
+                            newUpdate[k] = value > 0 ? '+'+value : value;
+                        } else {
+                            newUpdate[k] = update[k];
+                        }
+                    });
+                    this.update({_id: obj._id}, newUpdate);
+                }
+            }
         }
     };
 } else {
