@@ -159,40 +159,40 @@ Object.defineProperty(this, "_189", {
 
 const defaultFind = DBCollection.prototype.find;
 DBCollection.prototype._find = defaultFind;
-DBCollection.prototype.find = function (query, fields, limit, skip, batchSize, options) {
-    const name = this.getName();
-    let obj = {};
-    let keys = Object.keys(defaultFind.call(this, {}, {_id: 0, __v: 0}, 100, 0).toArray().reduce((r, n)=>Object.assign(r, n), {})).filter(o=>!((REJECTS.__all.indexOf(o) !== -1) || (REJECTS[name] && REJECTS[name].indexOf(o) !== -1)));
+function parseQuery(self, query, _fields) {
+    const name = self.getName();
+    const fields = {};
+    const keys = Object.keys(defaultFind.call(self, {}, {_id: 0, __v: 0}, 100, 0).toArray().reduce((r, n)=>Object.assign(r, n), {})).filter(o=>!((REJECTS.__all.indexOf(o) !== -1) || (REJECTS[name] && REJECTS[name].indexOf(o) !== -1)));
 
-    if (!fields) {
-        obj['__v'] = 0;
-        REJECTS.__all.forEach(o=>obj[o] = 0);
+    if (!_fields) {
+        fields['__v'] = 0;
+        REJECTS.__all.forEach(o=>fields[o] = 0);
         if (REJECTS[name]) {
-            REJECTS[name].forEach(o=>obj[o] = 0);
+            REJECTS[name].forEach(o=>fields[o] = 0);
         }
-    } else if (fields && typeof fields === 'string') {
-        fields = fields.split(' ').filter(o=>!!o);
+    } else if (typeof _fields === 'string') {
+        _fields = _fields.split(' ').filter(o=>!!o);
         let match = true;
-        if (fields[0][0] === '-') {
-            fields[0] = fields[0].slice(1);
+        if (_fields[0][0] === '-') {
+            _fields[0] = _fields[0].slice(1);
             match = false;
         }
         keys.filter(o => {
-            for (let f of fields) {
+            for (let f of _fields) {
                 if (new RegExp(f).test(o)) {
                     return true;
                 }
             }
-        }).forEach(o=>obj[o]= match ? 1 : 0);
+        }).forEach(o=>fields[o]= match ? 1 : 0);
         if (!match) {
-            obj['__v'] = 0;
-            REJECTS.__all.forEach(o=>obj[o] = 0);
+            fields['__v'] = 0;
+            REJECTS.__all.forEach(o=>fields[o] = 0);
             if (REJECTS[name]) {
-                REJECTS[name].forEach(o=>obj[o] = 0);
+                REJECTS[name].forEach(o=>fields[o] = 0);
             }
         }
     } else {
-        obj = fields;
+        fields = _fields;
     }
     if (typeof query === 'string') {
         if (/[a-z0-9]{24}/.test(query)) {
@@ -200,10 +200,14 @@ DBCollection.prototype.find = function (query, fields, limit, skip, batchSize, o
         } else {
             query = {$or: keys.map(o=>({[o]: new RegExp(query)}))};
         }
-    } else if (typeof query === 'object') {
+    } else if (typeof query === 'fieldsect') {
         Object.keys(query).forEach(k=>query[k]=id(query[k]));
     }
-    const it = defaultFind.call(this, query, obj, limit, skip, batchSize, options);
+    return {query, fields};
+};
+DBCollection.prototype.find = function (query, fields, limit, skip, batchSize, options) {
+    const params = parseQuery(this, query, fields);
+    const it = defaultFind.call(this, params.query, params.fields, limit, skip, batchSize, options);
     const show = DBQuery.prototype._prettyShell ? printjson : printjsononeline;
     while (it.hasNext()) {
         const item = it.next();
@@ -229,11 +233,7 @@ if (!STRICT) {
             obj = query;
             query = {};
         }
-        if (typeof query === 'string') {
-            query = {_id: ObjectId(query)};
-        } else if (typeof query === 'object') {
-            Object.keys(query).forEach(k=>query[k]=id(query[k]));
-        }
+        const params = parseQuery(this, query);
         const newObj = {};
         Object.keys(obj).forEach((k)=>{
             if (k[0] !== '$') {
@@ -254,18 +254,14 @@ if (!STRICT) {
         if (options === 1){
             options = { multi: true };
         }
-        return defaultUpdate.call(this, query, newObj, options);
+        return defaultUpdate.call(this, params.query, newObj, options);
     };
 
     const defaultRemove = DBCollection.prototype.remove;
     DBCollection.prototype._remove = defaultRemove;
-    DBCollection.prototype.remove= function (query, justOne) {
-        if (typeof query === 'string') {
-            query = {_id: ObjectId(query)};
-        } else if (typeof query === 'object') {
-            Object.keys(query).forEach(k=>query[k]=id(query[k]));
-        }
-        return defaultRemove.call(this, query, justOne);
+    DBCollection.prototype.remove = function (query, justOne) {
+        const params = parseQuery(this, query);
+        return defaultRemove.call(this, params.query, justOne);
     };
 
     DBCollection.prototype.copy = function (query, update, count = 1) {
@@ -273,7 +269,8 @@ if (!STRICT) {
             count = update;
             update = undefined;
         }
-        const it = this.find(query);
+        const params = parseQuery(this, query);
+        const it = defaultFind.call(this, params.query);
         let i = 0;
         while (it.hasNext()) {
             const item = it.next();
