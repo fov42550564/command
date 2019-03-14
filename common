@@ -363,47 +363,51 @@ function __ask()
 }
 function __diff() {
 ########################################
-#Usage:__diff [-r|-d|-rd] path1|file1 path2|file2 [-a]
-#e.g: __diff f1 f2
-#	  __diff -r f1 f2
-#	  __diff -d d2 f1
-#	  __diff -rd d2 f1
+#Usage:di [-r|-d|-rd] path1|file1 path2|file2 [-a]
+#e.g: di f1 f2
+#	  di -r f1 f2
+#	  di -d d2 f1
+#	  di -rd d2 f1
 ########################################
-    local tool first second open
+    local arr f1 f2 d a r tmp tool
+	if [ "$1" = "-h" -o "$1" = "--help" ];then
+		echo "Usage:di [-r|-d|-rd] path1|file1 path2|file2 [-a: use atom open file]"
+		echo "  di f1 f2"
+		echo "  di -r f1 f2"
+		echo "  di -d d2 f1"
+		echo "  di -rd d2 f1"
+		echo "  di f1: use \$dp, eg: use dt -3 to set dp"
+		return;
+	fi
+    arr=("$@")
+    for ((i=0; i<${#arr[@]}; i++));do
+        item=${arr[i]}
+        case "$item" in
+            "-a")a=1;;
+            "-r")r=1;;
+            "-d")d="${arr[++i]}";;
+            "-rd")r=1;d="${arr[++i]}";;
+            "-dr")r=1;d="${arr[++i]}";;
+            *)[ -z "$f1" ]&&f1="$item"||f2="$item";;
+        esac
+    done
+    [ -z "$f1" ]&&echo "no input file"&&return
+    [ -z "$f2" -a -n "$d" ]&&f2="$d/$f1"
+    [ -z "$f2" ]&&f2="$dp/$f1"
+    if [ -n "$r" ];then
+        tmp="$f1"
+        f1="$f2"
+        f2="$tmp"
+    fi
     if __mac;then
         tool='diffmerge.sh'
     else
         tool='bcompare'
     fi
-	if [ "$1" = "-h" ];then
-		echo "Usage:__diff [-r|-d|-rd] path1|file1 path2|file2 [-a]"
-		echo "  __diff f1 f2"
-		echo "  __diff -r f1 f2"
-		echo "  __diff -d d2 f1"
-		echo "  __diff -rd d2 f1"
-		return;
-	fi
-	if [ "$1" = "-d" ];then
-		first=$3
-		second="$2/$3"
-        open="$4"
-	elif [ "$1" = "-rd" -o "$1" = "-dr" ];then
-		first="$2/$3"
-		second=$3
-        open="$4"
-    elif [ "$1" = "-r" ];then
-        first=$3
-        second=$2
-        open="$4"
+    if [ -n "$a" ];then
+        atom "$f1" "$f2"
     else
-        first=$1
-        second=$2
-        open="$3"
-    fi
-    if [ "$open" = "-a" ];then
-        atom $first $second
-    else
-        ${tool} $first $second
+        $tool "$f1" "$f2"
     fi
 }
 function __sudo()
