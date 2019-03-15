@@ -83,6 +83,62 @@ function cloneDeep(doc) {
     return obj;
 }
 
+function checkUseSelfValue(doc) {
+    if (typeof doc !== 'object') {
+        if (typeof doc === 'string') {
+            return /_\.[0-9a-zA-Z_]+/.test(doc);
+        }
+        return false;
+    }
+    if (doc instanceof Array) {
+        for (let item of doc) {
+            if (checkUseSelfValue(item)) {
+                return true;
+            }
+        }
+    }
+    const keys = Object.keys(doc);
+    if (!keys.length) {
+        return false;
+    }
+    for (let key of keys) {
+        if (checkUseSelfValue(doc[key])) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function replaceSelfValue(doc, value) {
+    if (typeof doc !== 'object') {
+        if (typeof doc === 'string') {
+            const match = doc.match(/_\.[0-9a-zA-Z_]+/g);
+            for (let m of match) {
+                const name = m.replace('_.', '');
+                doc = doc.replace(m, value[name]);
+            }
+            try {
+                return eval(doc);
+            } catch (e) {
+                return doc;
+            }
+        }
+        return doc;
+    }
+    if (doc instanceof Array) {
+        return doc.map(o=>replaceSelfValue(o, value));
+    }
+    const keys = Object.keys(doc);
+    if (!keys.length) {
+        return doc;
+    }
+    const obj = {};
+    for (let key of keys) {
+        obj[key] = replaceSelfValue(doc[key], value);
+    }
+    return obj;
+}
+
 Object.defineProperty(this, "_h", {
     get: function() {
         print('show self defined command:');
@@ -94,6 +150,8 @@ Object.defineProperty(this, "_h", {
         print('     _189:   switch 189 and localhost server');
         print('     find:   find(id/str/obj, \'[-]xx xx ...\'/{xx:1, ...})');
         print('     update: update(id/obj, {xx:xx, ...}, 1), 1 is multi');
+        print('             update({xx:xx, ...}, 1)');
+        print('             update({xx:xx, ...})');
         print('             unset can be { $unset: { xx: 1 } } or { xx: \'$unset\' }');
         print('             inc can be { $inc: { xx: 1 } } or { xx: \'+1\' }');
         print('     copy:   copy(id/str/obj, {xx:xx, ...}, count)');
@@ -233,28 +291,40 @@ if (!STRICT) {
             obj = query;
             query = {};
         }
-        const params = parseQuery(this, query);
         const newObj = {};
         Object.keys(obj).forEach((k)=>{
+            const item = obj[k];
             if (k[0] !== '$') {
-                if (obj[k] === '$unset') {
+                if (item === '$unset') {
                     !newObj['$unset'] && (newObj['$unset'] = {});
                     newObj['$unset'][k] = 1;
-                } else if (/^-|\+\d+$/.test(obj[k])) { // +n | -n
+                } else if (/^(-|\+)\d+$/.test(item)) { // +n | -n
                     !newObj['$inc'] && (newObj['$inc'] = {});
-                    newObj['$inc'][k] = +obj[k];
+                    newObj['$inc'][k] = +item;
                 } else {
                     !newObj['$set'] &&( newObj['$set'] = {});
-                    newObj['$set'][k] = id(obj[k]);
+                    newObj['$set'][k] = id(item);
                 }
             } else {
-                newObj[k] = obj[k];
+                newObj[k] = item;
             }
         });
         if (options === 1){
             options = { multi: true };
         }
-        return defaultUpdate.call(this, params.query, newObj, options);
+        const params = parseQuery(this, query);
+        if (!checkUseSelfValue(newObj)) {
+            return defaultUpdate.call(this, params.query, newObj, options);
+        }
+        const it = defaultFind.call(this, params.query);
+        while (it.hasNext()) {
+            const doc = it.next();
+            const value = replaceSelfValue(newObj, doc);
+            this.update({_id: doc._id}, value);
+            if (!(options||{}).multi) {
+                break;
+            }
+        }
     };
 
     const defaultRemove = DBCollection.prototype.remove;
