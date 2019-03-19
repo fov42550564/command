@@ -267,6 +267,7 @@ Object.defineProperty(this, "_h", {
         print('     _host:  show host');
         print('     _189:   switch 189 and localhost server');
         print('     find:   find(id/str/obj, \'[-]xx xx ...\'/{xx:1, ...})');
+        print('             find(\'3d*5d\'), must have * in query');
         print('     update: update(id/obj, {xx:xx, ...}, 1), 1 is multi');
         print('             update({xx:xx, ...}, 1)');
         print('             update({xx:xx, ...})');
@@ -374,6 +375,12 @@ function parseQuery(self, query, _fields) {
     if (typeof query === 'string') {
         if (/[a-z0-9]{24}/.test(query)) {
             query = {$or: keys.concat('_id').map(o=>({[o]: ObjectId(query)}))};
+        } else if (/\*/.test(query) && /^[a-z*0-9]+$/.test(query)) {
+            const result = self.aggregate([
+                { $project: { _id: { $toString: '$_id' } } },
+                { $match: { _id: new RegExp(`^${query.replace('*', '.*')}$`) } },
+            ])._batch;
+            query = { _id: { $in: result.map(o=>new ObjectId(o._id)) } };
         } else {
             query = {$or: keys.map(o=>({[o]: new RegExp(query)}))};
         }
