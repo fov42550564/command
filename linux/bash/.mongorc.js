@@ -196,7 +196,7 @@ function cloneDeep(doc) {
 function checkUseSelfValue(doc) {
     if (typeof doc !== 'object') {
         if (typeof doc === 'string') {
-            return /\$[0-9a-zA-Z_]+/.test(doc);
+            return /\$[0-9a-zA-Z_]+/.test(doc) || /\$\$/.test(doc);
         }
         return false;
     }
@@ -219,9 +219,10 @@ function checkUseSelfValue(doc) {
     return false;
 }
 
-function replaceSelfValue(self, doc, value) {
+function replaceSelfValue(self, doc, value, options) {
     if (typeof doc !== 'object') {
         if (typeof doc === 'string') {
+            doc = doc.replace(/'?"?\$\$"?'?/, options['$$']);
             if (doc.slice(0, 4) === '_mo.') {
                 const result = self.aggregate([
                     { $match: { _id: value._id } },
@@ -229,7 +230,7 @@ function replaceSelfValue(self, doc, value) {
                 ])._batch[0].__result;
                 return result;
             } else {
-                const match = doc.match(/\$[0-9a-zA-Z_]+/g);
+                const match = doc.match(/\$[0-9a-zA-Z_]+/g)||[];
                 for (let m of match) {
                     const name = m.replace('$', '');
                     doc = doc.replace(m, value[name]);
@@ -244,7 +245,7 @@ function replaceSelfValue(self, doc, value) {
         return doc;
     }
     if (doc instanceof Array) {
-        return doc.map(o=>replaceSelfValue(self, o, value));
+        return doc.map(o=>replaceSelfValue(self, o, value, options));
     }
     const keys = Object.keys(doc);
     if (!keys.length) {
@@ -252,7 +253,7 @@ function replaceSelfValue(self, doc, value) {
     }
     const obj = {};
     for (let key of keys) {
-        obj[key] = replaceSelfValue(self, doc[key], value);
+        obj[key] = replaceSelfValue(self, doc[key], value, options);
     }
     return obj;
 }
@@ -272,7 +273,7 @@ Object.defineProperty(this, "_h", {
         print('             update({xx:xx, ...}, 1)');
         print('             update({xx:xx, ...})');
         print('             unset can be { $unset: { xx: 1 } } or { xx: \'null\' }');
-        print('             inc can be { $inc: { xx: 1 } } or { xx: \'+1\' }');
+        print('             inc can be { $inc: { xx: 1 } } or { xx: \'$xx+1\' } or { xx: mo.add(\'$xx\', 1) }');
         print('             mo can be { xx: mo.add(\'$a\', \'$b\')');
         print('     copy:   copy(id/str/obj, {xx:xx, ...}, count)');
         print('             {xx:xx, ...} is need modify, $$ will be replace to index, index is start at 1');
@@ -424,9 +425,6 @@ if (!STRICT) {
                 if (item === 'null') {
                     !newObj['$unset'] && (newObj['$unset'] = {});
                     newObj['$unset'][k] = 1;
-                } else if (/^(-|\+)\d+$/.test(item)) { // +n | -n
-                    !newObj['$inc'] && (newObj['$inc'] = {});
-                    newObj['$inc'][k] = +item;
                 } else {
                     !newObj['$set'] &&( newObj['$set'] = {});
                     newObj['$set'][k] = id(item);
@@ -446,7 +444,7 @@ if (!STRICT) {
         const result = [];
         while (it.hasNext()) {
             const doc = it.next();
-            const value = replaceSelfValue(this, newObj, doc);
+            const value = replaceSelfValue(this, newObj, doc, options);
             const ret = defaultUpdate.call(this, {_id: doc._id}, value);
             result.push(ret);
             if (!(options||{}).multi) {
@@ -478,16 +476,7 @@ if (!STRICT) {
                 obj._id = new ObjectId();
                 this.insert(obj);
                 if (update) {
-                    const newUpdate = {};
-                    Object.keys(update).forEach(k=>{
-                        if (/\$\$/.test(update[k])) {
-                            const value = eval(update[k].replace(/\$\$/, i));
-                            newUpdate[k] = value > 0 ? '+'+value : value;
-                        } else {
-                            newUpdate[k] = update[k];
-                        }
-                    });
-                    this.update({_id: obj._id}, newUpdate);
+                    this.update({_id: obj._id}, update, { '$$': i });
                 }
             }
         }
