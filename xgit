@@ -99,7 +99,7 @@ function git_log_by_version()
 {
 	local ver
 	ver=$1
-    ver=${ver%% *}
+	ver=${ver%% *}
 	if [ -z "$ver" ];then
 		return
 	fi
@@ -143,12 +143,12 @@ function git_get_log_version_files()
 	s=`echo $rs|awk '{split($0,tmp)} END {for(i in tmp) print tmp[i]}'`
 	i=0
 	unset _files
-  for var in $s;do
-    if [ "${var:0:3}" = "..." ];then
-      _files[i]=$(get_full_file $var)
-    else
-      _files[i]=$var
-        fi
+	for var in $s;do
+		if [ "${var:0:3}" = "..." ];then
+			_files[i]=$(get_full_file $var)
+		else
+			_files[i]=$var
+		fi
 		let i++
 	done
 }
@@ -195,24 +195,24 @@ function git_diff_change_with()
 
 function git_delete_history_force()
 {
-    local files file OLD_IFS
-    OLD_IFS="$IFS"
-    IFS=","
-    files=($1)
-    IFS="$OLD_IFS"
-    for file in ${files[@]};do
-        git filter-branch --force --index-filter "git rm --cached --ignore-unmatch $file" --prune-empty --tag-name-filter cat -- --all
-    done
-    rm -rf .git/refs/original/
-    git reflog expire --expire=now --all
-    git gc --prune=now
-    git gc --aggressive --prune=now
+	local files file OLD_IFS
+	OLD_IFS="$IFS"
+	IFS=","
+	files=($1)
+	IFS="$OLD_IFS"
+	for file in ${files[@]};do
+		git filter-branch --force --index-filter "git rm --cached --ignore-unmatch $file" --prune-empty --tag-name-filter cat -- --all
+	done
+	rm -rf .git/refs/original/
+	git reflog expire --expire=now --all
+	git gc --prune=now
+	git gc --aggressive --prune=now
 }
 
 function find_root_dir() {
 	dir=$(pwd)
 	while((1));do
-	 	found=$(find ${dir} -name .git)
+		found=$(find ${dir} -name .git)
 		if ! [ "${found}" = "" ];then
 			break
 		fi
@@ -244,11 +244,26 @@ function git_update_and_commit() {
 	git ci -m "$1"
 }
 
+function git_command() {
+	amend=`echo "$@"| grep "\--amend"`
+	if [ "$amend" != "" -o "$1" = "cihd" -o "$1" = "cihead" -o "$1" = "uphead" ];then
+		info=`git st|grep "is ahead of"`
+		if [ "$info" = "" ];then
+			echo "上次提交已经同步到远端，不能追加提交"
+			exit
+		fi
+	fi
+	if [ "$amend" = "" -a "$1" = "commit" -o "$1" = "ci" -o "$1" = "cm" ];then
+		git pl
+	fi
+	git "$@"
+}
+
 function show_help()
 {
 	local -a list
 	list="help"
-	list=("${list[@]}" "Usage :xgit [OPTIONS]")
+	list=("${list[@]}" "Usage :git [OPTIONS]")
 	list=("${list[@]}" "  -p [dest_dir]: copy change files to dest_dir and make dirs")
 	list=("${list[@]}" "  -i [dest_dir]: diff merger with dest_dir")
 	list=("${list[@]}" "  -l: show git log, use -f set file")
@@ -264,7 +279,36 @@ function show_help()
 	list=("${list[@]}" "  -v: edit file with vim")
 	list=("${list[@]}" "  -m [file;file]: delete history file force")
 	list=("${list[@]}" "  -u [url]: download file or directory from github")
-	list=("${list[@]}" "  -h: show help ")
+	list=("${list[@]}" "  -h: show help")
+	if [ "$1" = "full" ];then
+		list=("${list[@]}" "bref command:")
+		list=("${list[@]}" "  co: checkout")
+		list=("${list[@]}" "  ci: commit -a")
+		list=("${list[@]}" "  cm: commit")
+		list=("${list[@]}" "  st: status")
+		list=("${list[@]}" "  ss: show --stat")
+		list=("${list[@]}" "  br: branch")
+		list=("${list[@]}" "  di: diff")
+		list=("${list[@]}" "  pu: push -u origin master")
+		list=("${list[@]}" "  puf: push origin master --force")
+		list=("${list[@]}" "  pl: pull")
+		list=("${list[@]}" "  line: log --pretty=oneline --since='two hours ago'")
+		list=("${list[@]}" "  one: log -p -1")
+		list=("${list[@]}" "  lg: log --date=short --graph")
+		list=("${list[@]}" "  cihd: commit -C HEAD --amend")
+		list=("${list[@]}" "  cihead: commit -C HEAD -a --amend")
+		list=("${list[@]}" "  uphead: commit --amend -m")
+		list=("${list[@]}" "  rshead: reset --hard HEAD")
+		list=("${list[@]}" "  rs: reset --hard")
+		list=("${list[@]}" "  rsmaster: reset --hard origin/master")
+		list=("${list[@]}" "  noadd: rm -r --cached")
+		list=("${list[@]}" "  noaddall: rm -r --cached .")
+		list=("${list[@]}" "  bare: init --bare")
+		list=("${list[@]}" "  remoteadd: remote add origin")
+		list=("${list[@]}" "  pupage: push --set-upstream origin gh-pages")
+		list=("${list[@]}" "  plpage: pull origin gh-pages gh-pages")
+		list=("${list[@]}" "  copage: checkout -b gh-pages origin/gh-pages")
+	fi
 	__msgbox "${list[@]}"
 }
 
@@ -272,6 +316,11 @@ function main()
 {
 	local oper_right ver files info
 	oper_right=0
+
+	if [ "$1" = "--help" ];then
+		show_help full
+		exit
+	fi
 
 	while getopts :p:d:arvlst:c:i:n:f:m:e:u:h opt;do
 		oper_right=1
@@ -295,17 +344,18 @@ function main()
 		esac
 	done
 
-	[ $oper_right -eq 0 ] && show_help && exit
-    if ((_oper==7));then
+	[ $oper_right -eq 0 ] && git_command "$@";exit
+
+	if ((_oper==7));then
 		git_delete_history_force $files
-        exit
+		exit
 	elif ((_oper==9));then
 		git_revert_to_version $ver
-        exit
+		exit
 	elif ((_oper==10));then
 		git_update_and_commit "$info"
-        exit
-    fi
+		exit
+	fi
 
 	if ((_oper==5));then
 		if [ -z "$_show_status" -a -z "$_logfile" ];then

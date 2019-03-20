@@ -18,13 +18,13 @@ PS1='\n\[\e[32m\]\u\[\e[34m\]@\[\e[32m\]\t \[\e[33m\]\w\[\e[0m\]\n\$'
 
 # Uncomment to use the terminal colours set in DIR_COLORS
 if __windows;then
-eval "$(dircolors -b ~/.dir_colors)"
-# ignore return \r\d
-set -o igncr
-export SHELLOPTS
-#open
-alias open='explorer'
-alias atom='C:/Users/fang/AppData/Local/atom/atom.exe'
+    eval "$(dircolors -b ~/.dir_colors)"
+    # ignore return \r\d
+    set -o igncr
+    export SHELLOPTS
+    #open
+    alias open='explorer'
+    alias atom='C:/Users/fang/AppData/Local/atom/atom.exe'
 fi
 
 #set options
@@ -36,13 +36,13 @@ shopt -s nocaseglob
 #alias cp='cp -i'
 #alias mv='mv -i'
 if __mac ;then
-alias rm='~/command/linux/rm-trash/rm.rb'
+    alias rm='~/command/linux/rm-trash/rm.rb'
 else
-alias rm='rm -i'
+    alias rm='rm -i'
 fi
 #path
 alias path='echo -e ${PATH//:/\\n}'
-alias libpath='echo -e ${LD_LIBRARY_PATH//:/\\n}'  
+alias libpath='echo -e ${LD_LIBRARY_PATH//:/\\n}'
 
 #du df
 alias du='du -sh'
@@ -50,20 +50,20 @@ alias df='df -kTh'
 
 #show ls color
 if __mac ;then
-alias ls='ls -G'
+    alias ls='ls -G'
 else
-alias ls='ls --color'
+    alias ls='ls --color'
 fi
 alias dir='ls -l'
 alias ll='ls -l'
 alias la='ls -A'
 alias l='ls -AlF'
 alias lx='ls -lXB' #sort by file extract name
-alias lk='ls -lSr' #sort by file size 
+alias lk='ls -lSr' #sort by file size
 alias lc='ls -lcr' #sort by midify time
 alias lu='ls -lur' #sort by access time
 alias lt='ls -ltr' #sort by datetime
-alias lr='ls -lR'  
+alias lr='ls -lR'
 alias lm='ls -al |more'
 alias tree='tree -Csu'
 
@@ -74,7 +74,7 @@ alias tree='tree -Csu'
 #use ctrl+r to search history
 alias h='history'
 alias hh='history 20'
-export HISTCONTROL=ignoredups 
+export HISTCONTROL=ignoredups
 #export HISTCONTROL=erasedups
 #HISTSIZE=450
 #HISTFILESIZE=450
@@ -132,6 +132,9 @@ function wh() { cd $(which "$1"); }
 #diffmerge
 alias di='__diff'
 
+#git
+alias git='xgit'
+
 #copy
 alias mhon='xsmb -m'
 alias mhoff='xsmb -u'
@@ -144,21 +147,21 @@ alias mhmv='cp /Volumes/home/方运江/*'
 #set_path
 export PATH=$PATH:~/command
 if __mac;then
-  export PATH=$PATH:/usr/local/lib/node_modules/cordova/bin:~/tools/phantomjs-2.1.1-macosx/bin:~/tools/wasm:~/tools/wabt
+    export PATH=$PATH:/usr/local/lib/node_modules/cordova/bin:~/tools/phantomjs-2.1.1-macosx/bin:~/tools/wasm:~/tools/wabt
 elif __linux;then
-  export PATH=$PATH:/root/tools/node/bin:/root/tools/node/lib/node_modules/npm/bin/node-gyp-bin:/root/tools/mongodb/bin
-  export JAVA_HOME=~/tools/jdk1.8.0_144
+    export PATH=$PATH:/root/tools/node/bin:/root/tools/node/lib/node_modules/npm/bin/node-gyp-bin:/root/tools/mongodb/bin
+    export JAVA_HOME=~/tools/jdk1.8.0_144
 fi
 
 #ndk
 alias ndk='ndk-build'
 if __windows;then
-export ANDROID_NDK_HOME=~/f/android/android-ndk-r9d
-export ANDROID_SDK_HOME=~/f/android/android-sdk
+    export ANDROID_NDK_HOME=~/f/android/android-ndk-r9d
+    export ANDROID_SDK_HOME=~/f/android/android-sdk
 else
-export ANDROID_NDK_HOME=~/tools/android-ndk-r10e
-export ANDROID_SDK_HOME=~/Library/Android/sdk
-#export ANDROID_SDK_HOME=/usr/local/opt/android-sdk
+    export ANDROID_NDK_HOME=~/tools/android-ndk-r10e
+    export ANDROID_SDK_HOME=~/Library/Android/sdk
+    #export ANDROID_SDK_HOME=/usr/local/opt/android-sdk
 fi
 export ANDROID_NDK_PREFIX=$ANDROID_NDK_HOME/toolchains/arm-linux-androideabi-4.6/prebuilt/darwin-x86/bin/arm-linux-androideabi
 export ANDROID_SDK_PLATFORM_TOOLS=$ANDROID_SDK_HOME/platform-tools
@@ -170,7 +173,6 @@ export ANDROID_HOME=~/Library/Android/sdk
 #vim
 alias vi='vim'
 alias clearvim='rm -fr ~/.data/swap'
-alias viclear='rm -f ~/.data/swap/*.swp'
 
 #go
 alias xgo='go run'
@@ -226,4 +228,3 @@ export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib"
 
 export EMSDK=~/tools/emsdk-portable
 export PATH=$PATH:$EMSDK/emscripten/1.37.35
-
