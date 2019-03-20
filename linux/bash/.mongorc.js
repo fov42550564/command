@@ -1,113 +1,3 @@
-/*** mo define start ***/
-const _mo = {};
-const mo = {};
-!function (_mo, mo) {
-    const id = o => new ObjectId(o);
-    const isID = o => /^[a-z0-9]{24}$/.test(o);
-    const get = (o, k) => ({ $let: { vars: { o }, in: `$$o.${k}` } });
-    const set = o => ({ $literal: o });
-    const at = (array, index = 0) => ({ $arrayElemAt: [ array, index ] });
-    const if_fn = (criteria, trueValue = true, falseValue = false) => ({ $cond: { if: criteria, then: trueValue, else: falseValue } });
-    const filter = (array, itemName, cond) => ({ $filter: { input: array, as: itemName, cond } });
-    const find = (array, itemName, cond) => ({ $arrayElemAt: [ { $filter: { input: array, as: itemName, cond } }, 0 ] });
-    const findLast = (array, itemName, cond) => ({ $arrayElemAt: [ { $filter: { input: array, as: itemName, cond } }, -1 ] });
-    const map = (array, itemName, val) => ({ $map: { input: array, as: itemName, in: val } });
-    const pick = (o, keys) => ({ $arrayToObject: { $filter: { input: { $objectToArray: o }, as: 'item_', cond: { $in: [ '$$item_.k', keys ] } } } });
-    const let_fn = (vars, val) => (val !== undefined ? { $let: { vars, in: val } } : { $let: { vars: {}, in: vars } });
-    const reduce = (array, initialValue, fn) => ({ $reduce: { input: array, initialValue, in: fn('$$value', '$$this') } });
-    const bit2 = (n, fn) => ({ $divide: [ fn({ $multiply: [ n, 100 ] }), 100 ] }); // fn maybe _mo.round/_mo.ceil/_mo.floor
-    const bitN = (n, fn, rank = 0) => { rank = Math.pow(10, rank); return { $divide: [ fn({ $multiply: [ n, rank ] }), rank ] }; };
-    const round = n => ({ $floor: { $add: [ n, 0.5 ] } });
-    const ceil = n => ({ $cond: { if: { $lte: [ { $subtract: [ n, { $ceil: { $subtract: [ n, 1 ] } } ] }, 0.000001 ] }, then: { $ceil: { $subtract: [ n, 1 ] } }, else: { $add: [ { $ceil: { $subtract: [ n, 1 ] } }, 1 ] } } });
-    const floor = n => ({ $cond: { if: { $lte: [ { $subtract: [ { $floor: { $add: [ n, 1 ] } }, n ] }, 0.000001 ] }, then: { $floor: { $add: [ n, 1 ] } }, else: { $subtract: [ { $floor: { $add: [ n, 1 ] } }, 1 ] } } });
-    const include = (array, val) => ({ $ne: [ { $indexOfArray: [ array, val ] }, -1 ] });
-    const gsum = (key) => ({ $sum: key });
-    const time = (date, fmt = '%Y-%m-%d %H:%M:%S') => {
-        return { $dateToString: { format: fmt, date, timezone: '+08:00' } };
-    };
-    const date = (date, fmt = '%Y-%m-%d') => {
-        return { $dateToString: { format: fmt, date, timezone: '+08:00' } };
-    };
-    // unit = 1 表示米, 默认是1000,表示公里
-    const distance = (val, unit = 1000, distanceField = 'distance') => ({
-        near: val,
-        distanceField,
-        spherical: true,
-        distanceMultiplier: 6378137 / unit,
-    });
-
-    const maps = {
-        add: 'add',
-        sum: 'sum',
-        sub: 'subtract',
-        div: 'divide',
-        mul: 'multiply',
-        gt: 'gt',
-        gte: 'gte',
-        lt: 'lt',
-        lte: 'lte',
-        eq: 'eq',
-        ne: 'ne',
-        max: 'max',
-        min: 'min',
-        and: 'and',
-        or: 'or',
-        not: 'not',
-        ifNull: 'ifNull',
-        in: 'in',
-        concat: 'concat',
-        slice: 'slice',
-        substr: 'substr',
-        mergeObjects: 'mergeObjects',
-        concatArrays: 'concatArrays',
-        range: 'range',
-        abs: true,
-        trunc: true,
-        size: true,
-        toString: true,
-        toInt: true,
-        first: true,
-        push: true,
-        dayOfMonth: true,
-        id,
-        isID,
-        get,
-        set,
-        let: let_fn,
-        reduce,
-        at,
-        if: if_fn,
-        filter,
-        find,
-        findLast,
-        map,
-        pick,
-        bit2,
-        bitN,
-        round,
-        ceil,
-        floor,
-        time,
-        date,
-        distance,
-        include,
-        gsum,
-    };
-    for (let k in maps) {
-        const o = maps[k];
-        if (typeof o === 'function') {
-            _mo[k] = o;
-        } else if (o === true) {
-            _mo[k] = m => ({ ['$' + k]: m });
-        } else {
-            _mo[k] = (...m) => ({ ['$' + o]: m });
-        }
-        const func = '_mo.'+k;
-        mo[k] = (...m)=> func + `(${m.map(v => typeof v==='string' && v.slice(0, 4)!=='_mo.' ? `'${v}'` : v)})`;
-    }
-}(_mo, mo);
-/*** mo define end ***/
-
 const REJECTS = {
     __all: ['salt', 'hash'],
     roadmaps: ['sendDoorList'],
@@ -468,18 +358,23 @@ if (!STRICT) {
         }
         const params = parseQuery(this, query);
         const it = defaultFind.call(this, params.query);
+        const result = [];
+        let ret;
         let i = 0;
         while (it.hasNext()) {
             const item = it.next();
             const obj = cloneDeep(item);
             while (i++ < count) {
                 obj._id = new ObjectId();
-                this.insert(obj);
+                ret = this.insert(obj);
+                result.push(ret);
                 if (update) {
-                    this.update({_id: obj._id}, update, { '$$': i });
+                    ret = this.update({_id: obj._id}, update, { '$$': i });
+                    result.push(ret);
                 }
             }
         }
+        return result.reduce((r, n)=>{r.nInserted+=(n.nInserted||0);r.nModified+=(n.nModified||0);return r;}, { nInserted : 0, nModified : 0 });
     };
 } else {
     db.dropDatabase = forbidden;
@@ -498,3 +393,113 @@ if (!STRICT) {
 
 // 登录直接进入pdshop
 db = db.getMongo().getDB('pdshop');
+
+/*** mo define start ***/
+const _mo = {};
+const mo = {};
+!function (_mo, mo) {
+    const id = o => new ObjectId(o);
+    const isID = o => /^[a-z0-9]{24}$/.test(o);
+    const get = (o, k) => ({ $let: { vars: { o }, in: `$$o.${k}` } });
+    const set = o => ({ $literal: o });
+    const at = (array, index = 0) => ({ $arrayElemAt: [ array, index ] });
+    const if_fn = (criteria, trueValue = true, falseValue = false) => ({ $cond: { if: criteria, then: trueValue, else: falseValue } });
+    const filter = (array, itemName, cond) => ({ $filter: { input: array, as: itemName, cond } });
+    const find = (array, itemName, cond) => ({ $arrayElemAt: [ { $filter: { input: array, as: itemName, cond } }, 0 ] });
+    const findLast = (array, itemName, cond) => ({ $arrayElemAt: [ { $filter: { input: array, as: itemName, cond } }, -1 ] });
+    const map = (array, itemName, val) => ({ $map: { input: array, as: itemName, in: val } });
+    const pick = (o, keys) => ({ $arrayToObject: { $filter: { input: { $objectToArray: o }, as: 'item_', cond: { $in: [ '$$item_.k', keys ] } } } });
+    const let_fn = (vars, val) => (val !== undefined ? { $let: { vars, in: val } } : { $let: { vars: {}, in: vars } });
+    const reduce = (array, initialValue, fn) => ({ $reduce: { input: array, initialValue, in: fn('$$value', '$$this') } });
+    const bit2 = (n, fn) => ({ $divide: [ fn({ $multiply: [ n, 100 ] }), 100 ] }); // fn maybe _mo.round/_mo.ceil/_mo.floor
+    const bitN = (n, fn, rank = 0) => { rank = Math.pow(10, rank); return { $divide: [ fn({ $multiply: [ n, rank ] }), rank ] }; };
+    const round = n => ({ $floor: { $add: [ n, 0.5 ] } });
+    const ceil = n => ({ $cond: { if: { $lte: [ { $subtract: [ n, { $ceil: { $subtract: [ n, 1 ] } } ] }, 0.000001 ] }, then: { $ceil: { $subtract: [ n, 1 ] } }, else: { $add: [ { $ceil: { $subtract: [ n, 1 ] } }, 1 ] } } });
+    const floor = n => ({ $cond: { if: { $lte: [ { $subtract: [ { $floor: { $add: [ n, 1 ] } }, n ] }, 0.000001 ] }, then: { $floor: { $add: [ n, 1 ] } }, else: { $subtract: [ { $floor: { $add: [ n, 1 ] } }, 1 ] } } });
+    const include = (array, val) => ({ $ne: [ { $indexOfArray: [ array, val ] }, -1 ] });
+    const gsum = (key) => ({ $sum: key });
+    const time = (date, fmt = '%Y-%m-%d %H:%M:%S') => {
+        return { $dateToString: { format: fmt, date, timezone: '+08:00' } };
+    };
+    const date = (date, fmt = '%Y-%m-%d') => {
+        return { $dateToString: { format: fmt, date, timezone: '+08:00' } };
+    };
+    // unit = 1 表示米, 默认是1000,表示公里
+    const distance = (val, unit = 1000, distanceField = 'distance') => ({
+        near: val,
+        distanceField,
+        spherical: true,
+        distanceMultiplier: 6378137 / unit,
+    });
+
+    const maps = {
+        add: 'add',
+        sum: 'sum',
+        sub: 'subtract',
+        div: 'divide',
+        mul: 'multiply',
+        gt: 'gt',
+        gte: 'gte',
+        lt: 'lt',
+        lte: 'lte',
+        eq: 'eq',
+        ne: 'ne',
+        max: 'max',
+        min: 'min',
+        and: 'and',
+        or: 'or',
+        not: 'not',
+        ifNull: 'ifNull',
+        in: 'in',
+        concat: 'concat',
+        slice: 'slice',
+        substr: 'substr',
+        mergeObjects: 'mergeObjects',
+        concatArrays: 'concatArrays',
+        range: 'range',
+        abs: true,
+        trunc: true,
+        size: true,
+        toString: true,
+        toInt: true,
+        first: true,
+        push: true,
+        dayOfMonth: true,
+        id,
+        isID,
+        get,
+        set,
+        let: let_fn,
+        reduce,
+        at,
+        if: if_fn,
+        filter,
+        find,
+        findLast,
+        map,
+        pick,
+        bit2,
+        bitN,
+        round,
+        ceil,
+        floor,
+        time,
+        date,
+        distance,
+        include,
+        gsum,
+    };
+    for (let k in maps) {
+        const o = maps[k];
+        if (typeof o === 'function') {
+            _mo[k] = o;
+        } else if (o === true) {
+            _mo[k] = m => ({ ['$' + k]: m });
+        } else {
+            _mo[k] = (...m) => ({ ['$' + o]: m });
+        }
+        const func = '_mo.'+k;
+        mo[k] = (...m)=> func + `(${m.map(v => typeof v==='string' && v.slice(0, 4)!=='_mo.' ? `'${v}'` : v)})`;
+    }
+}(_mo, mo);
+/*** mo define end ***/
