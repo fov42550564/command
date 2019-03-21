@@ -281,6 +281,13 @@ function parseQuery(self, query, _fields) {
     return {query, fields};
 };
 DBCollection.prototype.find = function (query, fields, limit, skip, batchSize, options) {
+    if (!fields && typeof query === 'number') {
+        limit = query;
+        query = undefined;
+    } else if (!limit && typeof fields === 'number') {
+        limit = fields;
+        fields = undefined;
+    }
     const params = parseQuery(this, query, fields);
     const it = defaultFind.call(this, params.query, params.fields, limit, skip, batchSize, options);
     const show = DBQuery.prototype._prettyShell ? printjson : printjsononeline;

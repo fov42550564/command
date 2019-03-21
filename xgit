@@ -65,7 +65,7 @@ function git_show_diff()
 
 function git_add_files()
 {
-	git_mult_command "git add $_TARGET_" "" "no" "add files" "select bellow _files to add with git"
+	git_mult_command "__exec_command git add $_TARGET_" "" "no" "add files" "select bellow _files to add with git"
 }
 
 function git_backup_file()
@@ -344,7 +344,10 @@ function main()
 		esac
 	done
 
-	[ $oper_right -eq 0 ] && git_command "$@";exit
+	if [ $oper_right -eq 0 ];then
+		git_command "$@"
+		exit
+	fi
 
 	if ((_oper==7));then
 		git_delete_history_force $files
