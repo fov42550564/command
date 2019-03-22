@@ -1,8 +1,10 @@
+const STRICT_LIST = [ 'izwz9h2gldvmd5dzmiqkd0z', 'ylsmt' ];
+const STRICT = STRICT_LIST.indexOf(getHostName()) !== -1;
+
 const REJECTS = {
     __all: ['salt', 'hash'],
     roadmaps: ['sendDoorList'],
 };
-const STRICT = false;
 
 String.prototype.padRight = function(total, pad) {
     return (this+Array(total).join(pad || ' ')).slice(0, total);
@@ -157,8 +159,10 @@ Object.defineProperty(this, "_h", {
         print('     _n:     get/set shellBatchSize, e.g: _n=10');
         print('     _host:  show host');
         print('     _189:   switch 189 and localhost server');
-        print('     find:   find(id/str/obj, \'[-]xx xx ...\'/{xx:1, ...})');
+        print('     find:   find(id/str/obj, \'[-]xx xx ...\'/{xx:1, ...}, 1)');
         print('             find(\'3d*5d\'), must have * in query');
+        print('             find(0, ...), use origin find');
+        print('             find(1), limit 1');
         print('     update: update(id/obj, {xx:xx, ...}, 1), 1 is multi');
         print('             update({xx:xx, ...}, 1)');
         print('             update({xx:xx, ...})');
@@ -280,7 +284,17 @@ function parseQuery(self, query, _fields) {
     }
     return {query, fields};
 };
-DBCollection.prototype.find = function (query, fields, limit, skip, batchSize, options) {
+DBCollection.prototype.find = function (unused, query, fields, limit, skip, batchSize, options) {
+    let check = false;
+    if (unused !== 0) {
+        options = batchSize;
+        batchSize = skip;
+        skip = fields;
+        fields = query;
+        query = unused;
+    } else {
+        check = true;
+    }
     if (!fields && typeof query === 'number') {
         limit = query;
         query = undefined;
@@ -288,8 +302,15 @@ DBCollection.prototype.find = function (query, fields, limit, skip, batchSize, o
         limit = fields;
         fields = undefined;
     }
+    if (query && query.__check === true) {
+        delete query.__check;
+        check = true;
+    }
     const params = parseQuery(this, query, fields);
     const it = defaultFind.call(this, params.query, params.fields, limit, skip, batchSize, options);
+    if (check) {
+        return it;
+    }
     const show = DBQuery.prototype._prettyShell ? printjson : printjsononeline;
     while (it.hasNext()) {
         const item = it.next();
@@ -305,7 +326,11 @@ DBCollection.prototype.find = function (query, fields, limit, skip, batchSize, o
         show(obj);
     }
 };
-
+const defaultCount = DBCollection.prototype.count;
+DBCollection.prototype.count = function (query = {}, options) {
+    query.__check = true;
+    return defaultCount.call(this, query, options);
+};
 if (!STRICT) {
     const defaultUpdate = DBCollection.prototype.update;
     DBCollection.prototype._update = defaultUpdate;
