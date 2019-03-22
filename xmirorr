@@ -4,50 +4,64 @@ projects=(
 PDClient
 pdshop
 PDSalesman
+PDSalesman_APP
 PDDriver
 pdshopserver
 pdshop_client_pc
 pdshop_shop_pc
+PDAchieve_APP
+PDClient_WX
+PDWebPage
+PDPrint
+PDNCService
+Documents
+TestDocuments
 )
 username=42550564@qq.com
+#PDIssue
 password=$1
 
 function clone_mirror() {
-	expect -c "
-	set timeout 30000;
-	spawn git clone --mirror https://gitee.com/simiantong/${1}.git;
-	expect {
-		\"Username for*:\" {send \"${username}\r\"; exp_continue}
-		\"Password for*:\" {send \"${password}\r\"}
-	}
-	interact
-	"
+        expect -c "
+        set timeout 30000;
+        spawn git clone --mirror https://gitee.com/simiantong/${1}.git;
+        expect {
+                \"Username for*:\" {send \"${username}\r\"; exp_continue}
+                \"Password for*:\" {send \"${password}\r\"}
+        }
+        interact
+        "
 }
 
 function update_mirror() {
-    pushd ${1}.git
-	expect -c "
-	set timeout 30000;
-	spawn git push --mirror https://gitee.com/simiantong/${1}.git;
-	expect {
-		\"Username for*:\" {send \"${username}\r\"; exp_continue}
-		\"Password for*:\" {send \"${password}\r\"}
-	}
-	interact
-	"
-    popd
+        pushd ${1}.git
+        expect -c "
+        set timeout 30000;
+        spawn git push --mirror https://gitee.com/simiantong/${1}.git;
+        expect {
+                \"Username for*:\" {send \"${username}\r\"; exp_continue}
+                \"Password for*:\" {send \"${password}\r\"}
+        }
+        interact
+        "
+        popd
 }
 
 function clone_all_mirror() {
-	for project in ${projects[@]};do
-		clone_mirror ${project}
-	done
+        for project in ${projects[@]};do
+                if ! [ -a "${project}.git" ];then
+                        clone_mirror ${project}
+                fi
+        done
 }
 
 function update_all_mirror() {
-	for project in ${projects[@]};do
-		update_mirror ${project}
-	done
+        for project in ${projects[@]};do
+                if [ -a "${project}.git" ];then
+                        update_mirror ${project}
+                fi
+        done
 }
 
-clone_all_mirror
+#clone_all_mirror
+update_all_mirror
