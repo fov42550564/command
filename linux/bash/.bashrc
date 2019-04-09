@@ -147,6 +147,8 @@ alias mhmv='cp /Volumes/home/方运江/*'
 #set_path
 export PATH=$PATH:~/command
 if __mac;then
+    export PATH=/usr/local/opt/gnu-sed/libexec/gnubin:$PATH
+    export PATH=/usr/local/opt/findutils/libexec/gnubin:$PATH
     export PATH=$PATH:/usr/local/lib/node_modules/cordova/bin:~/tools/phantomjs-2.1.1-macosx/bin:~/tools/wasm:~/tools/wabt
 elif __linux;then
     export PATH=$PATH:/root/tools/node/bin:/root/tools/node/lib/node_modules/npm/bin/node-gyp-bin:/root/tools/mongodb/bin

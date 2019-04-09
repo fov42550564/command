@@ -14,15 +14,12 @@ function xbrewSetInstallApps()
 	((i++))
 
 	_apps[i]="gawk"
-	_app_params[i]="--with-default-names"
 	((i++))
 
 	_apps[i]="gnu-sed"
-	_app_params[i]="--with-default-names"
 	((i++))
 
 	_apps[i]="findutils"
-	_app_params[i]="--with-default-names"
 	((i++))
 }
 
