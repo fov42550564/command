@@ -70,7 +70,7 @@
 
   "React: shouldComponentUpdate(np, ns) { ... }":
     prefix: "scu"
-    body: "shouldComponentUpdate(nextProps, nextState) {\n\t${1}\n},"
+    body: "shouldComponentUpdate(nextProps, nextState) {\n\t${1}\n}"
 
   "React: this.state.":
     prefix: "state"

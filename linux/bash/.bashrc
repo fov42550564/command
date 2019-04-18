@@ -182,6 +182,9 @@ export PATH=$PATH:$M2_HOME/bin
 alias vi='vim'
 alias clearvim='rm -fr ~/.data/swap'
 
+#react
+function react() { cp "${HOME}/command/linux/atom/snippets/react${1}.cson" "${HOME}/.atom/packages/react/snippets/JavaScript (JSX).cson"; }
+
 #go
 alias xgo='go run'
 
