@@ -6,11 +6,12 @@ if [ "$1" = "--help" -o  "$1" = "-h" ];then
 fi
 
 if [ "$1" = "--es6" ];then
-  cp "./snippets/JavaScript (JSX6).cson" "$HOME/.atom/packages/react/snippets/JavaScript (JSX).cson"
+  cp "./snippets/react6.cson" "$HOME/.atom/packages/react/snippets/JavaScript (JSX).cson"
 else
-  cp "./snippets/JavaScript (JSX).cson" "$HOME/.atom/packages/react/snippets/JavaScript (JSX).cson"
+  cp "./snippets/react.cson" "$HOME/.atom/packages/react/snippets/JavaScript (JSX).cson"
 fi
 cp ./keymap/keymap.cson ~/.atom/
 cp ./config/config.cson ~/.atom/
+cp ./snippets/snippets.cson ~/.atom/
 
 echo "done"

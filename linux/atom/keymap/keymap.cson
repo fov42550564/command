@@ -37,3 +37,6 @@
 
 'atom-text-editor':
   'cmd-alt-l': 'editor:auto-indent'
+
+'.tree-view,.editor':
+  'cmd-o': 'tree-view:show-current-file-in-file-manager'
