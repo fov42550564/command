@@ -254,7 +254,7 @@ function git_command() {
 		fi
 	fi
 	if [ "$amend" = "" -a "$1" = "commit" -o "$1" = "ci" -o "$1" = "cm" -o "$1" = "cip" -o "$1" = "cmp" ];then
-		echo git pl
+		git pl
 	fi
 	if [ "$1" = "cip" -o "$1" = "cmp" ];then
 		cmd="$1"

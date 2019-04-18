@@ -1,5 +1,6 @@
 const STRICT_LIST = [ 'izwz9h2gldvmd5dzmiqkd0z', 'ylsmt' ];
 const STRICT = STRICT_LIST.indexOf(getHostName()) !== -1;
+const dbname = 'lq';
 
 const REJECTS = {
     __all: ['salt', 'hash'],
@@ -221,10 +222,10 @@ Object.defineProperty(this, "_host", {
 Object.defineProperty(this, "_189", {
     get: function() {
         if (db.getMongo().host === '127.0.0.1:27017') {
-            db = new Mongo("192.168.1.189").getDB('pdshop');
+            db = new Mongo("192.168.1.189").getDB(dbname);
             print('change to 192.168.1.189');
         } else {
-            db = new Mongo("127.0.0.1").getDB('pdshop');
+            db = new Mongo("127.0.0.1").getDB(dbname);
             print('change to 127.0.0.1');
         }
     },
@@ -423,8 +424,8 @@ if (!STRICT) {
     DBCollection.prototype.deleteOne = forbidden;
 }
 
-// 登录直接进入pdshop
-db = db.getMongo().getDB('pdshop');
+// 登录直接进入指定数据库
+db = db.getMongo().getDB(dbname);
 
 /*** mo define start ***/
 const _mo = {};
