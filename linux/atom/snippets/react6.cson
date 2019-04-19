@@ -108,7 +108,7 @@
     prefix: "ps"
     body: "const { ${1} } } = this.props;"
 
-  "React: const { ... } = this.props":
+  "React: const { ... } = this.state":
     prefix: "ss"
     body: "const { ${1} } } = this.state;"
 
