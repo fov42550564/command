@@ -3,11 +3,20 @@
     disabledPackages: [
       "ex-mode"
       "vim-mode"
+      "spell-check"
     ]
+    packagesWithSnippetsDisabled: []
     telemetryConsent: "no"
   editor:
+    fontSize: 15
     tabLength: 4
   "exception-reporting":
     userId: "bdd30e19-145d-4a9e-8933-d8b941636b2d"
+  react:
+    detectReactFilePattern: "/@tarojs|react/"
   welcome:
     showOnStartup: false
+".coffee.jsx.source":
+  editor:
+    autoIndent: true
+    autoIndentOnPaste: true
