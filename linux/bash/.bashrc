@@ -207,8 +207,7 @@ alias youku='nw ~/node/youku'
 alias qiubai='nw ~/node/git/node-qiubai/node_modules/node-qiubai/qiubai'
 alias net='__skip_sudo;sudo ifconfig en0 ether c8:2a:14:5a:f9:bb'
 
-#function xphone(){ cp "~/Desktop/cocos2d-x-2.2.2/samples/Cpp/HelloCpp/proj.android/bin/HelloCpp.apk" "/Volumes/NO NAME 1/a-qiubai/"; }
-function xphone(){ cp "~/android/workspace/TestGlRender/bin/TestGlRender.apk" "/Volumes/NO NAME 1/a-qiubai/"; echo "done"; }
+function xphone(){ xcrun instruments -w "iPhone 6 (12.1)"; }
 
 alias tsvn='telnet tj.myrsky.com.cn 3690'
 alias st='svn st|grep -v node_modules'

@@ -14,6 +14,7 @@ _jarfile=""
 _android=0
 _jni=0
 _oper=0
+_build=0
 _check=0
 android_skd_jar=~/android/android-sdk-macosx/platforms/android-10/android.jar
 
@@ -137,6 +138,9 @@ function xjavaExecuteJar()
 
 function xjavaExecute()
 {
+	if [ $_build -eq 1 ];then
+		xjavaCompileJava
+	fi
 	if [ $_android -eq 0 ];then
 		java -cp bin/classes -Djava.library.path=libs $_full_class_name
 	else
@@ -244,7 +248,7 @@ function main()
 		case $opt in
 			n)_full_class_name="$OPTARG";;
 			c)_oper=0;;
-			b)_oper=1;;
+			b)_oper=1;_build=1;;
 			e)_oper=2;;
 			r)_oper=3;_jarfile="$OPTARG";;
 			p)_oper=4;;
