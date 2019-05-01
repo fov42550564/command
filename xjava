@@ -11,12 +11,19 @@ source ~/command/common
 
 _full_class_name=""
 _jarfile=""
+_path=""
 _android=0
 _jni=0
 _oper=0
 _build=0
 _check=0
 android_skd_jar=~/android/android-sdk-macosx/platforms/android-10/android.jar
+classpath_file=~/.java_classpath
+m2_jar=(`cat ${classpath_file}`)
+m2_classpath=""
+for x in "${m2_jar[@]}";do
+	m2_classpath="/Users/$(whoami)/.m2/repository/${x}:${m2_classpath}"
+done
 
 function xjavaGetPackage()
 {
@@ -106,7 +113,7 @@ function xjavaCompileJava()
 	mkdir -p  bin/classes
 
 	if [ $_android -eq 0 ];then
-		javac -d bin/classes $file_name || return $_FALSE_
+		javac -d bin/classes $file_name -classpath ${m2_classpath} || return $_FALSE_
 	else
 		javac -d bin/classes -bootclasspath $android_skd_jar $file_name || return $_FALSE_
 	fi
@@ -142,7 +149,7 @@ function xjavaExecute()
 		xjavaCompileJava
 	fi
 	if [ $_android -eq 0 ];then
-		java -cp bin/classes -Djava.library.path=libs $_full_class_name
+		java -cp bin/classes:${m2_classpath} -Djava.library.path=libs $_full_class_name
 	else
 		echo "not complete!"
 	fi
@@ -207,6 +214,19 @@ function xjavaCreateJniNativeFile()
 	return $_TRUE_
 }
 
+function addClassPath() {
+	if [ -a "$_path" ];then
+		_path=$(__get_full_path "$_path")
+		if ! [ -z "$_path" ];then
+			echo "$_path" >> ${classpath_file}
+		fi
+	else
+		echo "current class path in ${classpath_file}:"
+		echo
+		cat ${classpath_file}
+	fi
+}
+
 function xjavaShowHelp()
 {
 	local -a list
@@ -214,15 +234,16 @@ function xjavaShowHelp()
 	list="help"
 	list=("${list[@]}" "Usage:xjava [-n full_class_name|-c|-b|-e|-r|-p|-f|-a|-j|-h]")
 	list=("${list[@]}" "-n full_class_name:set full_class_name[package.Class]")
-	list=("${list[@]}" "-c :create class")
-	list=("${list[@]}" "-b :build/complie java project")
-	list=("${list[@]}" "-e :execute program")
-	list=("${list[@]}" "-r jarfile:execute program with jarfile")
-	list=("${list[@]}" "-p :compress jar file")
-	list=("${list[@]}" "-f :create jni header file and src file")
-	list=("${list[@]}" "-a :package with android")
-	list=("${list[@]}" "-j :has native jni functions,only with -c")
-	list=("${list[@]}" "-h :show help")
+	list=("${list[@]}" "-c: create class")
+	list=("${list[@]}" "-b: build/complie java project")
+	list=("${list[@]}" "-e: execute program")
+	list=("${list[@]}" "-r jarfile: execute program with jarfile")
+	list=("${list[@]}" "-p: compress jar file")
+	list=("${list[@]}" "-f: create jni header file and src file")
+	list=("${list[@]}" "-a: package with android")
+	list=("${list[@]}" "-j: has native jni functions,only with -c")
+	list=("${list[@]}" "-d path: add classpath, if path is null, show classpath")
+	list=("${list[@]}" "-h: show help")
 	list=("${list[@]}" "")
 	list=("${list[@]}" "without jni:")
 	list=("${list[@]}" "xjava -n com.xx.name -c")
@@ -244,7 +265,7 @@ function xjavaShowHelp()
 
 function main()
 {
-	while getopts :n:cber:pfajh opt;do
+	while getopts :n:cber:d:pfajh opt;do
 		case $opt in
 			n)_full_class_name="$OPTARG";;
 			c)_oper=0;;
@@ -255,6 +276,7 @@ function main()
 			f)_oper=5;;
 			a)_android=1;;
 			j)_jni=1;;
+			d)_oper=6;_path="$OPTARG";;
 			h)xjavaShowHelp;exit;;
 			?)xjavaShowHelp;exit;;
 		esac
@@ -267,6 +289,7 @@ function main()
 		3)xjavaExecuteJar;;
 		4)xjavaCompressionJar;;
 		5)xjavaCreateJniNativeFile;;
+		6)addClassPath;;
 	esac
 }
 
