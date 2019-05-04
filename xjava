@@ -22,7 +22,7 @@ classpath_file=~/.java_classpath
 m2_jar=(`cat ${classpath_file}`)
 m2_classpath=""
 for x in "${m2_jar[@]}";do
-	m2_classpath="/Users/$(whoami)/.m2/repository/${x}:${m2_classpath}"
+	m2_classpath="${x}:${m2_classpath}"
 done
 
 function xjavaGetPackage()

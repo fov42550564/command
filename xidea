@@ -1,0 +1,72 @@
+#!/bin/bash
+source ~/command/common
+
+_project=SPServer
+_oper=0
+
+function getFilePath() {
+    file=`find -name $1.java`
+    if [ -z "$file" ];then
+        echo "请输入正确的类名"
+        exit
+    fi
+    __get_full_path $file
+}
+
+function gen_service_code() {
+    if [ -z "$3" ];then
+        echo "请输入类名和函数名"
+        exit
+    fi
+    cd $1/src/main/java/com
+    cpath=`getFilePath $2`
+    line=`cat $cpath|grep "public .*$3"|sed 's/.*public\s*//;s/\s*{//'`
+    sname=`echo $2|sed 's/C\(.\)$/S\1/'`
+    spath=`getFilePath $sname`
+    vim -e -s -c ":/^}/s/.*/${line};\r\r}/" -c "normal gg=GZZ" "$spath"
+    siname=`echo $2|sed 's/C\(.\)$/SI\1/'`
+    sipath=`getFilePath $siname`
+    vim -e -s -c ":?^}?s/.*/@Override\r@Transactional\rpublic ${line} {\rreturn Result.success();\r}\r\r}/" -c "normal gg=GZZ" "$sipath"
+}
+
+function show_help()
+{
+	local -a list
+	list="help"
+	list=("${list[@]}" "Usage :xidea [OPTIONS]")
+	list=("${list[@]}" "  -c [class]: the class name")
+	list=("${list[@]}" "  -n [function]: the function name")
+	list=("${list[@]}" "  -h: show help")
+	__msgbox "${list[@]}"
+}
+
+function main()
+{
+	local oper_right cls name
+	oper_right=0
+
+	if [ "$1" = "--help" ];then
+		show_help full
+		exit
+	fi
+
+    projectPath=`pwd`
+    if [ "${projectPath%${_project}/project}" = "${projectPath}" ];then
+        echo "请在工程的project目录运行"
+        exit
+    fi
+	while getopts :c:n:h opt;do
+		oper_right=1
+		case $opt in
+			c)cls="$OPTARG";;
+			n)name="$OPTARG";;
+			*)show_help;exit;;
+		esac
+	done
+
+	case $_oper in
+		0)gen_service_code $projectPath $cls $name;;
+	esac
+}
+
+main "$@"

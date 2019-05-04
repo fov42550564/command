@@ -1,6 +1,6 @@
 const STRICT_LIST = [ 'izwz9h2gldvmd5dzmiqkd0z', 'ylsmt' ];
 const STRICT = STRICT_LIST.indexOf(getHostName()) !== -1;
-const dbname = 'lq';
+const dbname = 'db_smart_plate';
 
 const REJECTS = {
     __all: ['salt', 'hash'],
