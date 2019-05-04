@@ -21,12 +21,13 @@ function gen_service_code() {
     cd $1/src/main/java/com
     cpath=`getFilePath $2`
     line=`cat $cpath|grep "public .*$3"|sed 's/.*public\s*//;s/\s*{//'`
+    echo "++${line}+"
     sname=`echo $2|sed 's/C\(.\)$/S\1/'`
     spath=`getFilePath $sname`
     vim -e -s -c ":/^}/s/.*/\r\t${line};\r}/" -c ":wq" "$spath"
     siname=`echo $2|sed 's/C\(.\)$/SI\1/'`
     sipath=`getFilePath $siname`
-    vim -e -s -c ":?^}?s/.*/\r\t@Override\r\t@Transactional\r\tpublic ${line} \t{\r\t\treturn Result.success();\r\t}\r}/" -c ":wq" "$sipath"
+    vim -e -s -c ":?^}?s/.*/\r\t@Override\r\t@Transactional\r\tpublic ${line} {\r\t\treturn Result.success();\r\t}\r}/" -c ":wq" "$sipath"
 }
 
 function show_help()
