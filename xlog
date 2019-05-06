@@ -107,7 +107,7 @@ function read_pbpaste_data_to_file()
       echo>>"$file"
       pbpaste >> "$file"
     fi
-  elif __cygwin;then
+  elif __windows;then
     if [ $_append -eq 0 ];then
       cat /dev/clipboard > "$file"
     else
