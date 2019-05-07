@@ -675,13 +675,16 @@ function __folder_cd()
 ########################################
 	local path
 	if __mac ;then
-	   path="`osascript -e 'tell application "Finder" to set myname to POSIX path of (target of window 1 as alias)' 2>/dev/null`"
-	   if [ -n "$path" ]; then
-		  cd "$path"
-	   else
-		  echo "no finder window finded"
-	   fi
-   fi
+		path=`osascript -e 'tell application "Finder" to set myname to POSIX path of (target of window 1 as alias)' 2>/dev/null`
+	elif __windows ;then
+		path=`cat /dev/clipboard`
+	fi
+	echo $path
+	if [ -n "$path" ]; then
+		__extend_cd "$path"
+	else
+		echo "no finder window finded"
+	fi
 }
 function __clear()
 {
