@@ -24,7 +24,10 @@ if __windows;then
     export SHELLOPTS
     #open
     alias open='explorer'
-    alias atom='C:/Users/fang/AppData/Local/atom/atom.exe'
+    function atom(){
+      atom=/c/Users/`whoami`/AppData/Local/atom/atom
+      $atom `pwd`/$1
+    }
 fi
 
 #set options
