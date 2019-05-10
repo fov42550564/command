@@ -1722,7 +1722,7 @@ function __init()
 	_declare_global_variables__
 
 	if __mac ;then
-		_SED_=/usr/local/bin/sed
+		_SED_=/usr/local/opt/gnu-sed/libexec/gnubin/sed
 	else
 		_SED_=/usr/bin/sed
 	fi
