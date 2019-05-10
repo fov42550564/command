@@ -43,6 +43,7 @@ if __mac ;then
 else
     alias rm='rm -i'
 fi
+alias rmf='__rm_files'
 #path
 alias path='echo -e ${PATH//:/\\n}'
 alias libpath='echo -e ${LD_LIBRARY_PATH//:/\\n}'

@@ -14,24 +14,179 @@ function getFilePath() {
 }
 
 function gen_service_code() {
-    local path cls name
-    path="$1"
-    cls=""
-    name=""
-    if [ -z "$3" ];then
-        echo "请输入类名和函数名"
+    local  path cls name
+    cls="${1%:*}"
+    name="${1#*:}"
+    if [ "$cls:$name" != "$1" ];then
+        echo "格式：class:function"
         exit
     fi
+
+    path=`pwd`
+    if [ "${path%${_project}/project}" = "${path}" ];then
+        echo "请在工程的project目录运行"
+        exit
+    fi
+
     cd $path/src/main/java/com
-    cpath=`getFilePath $2`
-    line=`cat $cpath|grep "public .*$3"|sed 's/.*public\s*//;s/\s*{//'`
-    echo "++${line}+"
-    sname=`echo $2|sed 's/C\(.\)$/S\1/'`
+    cpath=`getFilePath $cls`
+    line=`cat $cpath|grep "public .*$name"|sed 's/.*public\s*//;s/\s*{//'`
+    sname=`echo $cls|sed 's/C\(.\)$/S\1/'`
     spath=`getFilePath $sname`
     vim -e -s -c ":/^}/s/.*/\r\t${line};\r}/" -c ":wq" "$spath"
-    siname=`echo $2|sed 's/C\(.\)$/SI\1/'`
+    siname=`echo $cls|sed 's/C\(.\)$/SI\1/'`
     sipath=`getFilePath $siname`
     vim -e -s -c ":?^}?s/.*/\r\t@Override\r\t@Transactional\r\tpublic ${line} {\r\t\treturn Result.success();\r\t}\r}/" -c ":wq" "$sipath"
+}
+
+function copy_file() {
+    local  file newFile oldName newName _oldnameFlag=0 _newnameFlag=0 _oldname _oldname1 _newname _newname1
+    file="${1%%:*}"
+    oldName="${1#*:}"
+    newName="${oldName#*:}"
+    oldName="${oldName%:*}"
+
+    if [ "$file:$oldName:$newName" != "$1" ];then
+        echo "格式：file:oldName:newName"
+        exit
+    fi
+
+    echo $oldName | grep '^[A-Z]' > /dev/null
+    if [ $? -ne 0 ];then
+        _oldnameFlag=1;
+    fi
+
+    echo $newName | grep '^[A-Z]' > /dev/null
+    if [ $? -ne 0 ];then
+        _newnameFlag=1;
+    fi
+
+    if [ $_oldnameFlag = 1 ];then
+        _oldname="$oldName"
+        _oldname1=`echo $oldName|sed 's/^[a-z]/\u&/'`
+    else
+        _oldname1="$oldName"
+        _oldname=`echo $oldName|sed 's/^[A-Z]/\l&/'`
+    fi
+
+    if [ $_newnameFlag = 1 ];then
+        _newname="$newName"
+        _newname1=`echo $newName|sed 's/^[a-z]/\u&/'`
+    else
+        _newname1="$newName"
+        _newname=`echo $newName|sed 's/^[A-Z]/\l&/'`
+    fi
+
+    newFile=`echo $file|sed 's/'${_oldname}'/'${_newname}'/'|sed 's/'${_oldname1}'/'${_newname1}'/'`
+
+    cp $file $newFile
+
+    vim -e -s -c ":set noignorecase" -c ":%s/${_oldname}/${_newname}/g" -c ":%s/${_oldname1}/${_newname1}/g" -c ":wq" $newFile
+}
+
+function copy_class() {
+    local  path cls cls1 oldName newName _oldnameFlag=0 _newnameFlag=0 _oldname _oldname1 _newname _newname1
+    cls="${1%:*}"
+    cls1="${1#*:}"
+    if [ "$cls:$cls1" != "$1" ];then
+        echo "格式：class:function"
+        exit
+    fi
+
+    path=`pwd`
+    if [ "${path%${_project}/project}" = "${path}" ];then
+        echo "请在工程的project目录运行"
+        exit
+    fi
+
+    oldName=`echo $cls|sed 's/C.$//'`
+    newName=`echo $cls1|sed 's/C.$//'`
+
+    echo $oldName | grep '^[A-Z]' > /dev/null
+    if [ $? -ne 0 ];then
+        _oldnameFlag=1;
+    fi
+
+    echo $newName | grep '^[A-Z]' > /dev/null
+    if [ $? -ne 0 ];then
+        _newnameFlag=1;
+    fi
+
+    if [ $_oldnameFlag = 1 ];then
+        _oldname="$oldName"
+        _oldname1=`echo $oldName|sed 's/^[a-z]/\u&/'`
+    else
+        _oldname1="$oldName"
+        _oldname=`echo $oldName|sed 's/^[A-Z]/\l&/'`
+    fi
+
+    if [ $_newnameFlag = 1 ];then
+        _newname="$newName"
+        _newname1=`echo $newName|sed 's/^[a-z]/\u&/'`
+    else
+        _newname1="$newName"
+        _newname=`echo $newName|sed 's/^[A-Z]/\l&/'`
+    fi
+
+    cd $path/src/main/java/com
+    cpath=`getFilePath $cls`
+    cdir=`dirname $cpath`
+    cpath1=${cdir}/${cls1}.java
+    if ! [ -f $cpath1 ];then
+        if [ -f $cpath ];then
+            cp $cpath $cpath1
+            vim -e -s -c ":set noignorecase" -c ":%s/${_oldname}/${_newname}/g" -c ":%s/${_oldname1}/${_newname1}/g" -c ":wq" $cpath1
+        fi
+    fi
+
+    sname=`echo $cls|sed 's/C\(.\)$/S\1/'`
+    sname1=`echo $cls1|sed 's/C\(.\)$/S\1/'`
+    spath=`getFilePath $sname`
+    sdir=`dirname $spath`
+    spath1=${sdir}/${sname1}.java
+    if ! [ -f $spath1 ];then
+        if [ -f $spath ];then
+            cp $spath $spath1
+            vim -e -s -c ":set noignorecase" -c ":%s/${_oldname}/${_newname}/g" -c ":%s/${_oldname1}/${_newname1}/g" -c ":wq" $spath1
+        fi
+    fi
+
+    siname=`echo $cls|sed 's/C\(.\)$/SI\1/'`
+    siname1=`echo $cls1|sed 's/C\(.\)$/SI\1/'`
+    sipath=`getFilePath $siname`
+    sidir=`dirname $sipath`
+    sipath1=${sidir}/${siname1}.java
+    if ! [ -f $sipath1 ];then
+        if [ -f $sipath ];then
+            cp $sipath $sipath1
+            vim -e -s -c ":set noignorecase" -c ":%s/${_oldname}/${_newname}/g" -c ":%s/${_oldname1}/${_newname1}/g" -c ":wq" $sipath1
+        fi
+    fi
+
+    ename=`echo $cls|sed 's/C.$/E/'`
+    ename1=`echo $cls1|sed 's/C.$/E/'`
+    epath=`getFilePath $ename`
+    edir=`dirname $epath`
+    epath1=${edir}/${ename1}.jav
+    if ! [ -f $epath1 ];then
+        if [ -f $epath ];then
+            cp $epath $epath1
+            vim -e -s -c ":set noignorecase" -c ":%s/${_oldname}/${_newname}/g" -c ":%s/${_oldname1}/${_newname1}/g" -c ":wq" $epath1
+        fi
+    fi
+
+    ername=`echo $cls|sed 's/C.$/ER/'`
+    ername1=`echo $cls1|sed 's/C.$/ER/'`
+    erpath=`getFilePath $ername`
+    erdir=`dirname $erpath`
+    erpath1=${erdir}/${ername1}.java
+
+    if ! [ -f $erpath1 ];then
+        if [ -f $erpath ];then
+            cp $erpath $erpath1
+            vim -e -s -c ":set noignorecase" -c ":%s/${_oldname}/${_newname}/g" -c ":%s/${_oldname1}/${_newname1}/g" -c ":wq" $erpath1
+        fi
+    fi
 }
 
 function show_help()
@@ -39,8 +194,9 @@ function show_help()
 	local -a list
 	list="help"
 	list=("${list[@]}" "Usage :xidea [OPTIONS]")
-	list=("${list[@]}" "  -c [class:function]: copy c")
+	list=("${list[@]}" "  -s [class:function]: generate service code")
 	list=("${list[@]}" "  -f [file:oldName:newName]: copy file")
+	list=("${list[@]}" "  -c [oldClass:newClass]: copy Controller Service and ServerImpl")
 	list=("${list[@]}" "  -h: show help")
 	__msgbox "${list[@]}"
 }
@@ -55,23 +211,20 @@ function main()
 		exit
 	fi
 
-    projectPath=`pwd`
-    if [ "${projectPath%${_project}/project}" = "${projectPath}" ];then
-        echo "请在工程的project目录运行"
-        exit
-    fi
-	while getopts :c:f:h opt;do
+	while getopts :s:f:c:h opt;do
 		oper_right=1
 		case $opt in
-			c)_oper=0;param="$OPTARG";;
+			s)_oper=0;param="$OPTARG";;
 			f)_oper=1;param="$OPTARG";;
+			c)_oper=2;param="$OPTARG";;
 			*)show_help;exit;;
 		esac
 	done
 
 	case $_oper in
-		0)gen_service_code $projectPath $param;;
-		1)copr_file $projectPath $param;;
+		0)gen_service_code $param;;
+		1)copy_file $param;;
+		2)copy_class $param;;
 	esac
 }
 

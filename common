@@ -69,9 +69,6 @@ function _declare_global_variables__()
 	_INPUTBOX_HEIGHT_=$_MSGBOX_HEIGHT_
 	_INPUTBOX_WIDTH_=$_MSGBOX_WIDTH_
 
-	_SED_=/usr/bin/sed
-	_RM_=/bin/rm
-
 	__mac && _SUDO_=sudo || _SUDO_=""
 
 	_TRUE_=0
@@ -226,7 +223,7 @@ function __match()
 #	   check $?==0
 ########################################
 	local rs
-	rs=$(echo $1|$_SED_ -r -n '/'$2'/p')
+	rs=$(echo $1|sed -r -n '/'$2'/p')
 	[ -z "$rs" ] && return $_FALSE_ || return $_TRUE_
 }
 function __match_num()
@@ -245,7 +242,7 @@ function __match_line()
 #	   check $?==0
 ########################################
 	local rs
-	rs=$($_SED_ -r -n '/'"$1"'/p'  "$2" 2>/dev/null)
+	rs=$(sed -r -n '/'"$1"'/p'  "$2" 2>/dev/null)
 	[ -z "$rs" ] && return $_FALSE_ || return $_TRUE_
 }
 function __get_line()
@@ -254,7 +251,7 @@ function __get_line()
 #Usage:__get_line str file
 #	return the whole line
 ########################################
-	$_SED_ -r -n '/'"$1"'/p'  "$2" 2>/dev/null
+	sed -r -n '/'"$1"'/p'  "$2" 2>/dev/null
 }
 function __repeat()
 {
@@ -454,6 +451,18 @@ function __skip_sudo()
 			}
 			interact
 			" 2>/dev/null 1>&2
+	fi
+}
+function __rm_files()
+{
+########################################
+#Usage:__rm_files in clip
+########################################
+	pbpaste
+	echo
+	__ask "确认要删除以上文件吗"
+	if [ $? = 0 ];then
+		pbpaste|xargs -I bbbb rm -fr bbbb
 	fi
 }
 function __set_array()
@@ -1297,7 +1306,7 @@ function _checkbox_console__()
 	n=$?
 
 	if [ $n -eq 0 ];then
-		list=$(echo $list|$_SED_ 's/^[[:space:]]*-//')
+		list=$(echo $list|sed 's/^[[:space:]]*-//')
 	fi
 
 	if [ "$list" = "all" ];then
@@ -1310,8 +1319,8 @@ function _checkbox_console__()
 			__match "$m" ".*-.*"
 			p=$?
 			if [ $p -eq 0 ];then
-				begin=$(echo $m|$_SED_ 's/-.*//')
-				end=$(echo $m|$_SED_ 's/.*-//')
+				begin=$(echo $m|sed 's/-.*//')
+				end=$(echo $m|sed 's/.*-//')
 				__match_num "$begin"
 				p=$?
 				if [ $p -ne 0 ];then
@@ -1684,11 +1693,11 @@ function __set_setting()
 
 	settings="$1"
 	name=${settings%%:*}
-	search=$($_SED_ -n '/'"$name"':/p' "$_setting_file_")
+	search=$(sed -n '/'"$name"':/p' "$_setting_file_")
 	if [ "$search" = "" ];then
 		echo "$settings" >> "$_setting_file_"
 	elif ! [ "$search" = "$settings" ];then
-		$_SED_ -i 's#'"$search"'#'"$settings"'#' "$_setting_file_"
+		sed -i 's#'"$search"'#'"$settings"'#' "$_setting_file_"
 	fi
 }
 function __get_setting()
@@ -1698,7 +1707,7 @@ function __get_setting()
 	########################################
 	local search name
 	name="$1"
-	search=$($_SED_ -n '/'"$name"':/p' "$_setting_file_")
+	search=$(sed -n '/'"$name"':/p' "$_setting_file_")
 	if ! [ "$search" = "" ];then
 		echo ${search##*:}
 	fi
@@ -1720,14 +1729,6 @@ function __init()
 	#Usage:__init
 	########################################
 	_declare_global_variables__
-
-	if __mac ;then
-		_SED_=/usr/local/opt/gnu-sed/libexec/gnubin/sed
-	else
-		_SED_=/usr/bin/sed
-	fi
-
-	_RM_=/bin/rm
 
 	if ! [ -f $_setting_file_ ];then
 		echo "rm:system" > $_setting_file_
