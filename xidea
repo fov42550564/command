@@ -14,11 +14,15 @@ function getFilePath() {
 }
 
 function gen_service_code() {
+    local path cls name
+    path="$1"
+    cls=""
+    name=""
     if [ -z "$3" ];then
         echo "请输入类名和函数名"
         exit
     fi
-    cd $1/src/main/java/com
+    cd $path/src/main/java/com
     cpath=`getFilePath $2`
     line=`cat $cpath|grep "public .*$3"|sed 's/.*public\s*//;s/\s*{//'`
     echo "++${line}+"
@@ -35,15 +39,15 @@ function show_help()
 	local -a list
 	list="help"
 	list=("${list[@]}" "Usage :xidea [OPTIONS]")
-	list=("${list[@]}" "  -c [class]: the class name")
-	list=("${list[@]}" "  -n [function]: the function name")
+	list=("${list[@]}" "  -c [class:function]: copy c")
+	list=("${list[@]}" "  -f [file:oldName:newName]: copy file")
 	list=("${list[@]}" "  -h: show help")
 	__msgbox "${list[@]}"
 }
 
 function main()
 {
-	local oper_right cls name
+	local oper_right param
 	oper_right=0
 
 	if [ "$1" = "--help" ];then
@@ -56,17 +60,18 @@ function main()
         echo "请在工程的project目录运行"
         exit
     fi
-	while getopts :c:n:h opt;do
+	while getopts :c:f:h opt;do
 		oper_right=1
 		case $opt in
-			c)cls="$OPTARG";;
-			n)name="$OPTARG";;
+			c)_oper=0;param="$OPTARG";;
+			f)_oper=1;param="$OPTARG";;
 			*)show_help;exit;;
 		esac
 	done
 
 	case $_oper in
-		0)gen_service_code $projectPath $cls $name;;
+		0)gen_service_code $projectPath $param;;
+		1)copr_file $projectPath $param;;
 	esac
 }
 
