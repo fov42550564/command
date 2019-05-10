@@ -167,7 +167,7 @@ function copy_class() {
     ename1=`echo $cls1|sed 's/C.$/E/'`
     epath=`getFilePath $ename`
     edir=`dirname $epath`
-    epath1=${edir}/${ename1}.jav
+    epath1=${edir}/${ename1}.java
     if ! [ -f $epath1 ];then
         if [ -f $epath ];then
             cp $epath $epath1
