@@ -37,14 +37,14 @@ function xjavaGetPackageFromFile()
 {
 	local file_name
 	file_name="$1"
-	echo "$($_SED_ -n '/package.*\;/p' $file_name|$_SED_ 's/package//;s/;//;s/[[:space:]]//')"
+	echo "$(sed -n '/package.*\;/p' $file_name|sed 's/package//;s/;//;s/[[:space:]]//')"
 }
 
 function xjavaGetJniFlag()
 {
 	local file_name ret
 	file_name="$1"
-	ret=$($_SED_ -n '/native.*();/p' $file_name)
+	ret=$(sed -n '/native.*();/p' $file_name)
 	[ -z "$ret" ]&&_jni=0||_jni=1
 }
 
@@ -209,7 +209,7 @@ function xjavaCreateJniNativeFile()
 	echo "#include <stdio.h>" > $src_file
 	echo "#include \""$class_name"jni.h\"" >> $src_file
 	echo  >> $src_file
-	$_SED_ -n '/JNIEXPORT/,/);/p' $header_file|$_SED_ 'N;s/\n//'|$_SED_ 's/  (/(/;s/;/{\n\tprintf("hello jni\\n");\n}/;s/JNIEnv \*/JNIEnv *env/;s/jobject/jobject obj/;s/jclass/jclass cls/' >> $src_file
+	sed -n '/JNIEXPORT/,/);/p' $header_file|sed 'N;s/\n//'|sed 's/  (/(/;s/;/{\n\tprintf("hello jni\\n");\n}/;s/JNIEnv \*/JNIEnv *env/;s/jobject/jobject obj/;s/jclass/jclass cls/' >> $src_file
 	echo  >> $src_file
 	return $_TRUE_
 }

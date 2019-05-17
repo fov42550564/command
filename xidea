@@ -189,6 +189,19 @@ function copy_class() {
     fi
 }
 
+function gen_setter_getter() {
+    path=`pwd`
+    if [ "${path%${_project}/project}" = "${path}" ];then
+        echo "请在工程的project目录运行"
+        exit
+    fi
+
+    files=(`ls ${path}/src/main/java/com/whxx/sp/entity/*.java`)
+    for file in "${files[@]}";do
+        vim -e -s -c ":%s/private\s\+\(\w\+\)\s\+\(\w\+\)\([^;]*\);.*/\=\"private \".submatch(1).\" \".submatch(2).submatch(3).\";public \".submatch(1).\" get\".toupper(strpart(submatch(2), 0, 1)).strpart(submatch(2), 1).\"(){ return this.\".submatch(2).\"; }public void set\".toupper(strpart(submatch(2), 0, 1)).strpart(submatch(2), 1).\"(\".submatch(1).\" \".submatch(2).\"){ if(null != \".submatch(2).\"){ this.\".submatch(2).\" = \".submatch(2).\"; } }\"/" -c ":wq" "$file"
+    done
+}
+
 function show_help()
 {
 	local -a list
@@ -197,6 +210,7 @@ function show_help()
 	list=("${list[@]}" "  -s [class:function]: generate service code")
 	list=("${list[@]}" "  -f [file:oldName:newName]: copy file")
 	list=("${list[@]}" "  -c [oldClass:newClass]: copy Controller Service and ServerImpl")
+	list=("${list[@]}" "  -e: auto gen setter and getter")
 	list=("${list[@]}" "  -h: show help")
 	__msgbox "${list[@]}"
 }
@@ -211,12 +225,13 @@ function main()
 		exit
 	fi
 
-	while getopts :s:f:c:h opt;do
+	while getopts :s:f:c:eh opt;do
 		oper_right=1
 		case $opt in
 			s)_oper=0;param="$OPTARG";;
 			f)_oper=1;param="$OPTARG";;
 			c)_oper=2;param="$OPTARG";;
+			e)_oper=3;;
 			*)show_help;exit;;
 		esac
 	done
@@ -225,6 +240,7 @@ function main()
 		0)gen_service_code $param;;
 		1)copy_file $param;;
 		2)copy_class $param;;
+		3)gen_setter_getter;;
 	esac
 }
 
