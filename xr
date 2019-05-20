@@ -1,0 +1,89 @@
+#!/bin/bash
+source ~/command/common
+
+oldname=
+newname=
+_oldname=""
+_newname=""
+_oldname1=""
+_newname1=""
+_oldname2=""
+_newname2=""
+_oldnameFlag=0
+_newnameFlag=0
+
+function showHelp() {
+    echo "Usage:"
+    echo "  xr oldname:newname [0]"
+    echo "  进入某一个目录，将目录里面的文件按规则重命名，将文件中的内容按照规则替换，如果有第二个参数，则替换剪切板的内容"
+    echo "  规则：名称采用驼峰格式或者火箭式, 如: xr shopMemberModel:ClientModel 或者 xr ShopMemberModel:ClientModel"
+    echo "  命令执行修改： shopMemberModel->clientModel; ShopMemberModel->ClientModel; SHOP_MEMBER_MODEL->CLIENT_MODEL"
+    echo ""
+    exit
+}
+
+oldname=${1%:*}
+newname=${1#*:}
+if [ "$1" != "$oldname:$newname" -o "$oldname" = "" -o "$newname" = "" ];then
+    showHelp
+fi
+
+
+echo $oldname | grep '^[A-Z]' > /dev/null
+if [ $? -ne 0 ];then
+    _oldnameFlag=1;
+fi
+
+echo $newname | grep '^[A-Z]' > /dev/null
+if [ $? -ne 0 ];then
+    _newnameFlag=1;
+fi
+
+if [ $_oldnameFlag = 1 ];then
+    _oldname="$oldname"
+    _oldname1=`echo $oldname|sed 's/^[a-z]/\u&/'`
+else
+    _oldname1="$oldname"
+    _oldname=`echo $oldname|sed 's/^[A-Z]/\l&/'`
+fi
+
+if [ $_newnameFlag = 1 ];then
+    _newname="$newname"
+    _newname1=`echo $newname|sed 's/^[a-z]/\u&/'`
+else
+    _newname1="$newname"
+    _newname=`echo $newname|sed 's/^[A-Z]/\l&/'`
+fi
+_oldname2=`echo $_oldname|sed 's/[A-Z]/_&/g'|sed 's/[a-z]/\u&/g'`
+_newname2=`echo $_newname|sed 's/[A-Z]/_&/g'|sed 's/[a-z]/\u&/g'`
+
+
+# 替换前切板的内容
+if [ "$2" != "" ];then
+    pbpaste|sed 's/'${_oldname}'/'${_newname}'/g'|sed 's/'${_oldname1}'/'${_newname1}'/g'|sed 's/'${_oldname2}'/'${_newname2}'/g'|pbcopy
+    exit
+fi
+
+
+echo xfind -n "*${_oldname}*" -r "${_oldname}:${_newname}"
+echo xfind -v "-c \"%s/${_oldname}/${_newname}/g\""
+
+echo xfind -n "*${_oldname1}*" -r "${_oldname1}:${_newname1}"
+echo xfind -v "-c \"%s/${_oldname1}/${_newname1}/g\""
+
+echo xfind -n "*${_oldname2}*" -r "${_oldname2}:${_newname2}"
+echo xfind -v "-c \"%s/${_oldname2}/${_newname2}/g\""
+
+__ask "确定替换吗"
+if [ "$?" = "$_FALSE_" ];then
+    exit
+fi
+
+xfind -n "*${_oldname}*" -r "${_oldname}:${_newname}"
+xfind -v "-c \"%s/${_oldname}/${_newname}/g\""
+
+xfind -n "*${_oldname1}*" -r "${_oldname1}:${_newname1}"
+xfind -v "-c \"%s/${_oldname1}/${_newname1}/g\""
+
+xfind -n "*${_oldname2}*" -r "${_oldname2}:${_newname2}"
+xfind -v "-c \"%s/${_oldname2}/${_newname2}/g\""
