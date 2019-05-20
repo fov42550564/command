@@ -1,9 +1,0 @@
-#!/bin/bash
-
-file=.__tmp
-pbpaste > ${file}
-vim -e -s -c '%s/|[^|]*|[^|]*|//' -c '%s/|.*/+/' -c 'normal ggvGJ' -c '%s/+$//' -c :wq ${file}
-str=`cat ${file}`
-echo ${str} = `node -e "${str}" -p`
-rm -f ${file}
-echo ''| pbcopy

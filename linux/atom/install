@@ -5,13 +5,13 @@ if [ "$1" = "--help" -o  "$1" = "-h" ];then
   exit
 fi
 
+cp ./keymap/keymap.cson ~/.atom/
+cp ./config/config.cson ~/.atom/
+cp ./snippets/snippets.cson ~/.atom/
+
 if [ "$1" = "--es6" ];then
   cp "./snippets/react6.cson" "$HOME/.atom/packages/react/snippets/JavaScript (JSX).cson"
 else
   cp "./snippets/react.cson" "$HOME/.atom/packages/react/snippets/JavaScript (JSX).cson"
 fi
-cp ./keymap/keymap.cson ~/.atom/
-cp ./config/config.cson ~/.atom/
-cp ./snippets/snippets.cson ~/.atom/
-
 echo "done"

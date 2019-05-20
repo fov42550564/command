@@ -62,7 +62,11 @@ _newname2=`echo $_newname|sed 's/[A-Z]/_&/g'|sed 's/[a-z]/\u&/g'`
 
 # 替换前切板的内容
 if [ "$2" == "" ];then
-    pbpaste|sed 's/'${_oldname}'/'${_newname}'/g'|sed 's/'${_oldname1}'/'${_newname1}'/g'|sed 's/'${_oldname2}'/'${_newname2}'/g'|pbcopy
+    if __mac ;then
+        pbpaste|sed 's/'${_oldname}'/'${_newname}'/g'|sed 's/'${_oldname1}'/'${_newname1}'/g'|sed 's/'${_oldname2}'/'${_newname2}'/g'|pbcopy
+    else
+         cat /dev/clipboard|sed 's/'${_oldname}'/'${_newname}'/g'|sed 's/'${_oldname1}'/'${_newname1}'/g'|sed 's/'${_oldname2}'/'${_newname2}'/g'  > /dev/clipboard
+    fi
     exit
 fi
 

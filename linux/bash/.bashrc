@@ -126,9 +126,17 @@ function lgm() { if [ -z "$1" ];then xlog -v -m -r; else xlog -v -m -r -f "$1"; 
 function log() { if [ -z "$1" ];then xlog -a; else xlog -a -f "$1"; fi }
 function logv() { if [ -z "$1" ];then xlog -v -a; else xlog -v -a -f "$1"; fi }
 function logm() { if [ -z "$1" ];then xlog -v -m -a; else xlog -v -m -a -f "$1"; fi }
-function xcat() { cat "$1"|pbcopy; }
-function xlg() { pbpaste|pbcopy; }
-function xecho() { echo $(pbpaste)|pbcopy; }
+if __mac ;then
+    function xcat() { cat "$1"|pbcopy; }
+    function xlg() { pbpaste|pbcopy; }
+    function xecho() { echo $(pbpaste)|pbcopy; }
+    function cpwd() { echo -n `pwd`|pbcopy; }
+else
+    function xcat() { cat "$1"  > /dev/clipboard; }
+    function xlg() {  cat /dev/clipboard > /dev/clipboard; }
+    function xecho() { echo $(cat /dev/clipboard) > /dev/clipboard; }
+    function cpwd() { echo -n `pwd` > /dev/clipboard; }
+fi
 
 #cd which
 function wh() { cd $(which "$1"); }
@@ -202,8 +210,6 @@ alias node-rebuild='node-gyp rebuild'
 alias ffpcm='ffplay -f s16le -ar 41000 -ac 2 -loop 0'
 alias ffrgba='ffplay -f rawvideo -pixel_format rgba -video_size 128x128'
 alias ffyuv='ffplay -f rawvideo -loop 0 -video_size 568x320'
-alias copytext='lg __1__ && cat __1__|pbcopy && rm -f __1__'
-alias cpwd='echo -n `pwd`|pbcopy'
 
 alias gyp='~/node/gyp/gyp-read-only/gyp --depth=.'
 

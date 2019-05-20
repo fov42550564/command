@@ -458,11 +458,19 @@ function __rm_files()
 ########################################
 #Usage:__rm_files in clip
 ########################################
-	pbpaste
+	if __mac;then
+		pbpaste
+	else
+		cat /dev/clipboard
+	fi
 	echo
 	__ask "确认要删除以上文件吗"
 	if [ $? = 0 ];then
-		pbpaste|xargs -I bbbb rm -fr bbbb
+		if __mac;then
+			pbpaste|xargs -I bbbb rm -fr bbbb
+		else
+			cat /dev/clipboard|xargs -I bbbb rm -fr bbbb
+		fi
 	fi
 }
 function __set_array()
