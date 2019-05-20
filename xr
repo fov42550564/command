@@ -14,8 +14,10 @@ _newnameFlag=0
 
 function showHelp() {
     echo "Usage:"
-    echo "  xr oldname:newname [0]"
-    echo "  进入某一个目录，将目录里面的文件按规则重命名，将文件中的内容按照规则替换，如果有第二个参数，则替换剪切板的内容"
+    echo "  xr oldname:newname [-r|-c]"
+    echo "  默认替换剪切板的内容"
+    echo "  -r: 进入某一个目录，将目录里面的文件按规则重命名，将文件中的内容按照规则替换"
+    echo "  -c: 拷贝目录后，再替换"
     echo "  规则：名称采用驼峰格式或者火箭式, 如: xr shopMemberModel:ClientModel 或者 xr ShopMemberModel:ClientModel"
     echo "  命令执行修改： shopMemberModel->clientModel; ShopMemberModel->ClientModel; SHOP_MEMBER_MODEL->CLIENT_MODEL"
     echo ""
@@ -59,11 +61,19 @@ _newname2=`echo $_newname|sed 's/[A-Z]/_&/g'|sed 's/[a-z]/\u&/g'`
 
 
 # 替换前切板的内容
-if [ "$2" != "" ];then
+if [ "$2" == "" ];then
     pbpaste|sed 's/'${_oldname}'/'${_newname}'/g'|sed 's/'${_oldname1}'/'${_newname1}'/g'|sed 's/'${_oldname2}'/'${_newname2}'/g'|pbcopy
     exit
 fi
 
+if [ "$2" != "-r" -a "$2" != "-c" ];then
+    showHelp
+fi
+
+if [ "$2" = "-c" ];then
+    cp -r $_oldname $_newname
+    cd $_newname
+fi
 
 echo xfind -n "*${_oldname}*" -r "${_oldname}:${_newname}"
 echo xfind -v "-c \"%s/${_oldname}/${_newname}/g\""
