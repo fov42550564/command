@@ -18,6 +18,7 @@ function showHelp() {
     echo "  默认替换剪切板的内容"
     echo "  -r: 进入某一个目录，将目录里面的文件按规则重命名，将文件中的内容按照规则替换"
     echo "  -c [folder]: 拷贝目录后，再替换"
+    echo "  -f [file]: 拷贝文件后，再替换"
     echo "  规则：名称采用驼峰格式或者火箭式, 如: xr shopMemberModel:ClientModel 或者 xr ShopMemberModel:ClientModel"
     echo "  命令执行修改： shopMemberModel->clientModel; ShopMemberModel->ClientModel; SHOP_MEMBER_MODEL->CLIENT_MODEL"
     echo ""
@@ -70,9 +71,29 @@ if [ "$2" == "" ];then
     exit
 fi
 
-if [ "$2" != "-r" -a "$2" != "-c" ];then
+if [ "$2" != "-r" -a "$2" != "-f" -a "$2" != "-c" ];then
     showHelp
 fi
+
+oldfile=""
+newfile=""
+if [ "$2" = "-f" ];then
+    if [ -z "$3" ];then
+        oldfile="$_oldname"
+        newfile="$_newname"
+    else
+        oldfile="$3"
+        newfile="${3/${_oldname}/${_newname}}"
+    fi
+    if ! [ -f "$oldfile" ];then
+        echo "$oldfile 不存在"
+        exit
+    fi
+    cp $oldfile $newfile
+    vim -e -s -c ":%s/${_oldname}/${_newname}/g" -c ":%s/${_oldname1}/${_newname1}/g" -c ":%s/${_oldname2}/${_newname2}/g" -c ":wq" $newfile
+    exit
+fi
+
 
 olddir=""
 newdir=""
@@ -83,6 +104,10 @@ if [ "$2" = "-c" ];then
     else
         olddir="$3"
         newdir="${3/${_oldname}/${_newname}}"
+    fi
+    if ! [ -d "$olddir" ];then
+        echo "$olddir 不存在"
+        exit
     fi
     cp -r $olddir $newdir
     cd $newdir
