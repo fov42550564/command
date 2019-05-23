@@ -30,13 +30,15 @@ function gen_service_code() {
 
     cd $path/src/main/java/com
     cpath=`getFilePath $cls`
-    line=`cat $cpath|grep "public .*$name"|sed 's/.*public\s*//;s/\s*{//'`
+    #line=`cat $cpath|grep "public .*$name"|sed 's/.*public\s*//;s/\s*{//'`
+    line=`sed -n -e '/public .*createHouseList/,/) {/p' $cpath|sed -e 's/.*public\s*//;s/\s*{//;s/\n/\\\\r/g;'| sed ':label;N;s/\n/\\r/;b label'`
+
     sname=`echo $cls|sed 's/C\(.\)$/S\1/'`
     spath=`getFilePath $sname`
-    vim -e -s -c ":/^}/s/.*/\r\t${line};\r}/" -c ":wq" "$spath"
+    vim -e -s -c ":/^}/s#.*#\t${line};\r\r}#" -c ":wq" "$spath"
     siname=`echo $cls|sed 's/C\(.\)$/SI\1/'`
     sipath=`getFilePath $siname`
-    vim -e -s -c ":?^}?s/.*/\r\t@Override\r\t@Transactional\r\tpublic ${line} {\r\t\treturn Result.success();\r\t}\r}/" -c ":wq" "$sipath"
+    vim -e -s -c ":?^}?s#.*#\t@Override\r\tpublic ${line} {\r\t\treturn Result.success();\r\t}\r\r}#" -c ":wq" "$sipath"
 }
 
 function copy_file() {
@@ -210,7 +212,6 @@ function show_help()
 	list=("${list[@]}" "  -s [class:function]: generate service code")
 	list=("${list[@]}" "  -f [file:oldName:newName]: copy file")
 	list=("${list[@]}" "  -c [oldClass:newClass]: copy Controller Service and ServerImpl")
-	list=("${list[@]}" "  -e: auto gen setter and getter")
 	list=("${list[@]}" "  -h: show help")
 	__msgbox "${list[@]}"
 }
@@ -225,13 +226,12 @@ function main()
 		exit
 	fi
 
-	while getopts :s:f:c:eh opt;do
+	while getopts :s:f:c:h opt;do
 		oper_right=1
 		case $opt in
 			s)_oper=0;param="$OPTARG";;
 			f)_oper=1;param="$OPTARG";;
 			c)_oper=2;param="$OPTARG";;
-			e)_oper=3;;
 			*)show_help;exit;;
 		esac
 	done
@@ -240,7 +240,6 @@ function main()
 		0)gen_service_code $param;;
 		1)copy_file $param;;
 		2)copy_class $param;;
-		3)gen_setter_getter;;
 	esac
 }
 
