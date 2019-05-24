@@ -35,10 +35,10 @@ function gen_service_code() {
     line=`sed -n '/public .*'$name'/,/) {/p' $cpath|sed 's/.*public\s*//;s/\s*{//;'| sed '/Long userId/d' | sed ':label;N;s/\n/\\r/;b label'`
     sname=`echo $cls|sed 's/C\(.\)$/S\1/'`
     spath=`getFilePath $sname`
-    vim -e -s -c ":/^}/s#.*#\t${comment}\r\t${line};\r\r}#" -c ":wq" "$spath"
+    vim -e -s -c ":/^}/s#.*#${comment}\r\t${line};\r\r}#" -c ":wq" "$spath"
     siname=`echo $cls|sed 's/C\(.\)$/SI\1/'`
     sipath=`getFilePath $siname`
-    vim -e -s -c ":?^}?s#.*#\t${comment}\r\t@Override\r\tpublic ${line} {\r\t\treturn Result.success();\r\t}\r\r}#" -c ":wq" "$sipath"
+    vim -e -s -c ":?^}?s#.*#${comment}\r\t@Override\r\tpublic ${line} {\r\t\treturn Result.success();\r\t}\r\r}#" -c ":wq" "$sipath"
 }
 
 function copy_file() {
