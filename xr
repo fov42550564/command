@@ -19,7 +19,11 @@ function showHelp() {
     echo "  -r: 进入某一个目录，将目录里面的文件按规则重命名，将文件中的内容按照规则替换"
     echo "  -c [folder]: 拷贝目录后，再替换"
     echo "  -f [file]: 拷贝文件后，再替换"
-    echo "  规则：名称采用驼峰格式或者火箭式, 如: xr shopMemberModel:ClientModel 或者 xr ShopMemberModel:ClientModel"
+    echo "  xr shop:client -f|-c shopTail，结果：cp [-r] shopTail clientTail"
+    echo "  xr Shop:client -f|-c ShopTail，结果：cp [-r] ShopTail ClientTail"
+    echo "  xr shop:client -f|-c，结果：cp [-r] shop client"
+    echo "  xr Shop:client -f|-c，结果：cp [-r] Shop Client"
+    echo "  替换规则：名称采用驼峰格式或者火箭式, 如: xr shopMemberModel:ClientModel 或者 xr ShopMemberModel:ClientModel"
     echo "  命令执行修改： shopMemberModel->clientModel; ShopMemberModel->ClientModel; SHOP_MEMBER_MODEL->CLIENT_MODEL"
     echo ""
     exit
@@ -75,15 +79,24 @@ if [ "$2" != "-r" -a "$2" != "-f" -a "$2" != "-c" ];then
     showHelp
 fi
 
-oldfile=""
-newfile=""
 if [ "$2" = "-f" ];then
+    oldfile=""
+    newfile=""
+    oldfilename=""
+    newfilename=""
+    if [ "$oldname" = "$_oldname" ];then
+        oldfilename="$_oldname"
+        newfilename="$_newname"
+    elif [ "$oldname" = "$_oldname1" ];then
+        oldfilename="$_oldname1"
+        newfilename="$_newname1"
+    fi
     if [ -z "$3" ];then
-        oldfile="$_oldname"
-        newfile="$_newname"
+        oldfile="$oldfilename"
+        newfile="$newfilename"
     else
         oldfile="$3"
-        newfile="${3/${_oldname}/${_newname}}"
+        newfile="${3/${oldfilename}/${newfilename}}"
     fi
     if ! [ -f "$oldfile" ];then
         echo "$oldfile 不存在"
@@ -95,15 +108,24 @@ if [ "$2" = "-f" ];then
 fi
 
 
-olddir=""
-newdir=""
 if [ "$2" = "-c" ];then
+    olddir=""
+    newdir=""
+    olddirname=""
+    newdirname=""
+    if [ "$oldname" = "$_oldname" ];then
+        olddirname="$_oldname"
+        newdirname="$_newname"
+    elif [ "$oldname" = "$_oldname1" ];then
+        olddirname="$_oldname1"
+        newdirname="$_newname1"
+    fi
     if [ -z "$3" ];then
-        olddir="$_oldname"
-        newdir="$_newname"
+        olddir="$olddirname"
+        newdir="$newdirname"
     else
         olddir="$3"
-        newdir="${3/${_oldname}/${_newname}}"
+        newdir="${3/${olddirname}/${newdirname}}"
     fi
     if ! [ -d "$olddir" ];then
         echo "$olddir 不存在"
