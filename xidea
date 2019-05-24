@@ -32,7 +32,7 @@ function gen_service_code() {
     cpath=`getFilePath $cls`
     #line=`cat $cpath|grep "public .*$name"|sed 's/.*public\s*//;s/\s*{//'`
     comment=`sed -n '/PostMapping.*'$name'/{x;p};h ' $cpath`
-    line=`sed -n '/public .*'$name'/,/) {/p' $cpath|sed 's/.*public\s*//;s/\s*{//;'| sed '/Long userId/d' | sed ':label;N;s/\n/\\r/;b label'`
+    line=`sed -n '/public .*'$name'/,/) {/p' $cpath|sed 's/.*public\s*//;s/\s*{//;s/@IfNull.*)\s*//;'| sed '/Long userId/d' | sed ':label;N;s/\n/\\r/;b label'`
     sname=`echo $cls|sed 's/C\(.\)$/S\1/'`
     spath=`getFilePath $sname`
     vim -e -s -c ":/^}/s#.*#${comment}\r\t${line};\r\r}#" -c ":wq" "$spath"
