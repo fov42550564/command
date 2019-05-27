@@ -1,0 +1,39 @@
+#!/usr/bin/env node
+
+const mysql = require('mysql2');
+const command = require('./js/command');
+const DATA_BASE = 'db_smart_plate';
+
+function createMysql (commands, options) {
+    const connection = mysql.createConnection({
+        host: 'localhost',
+        user: 'root',
+        database: DATA_BASE,
+    });
+    command(commands, { ...options, connection });
+}
+function showHelp () {
+    this.print('commands:', 'blue');
+    this.print('    <h|help>: show help');
+    this.print('    <q|exit>: exit');
+    this.print('');
+    this.prompt();
+}
+function executeSQL(line, { connection }) {
+    connection.query(line, (err, results) => {
+        if (err) {
+            this.error(err);
+        } else {
+            this.showJson(results);
+        }
+        this.prompt();
+    });
+}
+
+const COMMANDS = {
+    'h|help': showHelp,
+    'q|exit': function () { process.exit(0); },
+    'default': executeSQL,
+};
+
+createMysql(COMMANDS, { prompt: 'mysql' });
