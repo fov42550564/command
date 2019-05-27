@@ -6,6 +6,7 @@
     "colors": "1.1.2",
     "commander": "2.9.0",
     "express": "4.15.3",
+    "fs-extra": "8.0.1",
     "jquery": "3.2.1",
     "jsdom": "10.1.0",
     "jszip": "2.6.1",
