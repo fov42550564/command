@@ -41,8 +41,8 @@ module.exports = (cmds, options = {}) => {
             msg = colors[color](msg);
             console.log(msg);
         },
-        showJson (obj) {
-            const msg = JSON.stringify(obj, null, 2);
+        showJson (obj, pretty) {
+            const msg = pretty ? JSON.stringify(obj, null, 2) : JSON.stringify(obj);
             this.print(msg);
             this.prompt();
         },

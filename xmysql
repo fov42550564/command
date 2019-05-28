@@ -5,8 +5,11 @@
 
 const mysql = require('mysql2');
 const command = require('./js/command');
+const _ = require('lodash');
 const DATA_BASE = 'db_smart_plate';
 
+
+let _prettyShell = true;
 function createMysql (commands, options) {
     const connection = mysql.createConnection({
         host: 'localhost',
@@ -20,23 +23,67 @@ function showHelp () {
     this.print('commands:', 'blue');
     this.print('    <h|help>: show help');
     this.print('    <q|exit>: exit');
+    this.print('    _: togglePrettyShell');
     this.print('');
     this.prompt();
 }
-function executeSQL(line, { connection }) {
-    connection.query(line, (err, results) => {
-        if (err) {
-            this.error(err);
-        } else {
-            this.showJson(results);
-        }
-        this.prompt();
+function querySQL(connection, query) {
+    return new Promise(resolve=>{
+        connection.query(query, (err, results) => {
+            if (err) {
+                this.error(err);
+                this.prompt();
+                resolve();
+            } else {
+                resolve(results);
+            }
+        });
+    })
+    //
+}
+async function executeSQL(line, { connection }) {
+    const results = await querySQL(connection, line);
+    results.forEach(o=>{
+        this.showJson(o, _prettyShell);
     });
+    this.prompt();
+}
+async function showDatabases(line, { connection }) {
+    this.print('databases :', 'red');
+    const results = await querySQL(connection, 'show databases');
+    this.print(results.map(o=>o.Database).join('  '), 'green');
+    this.prompt();
+}
+async function showTables(line, { connection }) {
+    let results = await querySQL(connection, 'select database() as db');
+    this.print('tables in '+ results[0].db +' :', 'red');
+    results = await querySQL(connection, 'show tables');
+    if (results) {
+        this.print(_.map(results, o=>o[_.keys(o)[0]]).join('  '), 'green');
+        this.prompt();
+    }
+}
+async function showTableDescript(table, { connection }) {
+    let results = await querySQL(connection, 'desc ' + table);
+    this.print('desc '+ table +' :', 'red');
+    results.forEach(o=>{
+        this.showJson(o, _prettyShell);
+    });
+    this.prompt();
+}
+function togglePrettyShell() {
+    _prettyShell = !_prettyShell;
+    this.print('pretty format change to ' + _prettyShell);
+    this.prompt();
 }
 
 const COMMANDS = {
     'h|help': showHelp,
     'q|exit': function () { process.exit(0); },
+    'ls': showDatabases,
+    'l': showTables,
+    'd': showTableDescript,
+    '_': togglePrettyShell,
     'default': executeSQL,
 };
 
