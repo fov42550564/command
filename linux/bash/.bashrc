@@ -26,7 +26,7 @@ if __windows;then
     alias open='explorer'
     function atom(){
       atom=/c/Users/`whoami`/AppData/Local/atom/atom
-      $atom "`pwd`/$1"
+      $atom "`cygpath $1`"
     }
 fi
 
