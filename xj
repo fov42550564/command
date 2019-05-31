@@ -13,6 +13,17 @@ function doCommand (commands, options) {
     fs.ensureDirSync(PATH);
     command(commands, options);
 }
+
+function runJavaFile(file, classpath)
+{
+    const name = file.replace(/\.java$/, '');
+    const cmd = `cat xjava`;
+
+    // #javac -d classes "${file}" -classpath ${classpath}
+    // #java -cp classes:${classpath} -Djava.library.path=libs ${name}
+    console.log(cmd);
+    return shell.exec(cmd, {silent:true}).stdout;
+}
 function getJavaFiles() {
     const files = fs.readdirSync(PATH);
     return _.reject(files, o=>/^\./.test(o)).filter(o=>/\.java$/.test(o));
@@ -53,6 +64,14 @@ function setCurrentFile(index) {
 }
 function runCurrentFile() {
     const files = getJavaFiles();
+    const file = files[currentIndex - 1];
+    if (file) {
+        const result = runJavaFile(file, '.');
+        this.print('result===================');
+        this.print(result);
+    } else {
+        this.error('文件不存在');
+    }
     this.prompt();
 }
 function editCurrentFile() {
