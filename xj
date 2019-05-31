@@ -6,110 +6,38 @@ const path = require('path');
 const fs = require('fs-extra');
 const _ = require('lodash');
 const shell = require('shelljs');
-const PATH = path.join(osHomedir(), '.java_test');
-let currentIndex = 1;
+let code = [];
 
-function doCommand (commands, options) {
-    fs.ensureDirSync(PATH);
-    command(commands, options);
-}
-
-function runJavaFile(file, classpath)
-{
-    const name = file.replace(/\.java$/, '');
-    const cmd = `cat xjava`;
-
-    // #javac -d classes "${file}" -classpath ${classpath}
-    // #java -cp classes:${classpath} -Djava.library.path=libs ${name}
-    console.log(cmd);
-    return shell.exec(cmd, {silent:true}).stdout;
-}
-function getJavaFiles() {
-    const files = fs.readdirSync(PATH);
-    return _.reject(files, o=>/^\./.test(o)).filter(o=>/\.java$/.test(o));
-}
-function showAllFiles() {
-    getJavaFiles().forEach((file, index) => {
-        this.print(`${index+1}: ${file}`);
-    });
-    this.print();
+function clearCode() {
+    code = [];
     this.prompt();
 }
-function catFile(index) {
-    if (!index) {
-        index = currentIndex;
-    }
-    index = +index - 1;
-    const files = getJavaFiles();
-    const file = files[index];
-    if (file) {
-        this.print(file+':');
-        this.print(fs.readFileSync(path.join(PATH, file), 'utf-8'));
-    } else {
-        this.error('文件不存在');
-    }
-    this.prompt();
-}
-function setCurrentFile(index) {
-    index = +index - 1;
-    const files = getJavaFiles();
-    const file = files[index];
-    if (file) {
-        currentIndex = index + 1;
-        this.print('设置当前文件为: ' + file);
-    } else {
-        this.error('文件不存在');
-    }
-    this.prompt();
-}
-function runCurrentFile() {
-    const files = getJavaFiles();
-    const file = files[currentIndex - 1];
-    if (file) {
-        const result = runJavaFile(file, '.');
-        this.print('result===================');
-        this.print(result);
-    } else {
-        this.error('文件不存在');
-    }
-    this.prompt();
-}
-function editCurrentFile() {
-    const files = getJavaFiles();
-    const file = files[currentIndex - 1];
-    if (file) {
-        this.print(`atom ${path.join(PATH, file)}`);
-        shell.exec(`atom ${path.join(PATH, file)}`);
-    } else {
-        this.error('文件不存在');
-    }
+function showCode() {
+    this.print(code.join('\n'));
     this.prompt();
 }
 function appendCode(line) {
-    this.print(line);
+    code.push(line);
+    this.prompt();
+}
+function runCode() {
     this.prompt();
 }
 function showHelp () {
     this.print('commands:', 'blue');
     this.print('    <h|help>: show help');
     this.print('    <q|exit>: exit');
-    this.print('    ls: 查看所有的文件和注释，文件目录在~/.java_test');
-    this.print('    cat [index]: 显示当前文件名和内容, 如果有index，则显示相应文件的内容');
-    this.print('    set [index]: 按照序号设置当前文件, 如果没有序号，则新建文件');
-    this.print('    run: 编译执行文件');
-    this.print('    edit: 使用atom编辑器编辑文件');
+    this.print('    <c|clear>: 清除缓存的内容');
+    this.print('    <s|show>: 显示缓存的内容');
     this.print('');
     this.prompt();
 }
 const COMMANDS = {
     'h|help': showHelp,
     'q|exit': function () { process.exit(0); },
-    'ls': showAllFiles,
-    'cat': catFile,
-    'set': setCurrentFile,
-    'run': runCurrentFile,
-    'edit': editCurrentFile,
+    'c|clear': clearCode,
+    's|show': showCode,
     'default': appendCode,
 };
 
-doCommand(COMMANDS, { prompt: 'java' });
+command(COMMANDS, { prompt: 'java' });

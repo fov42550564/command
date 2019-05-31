@@ -243,6 +243,7 @@ function xjavaShowHelp()
 	list=("${list[@]}" "-a: package with android")
 	list=("${list[@]}" "-j: has native jni functions,only with -c")
 	list=("${list[@]}" "-d path: add classpath, if path is null, show classpath")
+	list=("${list[@]}" "-s: compile and execute for xj")
 	list=("${list[@]}" "-h: show help")
 	list=("${list[@]}" "")
 	list=("${list[@]}" "without jni:")
@@ -265,7 +266,7 @@ function xjavaShowHelp()
 
 function main()
 {
-	while getopts :n:cber:d:pfajh opt;do
+	while getopts :n:cber:d:pfajsh opt;do
 		case $opt in
 			n)_full_class_name="$OPTARG";;
 			c)_oper=0;;
@@ -277,6 +278,7 @@ function main()
 			a)_android=1;;
 			j)_jni=1;;
 			d)_oper=6;_path="$OPTARG";;
+			s)_oper=7;;
 			h)xjavaShowHelp;exit;;
 			?)xjavaShowHelp;exit;;
 		esac
