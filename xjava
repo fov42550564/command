@@ -19,8 +19,8 @@ _build=0
 _check=0
 android_skd_jar=~/android/android-sdk-macosx/platforms/android-10/android.jar
 classpath_file=~/.java_classpath
-m2_jar=(`cat ${classpath_file}`)
-m2_classpath=""
+m2_jar=(`cat ${classpath_file} 2>/dev/null`)
+m2_classpath="."
 for x in "${m2_jar[@]}";do
 	m2_classpath="${x}:${m2_classpath}"
 done

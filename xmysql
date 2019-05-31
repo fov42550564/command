@@ -19,14 +19,6 @@ function createMysql (commands, options) {
     });
     command(commands, { ...options, connection });
 }
-function showHelp () {
-    this.print('commands:', 'blue');
-    this.print('    <h|help>: show help');
-    this.print('    <q|exit>: exit');
-    this.print('    _: togglePrettyShell');
-    this.print('');
-    this.prompt();
-}
 function querySQL(connection, query) {
     return new Promise(resolve=>{
         connection.query(query, (err, results) => {
@@ -76,7 +68,14 @@ function togglePrettyShell() {
     this.print('pretty format change to ' + _prettyShell);
     this.prompt();
 }
-
+function showHelp () {
+    this.print('commands:', 'blue');
+    this.print('    <h|help>: show help');
+    this.print('    <q|exit>: exit');
+    this.print('    _: togglePrettyShell');
+    this.print('');
+    this.prompt();
+}
 const COMMANDS = {
     'h|help': showHelp,
     'q|exit': function () { process.exit(0); },

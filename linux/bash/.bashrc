@@ -23,10 +23,17 @@ if __windows;then
     set -o igncr
     export SHELLOPTS
     #open
-    alias open='explorer'
+    function open(){
+      local dir
+      dir=`cygpath -w "$@"`
+      explorer "$dir"
+    }
+    #atom
     function atom(){
+      local dir
+      dir=`cygpath -w "$@"`
       atom=/c/Users/`whoami`/AppData/Local/atom/atom
-      $atom "`cygpath $1`"
+      $atom "$dir"
     }
 fi
 

@@ -3,9 +3,9 @@ const readline = require('readline');
 const fs = require('fs-extra');
 const path = require('path');
 const osHomedir = require('os-homedir');
-const historyPath = path.join(osHomedir(), '.mysql_history');
 
 module.exports = (cmds, options = {}) => {
+    const historyPath = path.join(osHomedir(), `.xn_${options.prompt || 'common'}_history`);
     const rl = readline.createInterface(process.stdin, process.stdout);
     const _prompt = options.prompt;
     delete options.prompt;
@@ -30,7 +30,7 @@ module.exports = (cmds, options = {}) => {
         process.exit(0);
     });
     const cmd = {
-        print (msg, color = 'black') {
+        print (msg = '', color) {
             process.stdout.clearLine();
             process.stdout.cursorTo(0);
             if (color) {
@@ -38,7 +38,7 @@ module.exports = (cmds, options = {}) => {
             } else {
                 color = this.color;
             }
-            msg = colors[color](msg);
+            msg = colors[color] && colors[color](msg) || msg;
             console.log(msg);
         },
         showJson (obj, pretty) {
