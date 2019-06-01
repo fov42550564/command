@@ -6,22 +6,37 @@ const path = require('path');
 const fs = require('fs-extra');
 const _ = require('lodash');
 const shell = require('shelljs');
-let code = [];
+let headers = [];
+let codes = [];
 
 function clearCode() {
-    code = [];
+    codes = [];
     this.prompt();
 }
 function showCode() {
-    this.print(code.join('\n'));
+    this.print(codes.join('\n'));
     this.prompt();
+}
+function format(line) {
+    const lastWord = _.last(line);
+    if (!_.includes(['}', ';'], lastWord)) {
+        line = `${line};`;
+    }
+    if (/log\(.*\)/.test(line)) {
+        line = line.replace('log(', 'System.out.println(');
+    }
 }
 function appendCode(line) {
-    code.push(line);
-    this.prompt();
-}
-function runCode() {
-    this.prompt();
+    codes.push(format(line));
+    fs.writeFileSync(path.join(osHomedir(), 'command/java/Test.java'), `${headers.join('\n')}public class Test {public static void main(String[] args) {${codes.join('\n')}}}`);
+    shell.exec('xjava -s', { silent:true }, (code, stdout, stderr) => {
+        if (stderr) {
+            this.print(stderr, 'red');
+        } else {
+            this.print(stdout, 'green');
+        }
+        this.prompt();
+    });
 }
 function showHelp () {
     this.print('commands:', 'blue');
