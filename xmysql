@@ -104,7 +104,7 @@ function showHelp () {
 }
 const COMMANDS = {
     'h|help': showHelp,
-    'q|exit': function () { process.exit(0); },
+    'q|exit': function () { this.close() },
     'ls': showDatabases,
     'l': showTables,
     'd': showTableDescript,

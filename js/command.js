@@ -72,6 +72,9 @@ module.exports = (cmds, options = {}) => {
             this.error(error);
             process.exit();
         },
+        close() {
+            rl.close();
+        },
     };
     rl.on('line', line => {
         for (let key in cmds) {
