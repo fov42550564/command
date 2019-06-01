@@ -19,9 +19,9 @@ function createMysql (commands, options) {
     });
     command(commands, { ...options, connection });
 }
-async function getFieldsOfTable(table, connection) {
+async function getFieldsOfTable(self, table, connection) {
     if (!tableFieldCache[table]) {
-        tableFieldCache[table] = (await querySQL(connection, 'desc ' + table)).map(o=>o.Field);
+        tableFieldCache[table] = (await querySQL(self, connection, 'desc ' + table)).map(o=>o.Field);
     }
     return tableFieldCache[table];
 }
@@ -30,19 +30,19 @@ async function format(line, connection) {
     if (matches) {
         const reg = new RegExp(matches[1], 'i');
         const table = matches[2];
-        const results = await getFieldsOfTable(table, connection);
+        const results = await getFieldsOfTable(self, table, connection);
         const fields = results.filter(o=>reg.test(o));
         const allFields = [ 'id', ...line.replace(/select(.*)from/, '$1').split(',').filter(o=> !!o && !/\//.test(o)), ...fields ];
         line = line.replace(/select.*from/, `select ${allFields.join(',')} from`);
     }
     return line;
 }
-function querySQL(connection, query) {
+function querySQL(self, connection, query) {
     return new Promise(resolve=>{
         connection.query(query, (err, results) => {
             if (err) {
-                this.error(err);
-                this.prompt();
+                self.error(err);
+                self.prompt();
                 resolve();
             } else {
                 resolve(results);
@@ -51,8 +51,11 @@ function querySQL(connection, query) {
     })
 }
 async function executeSQL(line, { connection }) {
-    line = await format(line, connection);
-    const results = await querySQL(connection, line);
+    if (!line) {
+        return this.prompt();
+    }
+    line = await format(this, line, connection);
+    const results = await querySQL(this, connection, line);
     results.forEach(o=>{
         this.showJson(o, _prettyShell);
     });
@@ -60,21 +63,21 @@ async function executeSQL(line, { connection }) {
 }
 async function showDatabases(line, { connection }) {
     this.print('databases :', 'red');
-    const results = await querySQL(connection, 'show databases');
+    const results = await querySQL(this, connection, 'show databases');
     this.print(results.map(o=>o.Database).join('  '), 'green');
     this.prompt();
 }
 async function showTables(line, { connection }) {
-    let results = await querySQL(connection, 'select database() as db');
+    let results = await querySQL(this, connection, 'select database() as db');
     this.print('tables in '+ results[0].db +' :', 'red');
-    results = await querySQL(connection, 'show tables');
+    results = await querySQL(this, connection, 'show tables');
     if (results) {
         this.print(_.map(results, o=>o[_.keys(o)[0]]).join('  '), 'green');
         this.prompt();
     }
 }
 async function showTableDescript(table, { connection }) {
-    let results = await querySQL(connection, 'desc ' + table);
+    let results = await querySQL(this, connection, 'desc ' + table);
     this.print('desc '+ table +' :', 'green');
     results.forEach(o=>{
         this.showJson(o, _prettyShell);
