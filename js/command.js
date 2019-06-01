@@ -24,6 +24,10 @@ module.exports = (cmds, options = {}) => {
     if (rl.history instanceof Array) {
         rl.history.push.apply(rl.history, history);
     }
+    rl.on('SIGINT', () => {
+        rl.clearLine();
+        rl.prompt(true);
+    });
     rl.on('close', () => {
         console.log('');
         console.log('Goodbye!');
@@ -89,5 +93,6 @@ module.exports = (cmds, options = {}) => {
         }
     });
     cmd.prompt();
+
     return cmd;
 };
