@@ -227,6 +227,10 @@ function addClassPath() {
 	fi
 }
 
+function runCodeForXJ() {
+	
+}
+
 function xjavaShowHelp()
 {
 	local -a list
@@ -278,7 +282,7 @@ function main()
 			a)_android=1;;
 			j)_jni=1;;
 			d)_oper=6;_path="$OPTARG";;
-			s)_oper=7;;
+			s)_oper=7;_path="$OPTARG";;
 			h)xjavaShowHelp;exit;;
 			?)xjavaShowHelp;exit;;
 		esac
@@ -292,6 +296,7 @@ function main()
 		4)xjavaCompressionJar;;
 		5)xjavaCreateJniNativeFile;;
 		6)addClassPath;;
+		7)runCodeForXJ;;
 	esac
 }
 
