@@ -7,7 +7,7 @@ const mysql = require('mysql2');
 const command = require('./js/command');
 const _ = require('lodash');
 const DATA_BASE = 'db_smart_plate';
-
+const tableFieldCache = {};
 
 let _prettyShell = true;
 function createMysql (commands, options) {
@@ -19,13 +19,20 @@ function createMysql (commands, options) {
     });
     command(commands, { ...options, connection });
 }
+async function getFieldsOfTable(table, connection) {
+    if (tableFieldCache[table]) {
+        return tableFieldCache[table];
+    }
+    const results = await querySQL(connection, 'desc ' + table);
+    return results.map(o=>o.Field);
+}
 async function format(line, connection) {
     const matches = line.match(/select.*\/(.*)\/.*from\s*(\w+)/);
     if (matches) {
         const reg = new RegExp(matches[1], 'i');
         const table = matches[2];
-        const results = await querySQL(connection, 'desc ' + table);
-        const fields = results.map(o=>o.Field).filter(o=>reg.test(o));
+        const results = await getFieldsOfTable(table, connection);
+        const fields = results.filter(o=>reg.test(o));
         const allFields = [ 'id', ...line.replace(/select(.*)from/, '$1').split(',').filter(o=> !!o && !/\//.test(o)), ...fields ];
         line = line.replace(/select.*from/, `select ${allFields.join(',')} from`);
     }
