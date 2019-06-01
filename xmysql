@@ -20,11 +20,10 @@ function createMysql (commands, options) {
     command(commands, { ...options, connection });
 }
 async function getFieldsOfTable(table, connection) {
-    if (tableFieldCache[table]) {
-        return tableFieldCache[table];
+    if (!tableFieldCache[table]) {
+        tableFieldCache[table] = (await querySQL(connection, 'desc ' + table)).map(o=>o.Field);
     }
-    const results = await querySQL(connection, 'desc ' + table);
-    return results.map(o=>o.Field);
+    return tableFieldCache[table];
 }
 async function format(line, connection) {
     const matches = line.match(/select.*\/(.*)\/.*from\s*(\w+)/);
