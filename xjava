@@ -12,6 +12,7 @@ source ~/command/common
 _full_class_name=""
 _jarfile=""
 _path=""
+_header=""
 _android=0
 _jni=0
 _oper=0
@@ -19,6 +20,7 @@ _build=0
 _check=0
 android_skd_jar=~/android/android-sdk-macosx/platforms/android-10/android.jar
 classpath_file=~/.java_classpath
+header_file=~/.java_header
 m2_jar=(`cat ${classpath_file} 2>/dev/null`)
 m2_classpath="."
 for x in "${m2_jar[@]}";do
@@ -222,8 +224,15 @@ function addClassPath() {
 		fi
 	else
 		echo "current class path in ${classpath_file}:"
-		echo
-		cat ${classpath_file}
+		cat ${classpath_file} 2>/dev/null
+	fi
+}
+
+function addCommonHeader() {
+	if [ -n "$_header" ];then
+		echo "$_header" >> ${header_file}
+	else
+		cat ${header_file} 2>/dev/null
 	fi
 }
 
@@ -252,6 +261,7 @@ function xjavaShowHelp()
 	list=("${list[@]}" "-a: package with android")
 	list=("${list[@]}" "-j: has native jni functions,only with -c")
 	list=("${list[@]}" "-d path: add classpath, if path is null, show classpath")
+	list=("${list[@]}" "-k package: add common header, if path is null, show headers")
 	list=("${list[@]}" "-s: compile and execute for xj")
 	list=("${list[@]}" "-h: show help")
 	list=("${list[@]}" "")
@@ -275,7 +285,7 @@ function xjavaShowHelp()
 
 function main()
 {
-	while getopts :n:cber:d:pfajsh opt;do
+	while getopts :n:cber:d:k:pfajsh opt;do
 		case $opt in
 			n)_full_class_name="$OPTARG";;
 			c)_oper=0;;
@@ -287,7 +297,8 @@ function main()
 			a)_android=1;;
 			j)_jni=1;;
 			d)_oper=6;_path="$OPTARG";;
-			s)_oper=7;;
+			k)_oper=7;_header="$OPTARG";;
+			s)_oper=8;;
 			h)xjavaShowHelp;exit;;
 			?)xjavaShowHelp;exit;;
 		esac
@@ -301,7 +312,8 @@ function main()
 		4)xjavaCompressionJar;;
 		5)xjavaCreateJniNativeFile;;
 		6)addClassPath;;
-		7)runCodeForXJ;;
+		7)addCommonHeader;;
+		8)runCodeForXJ;;
 	esac
 }
 

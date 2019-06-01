@@ -6,34 +6,89 @@ const path = require('path');
 const fs = require('fs-extra');
 const _ = require('lodash');
 const shell = require('shelljs');
-let headers = [];
+let headers = getDefaultHeaders();
 let codes = [];
 
-function clearCode() {
-    codes = [];
+function getDefaultHeaders() {
+    const text = shell.exec(`xjava -k ""`, { silent:true }).stdout;
+    return text ? text.split('\n').filter(o=>o) : [];
+}
+function getFullCode(hasLineNumber) {
+    let _headers, _codes;
+    if (hasLineNumber) {
+        const len = headers.length;
+        _headers = headers.map((o, i) => `${i+1}: ${o}`);
+        _codes = codes.map((o, i) => `${i+1+len}: ${o}`);
+    } else {
+        _headers = headers;
+        _codes = codes;
+    }
+    return `${_headers.join('\n')}\npublic class Test {\n  public static void main(String[] args) {\n    ${_codes.join('\n    ')}\n  }\n}`;
+}
+function clearCode(index) {
+    if (index) {
+        index--;
+        const len = headers.length;
+        if (index < len) {
+            headers.splice(index, 1);
+        } else {
+            codes.splice(index-len, 1);
+        }
+        runCode.call(this);
+    } else {
+        codes = [];
+        headers = getDefaultHeaders();
+    }
     this.prompt();
 }
 function showCode() {
-    this.print(codes.join('\n'));
+    this.print(getFullCode(true), 'blue');
+    this.prompt();
+}
+function showJar(line) {
+    this.print(shell.exec(`xjava -d "${line}"`, { silent:true }).stdout, 'blue');
+    this.prompt();
+}
+function showHeaders(line) {
+    this.print(shell.exec(`xjava -k "${line}"`, { silent:true }).stdout, 'blue');
     this.prompt();
 }
 function format(line) {
+    if (/log\(.*\)/.test(line)) {
+        line = line.replace('log(', 'System.out.println(');
+    }
+    return line;
+}
+function appendCode(line) {
     const lastWord = _.last(line);
     if (!_.includes(['}', ';'], lastWord)) {
         line = `${line};`;
     }
-    if (/log\(.*\)/.test(line)) {
-        line = line.replace('log(', 'System.out.println(');
+    let isHeader;
+    if (/^import/.test(line)) {
+        isHeader = true;
+        headers.push(line);
+    } else {
+        codes.push(format(line));
     }
+    runCode.call(this, isHeader);
 }
-function appendCode(line) {
-    codes.push(format(line));
-    fs.writeFileSync(path.join(osHomedir(), 'command/java/Test.java'), `${headers.join('\n')}public class Test {public static void main(String[] args) {${codes.join('\n')}}}`);
+function runCode(isHeader) {
+    const text = getFullCode();
+    fs.writeFileSync(path.join(osHomedir(), 'command/java/Test.java'), text);
     shell.exec('xjava -s', { silent:true }, (code, stdout, stderr) => {
         if (stderr) {
+            if (isHeader) {
+                headers = _.dropRight(headers);
+            } else {
+                codes = _.dropRight(codes);
+            }
             this.print(stderr, 'red');
-        } else {
+        } else if (stdout) {
+            this.print(text, 'blue');
             this.print(stdout, 'green');
+        } else {
+            this.print(text, 'blue');
         }
         this.prompt();
     });
@@ -42,16 +97,22 @@ function showHelp () {
     this.print('commands:', 'blue');
     this.print('    <h|help>: show help');
     this.print('    <q|exit>: exit');
-    this.print('    <c|clear>: 清除缓存的内容');
+    this.print('    <j|jar>: 显示和查看classpath的jar包');
+    this.print('    <d|header>: 显示和查看固定的header');
+    this.print('    <c|clear>: 清除缓存的内容，如果后面有数字，则清除对应的内容');
     this.print('    <s|show>: 显示缓存的内容');
+    this.print('    <r|run>: 运行存在的代码');
     this.print('');
     this.prompt();
 }
 const COMMANDS = {
     'h|help': showHelp,
     'q|exit': function () { process.exit(0); },
+    'j|jar': showJar,
+    'd|header': showHeaders,
     'c|clear': clearCode,
     's|show': showCode,
+    'r|run': runCode,
     'default': appendCode,
 };
 
