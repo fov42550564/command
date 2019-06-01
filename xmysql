@@ -19,19 +19,15 @@ function createMysql (commands, options) {
     });
     command(commands, { ...options, connection });
 }
-// sele
-async function format(line) {
+async function format(line, connection) {
     const matches = line.match(/select.*\/(.*)\/.*from\s*(\w+)/);
     if (matches) {
-        const reg = new RegExp(matches[0]);
-        const table = matches[1];
+        const reg = new RegExp(matches[1], 'i');
+        const table = matches[2];
         const results = await querySQL(connection, 'desc ' + table);
-        this.print('desc '+ table +' :', 'red');
-        results.forEach(o=>{
-            this.showJson(o, _prettyShell);
-        });
-        this.prompt();
-
+        const fields = results.map(o=>o.Field).filter(o=>reg.test(o));
+        const allFields = [ 'id', ...line.replace(/select(.*)from/, '$1').split(',').filter(o=> !!o && !/\//.test(o)), ...fields ];
+        line = line.replace(/select.*from/, `select ${allFields.join(',')} from`);
     }
     return line;
 }
@@ -49,7 +45,7 @@ function querySQL(connection, query) {
     })
 }
 async function executeSQL(line, { connection }) {
-    line = await format(line);
+    line = await format(line, connection);
     const results = await querySQL(connection, line);
     results.forEach(o=>{
         this.showJson(o, _prettyShell);
@@ -93,7 +89,7 @@ function showHelp () {
     this.print('    d [table]: showTableDescript');
     this.print('    _: togglePrettyShell');
     this.print('');
-    this.print('    select id, "xx yy" from table');
+    this.print('    select id, /xx yy/ from table');
     this.print('');
     this.prompt();
 }
