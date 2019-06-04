@@ -9,7 +9,7 @@
 
 #source ~/.profile
 
-shopt -s  expand_aliases
+shopt -s expand_aliases
 
 source ~/command/common
 
@@ -22,19 +22,8 @@ if __windows;then
     # ignore return \r\d
     set -o igncr
     export SHELLOPTS
-    #open
-    function open(){
-      local dir
-      dir=`cygpath -w "$@"`
-      explorer "$dir"
-    }
-    #atom
-    function atom(){
-      local dir
-      dir=`cygpath -w "$@"`
-      atom=/c/Users/`whoami`/AppData/Local/atom/atom
-      $atom "$dir"
-    }
+    alias open='__open'
+    alias atom='__atom'
 fi
 
 #set options
@@ -43,13 +32,9 @@ shopt -s checkwinsize
 shopt -s nocaseglob
 
 #confirm to do command
-#alias cp='cp -i'
-#alias mv='mv -i'
-if __mac ;then
-    alias rm='~/command/linux/rm-trash/rm.rb'
-else
-    alias rm='rm -i'
-fi
+alias cp='__cp'
+alias mv='__mv'
+alias rm='__rm'
 alias rmf='__rm_files'
 #path
 alias path='echo -e ${PATH//:/\\n}'

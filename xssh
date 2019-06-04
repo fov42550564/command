@@ -1,9 +1,9 @@
 #!/bin/bash
 
 source ~/command/common
-ip="192.168.1.189"
-password=simiantong
-_remote_root=/root/simiantong/
+ip="192.168.0.190"
+password=123
+_remote_root=/root/whxx/
 _oper=0
 _name=""
 _localpath="./"
@@ -57,7 +57,7 @@ function xssh_update_server()
 {
 	expect -c "
 	set timeout 30000;
-	spawn scp -r "/Users/$(whoami)/simiantong/PDShopServer/tools/dist/${_name}.tar.gz" "root@${ip}:${_remote_root}${_name}/${_name}.tar.gz"
+	spawn scp -r "/Users/$(whoami)/whxx/PDShopServer/tools/dist/${_name}.tar.gz" "root@${ip}:${_remote_root}${_name}/${_name}.tar.gz"
 	expect {
 		\"*password:\" {send \"${password}\r\"}
 	}
@@ -77,7 +77,7 @@ function xssh_update_web()
 {
 	expect -c "
 	set timeout 30000;
-	spawn scp -r "/Users/$(whoami)/simiantong/PDShopServer/tools/dist/${_name}.tar.gz" "root@${ip}:${_remote_root}${_name}/${_name}.tar.gz"
+	spawn scp -r "/Users/$(whoami)/whxx/PDShopServer/tools/dist/${_name}.tar.gz" "root@${ip}:${_remote_root}${_name}/${_name}.tar.gz"
 	expect {
 		\"*password:\" {send \"${password}\r\"}
 	}
@@ -107,7 +107,7 @@ function xssh_update_static()
 	if [ "${_name}" = "website" -o "${_name}" = "pdclient_wx" ];then
 		expect -c "
 		set timeout 30000;
-		spawn scp -r "/Users/$(whoami)/simiantong/PDShopServer/tools/dist/${_name}" "root@${ip}:${_remote_root}server/public/${_name}"
+		spawn scp -r "/Users/$(whoami)/whxx/PDShopServer/tools/dist/${_name}" "root@${ip}:${_remote_root}server/public/${_name}"
 		expect {
 			\"*password:\" {send \"${password}\r\"}
 		}

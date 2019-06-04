@@ -25,7 +25,7 @@ async function getFieldsOfTable(self, table, connection) {
     }
     return tableFieldCache[table];
 }
-async function format(line, connection) {
+async function format(self, line, connection) {
     const matches = line.match(/select.*\/(.*)\/.*from\s*(\w+)/);
     if (matches) {
         const reg = new RegExp(matches[1], 'i');
@@ -43,7 +43,7 @@ function querySQL(self, connection, query) {
             if (err) {
                 self.error(err);
                 self.prompt();
-                resolve();
+                resolve([]);
             } else {
                 resolve(results);
             }

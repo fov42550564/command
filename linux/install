@@ -32,7 +32,11 @@ function install_single()
 
 function install_bash()
 {
+    if ((!$_platforms&$platforms_linux));then
+        mkdir -p $HOME/.Trash
+    fi
     if ((!$_platforms&$platforms_windows));then
+        mkdir -p $HOME/.Trash
     	sudo chmod 666 /etc/profile
     	sudo sed -i '/\/etc\/bashrc/a\\t[ -r ~/.bashrc ] && . ~/.bashrc' /etc/profile
     	sudo chmod 444 /etc/profile
@@ -94,4 +98,3 @@ function main()
 }
 
 main "$@"
-

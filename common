@@ -97,7 +97,7 @@ function _declare_global_variables__()
 function __mac()
 {
 ########################################
-#Usage:__mac
+#Usage: __mac
 #	  check if is mac system
 ########################################
   [ $(uname) = "Darwin" ]&&return $_TRUE_||return $_FALSE_
@@ -105,7 +105,7 @@ function __mac()
 function __linux()
 {
 ########################################
-#Usage:__mac
+#Usage: __mac
 #	  check if is linux system
 ########################################
   [ $(uname) = "Linux" ]&&return $_TRUE_||return $_FALSE_
@@ -113,7 +113,7 @@ function __linux()
 function __windows()
 {
 ########################################
-#Usage:__windows
+#Usage: __windows
 #	  check if is windows system
 ########################################
   local name=$(uname)
@@ -122,7 +122,7 @@ function __windows()
 function __debug()
 {
 ########################################
-#Usage:__debug info
+#Usage: __debug info
 ########################################
 	if ((_DEBUG_LEVEL_>= 2));then
 		if [ "$_WINDOW_" = "1" ];then
@@ -135,7 +135,7 @@ function __debug()
 function __warning()
 {
 ########################################
-#Usage:__warning info
+#Usage: __warning info
 ########################################
 	if ((_DEBUG_LEVEL_>= 1));then
 		if [ "$_WINDOW_" = "1" ];then
@@ -148,7 +148,7 @@ function __warning()
 function __error()
 {
 ########################################
-#Usage:__error info
+#Usage: __error info
 ########################################
 	if ((_DEBUG_LEVEL_>= 0));then
 		if [ "$_WINDOW_" = "1" ];then
@@ -161,7 +161,7 @@ function __error()
 function __join_path()
 {
 ########################################
-#Usage:__join_path path1 ...  pathn
+#Usage: __join_path path1 ...  pathn
 ########################################
 	local path n
 	n=$#
@@ -177,7 +177,7 @@ function __join_path()
 function __relative_path()
 {
 ########################################
-#Usage:__relative_path path1 path2 [out]relative_path [out]root
+#Usage: __relative_path path1 path2 [out]relative_path [out]root
 #	  relative_path is path2 relative to path1
 #	  root is path1 and path2 's same path
 ########################################
@@ -189,7 +189,7 @@ function __relative_path()
 function __change_to_winpath()
 {
 ########################################
-#Usage:__change_to_winpath path
+#Usage: __change_to_winpath path
 #	only use in windows
 ########################################
     cygpath -C ANSI -w -a "$XPATH"
@@ -197,7 +197,7 @@ function __change_to_winpath()
 function __pause()
 {
 ########################################
-#Usage:__pause
+#Usage: __pause
 ########################################
 	read -n 1 -p "Press any key to continue...    "; [[ -z $REPLY ]] && echo -n || echo -e '\b\b\b\b    '
 	return $_TRUE_
@@ -205,21 +205,21 @@ function __pause()
 function __toupper()
 {
 ########################################
-#Usage:__toupper "$@"
+#Usage: __toupper "$@"
 ########################################
 	echo "$@"|tr a-z A-Z
 }
 function __toupper()
 {
 ########################################
-#Usage:__tolower "$@"
+#Usage: __tolower "$@"
 ########################################
 	echo "$@"|tr A-Z a-z
 }
 function __match()
 {
 ########################################
-#Usage:__match "^123$"
+#Usage: __match "^123$"
 #	   check $?==0
 ########################################
 	local rs
@@ -229,7 +229,7 @@ function __match()
 function __match_num()
 {
 ########################################
-#Usage:__match_num "123"
+#Usage: __match_num "123"
 #	   check $?==0
 ########################################
     __match "$1" "^[[:space:]]*[0-9]+[[:space:]]*$"
@@ -238,7 +238,7 @@ function __match_num()
 function __match_line()
 {
 ########################################
-#Usage:__match_line str file
+#Usage: __match_line str file
 #	   check $?==0
 ########################################
 	local rs
@@ -248,7 +248,7 @@ function __match_line()
 function __get_line()
 {
 ########################################
-#Usage:__get_line str file
+#Usage: __get_line str file
 #	return the whole line
 ########################################
 	sed -r -n '/'"$1"'/p'  "$2" 2>/dev/null
@@ -256,7 +256,7 @@ function __get_line()
 function __repeat()
 {
 ########################################
-#Usage:__repeat command
+#Usage: __repeat command
 ########################################
 	local i max
 
@@ -268,7 +268,7 @@ function __repeat()
 function __get_extname()
 {
 ########################################
-#Usage:__get_extname filename
+#Usage: __get_extname filename
 #   return file's extname
 ########################################
     local basename extname file
@@ -285,7 +285,7 @@ function __get_extname()
 function __get_pure_filename()
 {
 ########################################
-#Usage:__get_pure_filename filename
+#Usage: __get_pure_filename filename
 #   return file's pure file name
 ########################################
     local file extname purename
@@ -303,7 +303,7 @@ function __get_pure_filename()
 function __check_opts()
 {
 ########################################
-#Usage:__check_opts -h --help
+#Usage: __check_opts -h --help
 #	 success return $_TRUE_
 #	 else return $_FALSE_
 ########################################
@@ -331,7 +331,7 @@ function __check_opts()
 function __add_opts()
 {
 ########################################
-#Usage:__add_opts "${arr[@]}"
+#Usage: __add_opts "${arr[@]}"
 ########################################
 	local len i j
 	len=$#
@@ -346,7 +346,7 @@ function __add_opts()
 function __ask()
 {
 ########################################
-#Usage:__ask info
+#Usage: __ask info
 #	 check $?==0
 ########################################
 	local ans
@@ -410,7 +410,7 @@ function __diff() {
 function __sudo()
 {
 ########################################
-#Usage:__sudo
+#Usage: __sudo
 #	 check $?==0
 ########################################
 	local ans i
@@ -438,7 +438,7 @@ function __sudo()
 function __skip_sudo()
 {
 ########################################
-#Usage:__skip_sudo
+#Usage: __skip_sudo
 #	run this function pre sudo command
 #	e.g: __skip_sudo
 #		sudo command
@@ -453,10 +453,95 @@ function __skip_sudo()
 			" 2>/dev/null 1>&2
 	fi
 }
+function __open()
+{
+########################################
+#Usage: __open dir
+########################################
+	local dir
+	dir=`cygpath -w "$@"`
+	explorer "$dir"
+}
+function __atom(){
+########################################
+#Usage: __atom dir/file
+########################################
+	local dir
+	dir=`cygpath -w "$@"`
+	atom=$HOME/AppData/Local/atom/atom
+	$atom "$dir"
+}
+function __cp()
+{
+########################################
+#Usage: __cp file1 file2
+########################################
+	local name var1
+	if ! [ -a "$1" ];then
+		echo "$1 not exits"
+		return $_FALSE_
+	fi
+
+	name=`basename $1`
+	if [ -d "$2" ];then
+		if [ -a "$2/$name" ]; then
+			echo mv "$2/$name" "$HOME/.Trash/$name.$(date '+%Y-%m-%d-%H-%M-%S')"
+			mv "$2/$name" "$HOME/.Trash/$name.$(date '+%Y-%m-%d-%H-%M-%S')"
+		fi
+	elif [ -a "$2" ];then
+		var1=`basename "$2"`
+		echo mv "$2" "$HOME/.Trash/$var1.$(date '+%Y-%m-%d-%H-%M-%S')"
+		mv "$2" "$HOME/.Trash/$var1.$(date '+%Y-%m-%d-%H-%M-%S')"
+	fi
+	cp -fr "$1" "$2"
+	return $?
+}
+function __mv()
+{
+########################################
+#Usage: __mv file1 file2.
+########################################
+	local name var1
+	if ! [ -a "$1" ];then
+		echo "$1 not exits"
+		return $_FALSE_
+	fi
+
+	name=`basename $1`
+	if [ -d "$2" ];then
+		if [ -a "$2/$name" ]; then
+			echo mv "$2/$name" "$HOME/.Trash/$name.$(date '+%Y-%m-%d-%H-%M-%S')"
+			mv "$2/$name" "$HOME/.Trash/$name.$(date '+%Y-%m-%d-%H-%M-%S')"
+		fi
+	elif [ -a "$2" ];then
+		var1=`basename "$2"`
+		echo mv "$2" "$HOME/.Trash/$var1.$(date '+%Y-%m-%d-%H-%M-%S')"
+		mv "$2" "$HOME/.Trash/$var1.$(date '+%Y-%m-%d-%H-%M-%S')"
+	fi
+	mv "$1" "$2"
+	return $?
+}
+function __rm()
+{
+########################################
+#Usage: __rm file1 dir1 ...
+########################################
+	local var var1
+	for var in "$@";do
+		if [ -a "$var" ];then
+			var1=`basename "$var"`
+			echo mv "$var" "$HOME/.Trash/$var1.$(date '+%Y-%m-%d-%H-%M-%S')"
+			mv "$var" "$HOME/.Trash/$var1.$(date '+%Y-%m-%d-%H-%M-%S')"
+		else
+			echo "$var not exits"
+		fi
+	done
+	return $_TRUE_
+}
 function __rm_files()
 {
 ########################################
-#Usage:__rm_files in clip
+#Usage: __rm_files in clip
 ########################################
 	if __mac;then
 		pbpaste
@@ -476,7 +561,7 @@ function __rm_files()
 function __set_array()
 {
 ########################################
-#Usage:__set_array arrname command
+#Usage: __set_array arrname command
 ########################################
 	local arrname command arrinfo
 	arrname="$1"
@@ -488,7 +573,7 @@ function __set_array()
 function __add_array()
 {
 ########################################
-#Usage:__add_array arrname1 arrname2
+#Usage: __add_array arrname1 arrname2
 #	add arrname2 to arrname1
 #	see diff with __append_array
 #	will fill null element
@@ -510,7 +595,7 @@ function __add_array()
 function __append_array()
 {
 ########################################
-#Usage:__append_array arrname1 arrname2
+#Usage: __append_array arrname1 arrname2
 #	append arrname2 to arrname1
 #   just append, remain null element
 ########################################
@@ -531,7 +616,7 @@ function __append_array()
 function __sub_array()
 {
 ########################################
-#Usage:__sub_array arrname1 arrname2
+#Usage: __sub_array arrname1 arrname2
 ########################################
 	local arrname1 arrname2 len1 len2 val1 val2 i j
 	arrname1="$1"
@@ -550,7 +635,7 @@ function __sub_array()
 function __print_array()
 {
 ########################################
-#Usage:__print_array arrname
+#Usage: __print_array arrname
 ########################################
 	local  arrname len val i
 	arrname=$1
@@ -568,7 +653,7 @@ function __print_array()
 function __swap_two_files()
 {
 ########################################
-#Usage:__swap_two_files file1 file2
+#Usage: __swap_two_files file1 file2
 ########################################
 	[ $# -ne 2 ] && return
 	if [ -a "$1" -a -a "$2" ];then
@@ -580,7 +665,7 @@ function __swap_two_files()
 function __backup_file()
 {
 ########################################
-#Usage:__backup_file file
+#Usage: __backup_file file
 ########################################
 	local path file
 	path=$(dirname "$1")
@@ -597,7 +682,7 @@ function __backup_file()
 function __get_full_path()
 {
 ########################################
-#Usage:__get_unique_file file
+#Usage: __get_unique_file file
 #	return "" if not exist
 ########################################
 	local path file flag
@@ -687,7 +772,7 @@ function __extend_cd()
 function __folder_cd()
 {
 ########################################
-#Usage:__folder_cd
+#Usage: __folder_cd
 # 		cd to finder's front's window's path
 ########################################
 	local path
@@ -706,14 +791,14 @@ function __folder_cd()
 function __clear()
 {
 ########################################
-#Usage:__clear
+#Usage: __clear
 ########################################
     printf '\33c\e[3J'
 }
 function __read_file()
 {
 ########################################
-#Usage:__read_file file start_line[=1] end_line[=$]
+#Usage: __read_file file start_line[=1] end_line[=$]
 #	  read file line by line can used by pipe
 ########################################
 	local file start_line end_line line
@@ -727,7 +812,7 @@ function __read_file()
 function __set_dest_path()
 {
 ########################################
-#Usage:__set_dest_path -h
+#Usage: __set_dest_path -h
 #	  dp is the system viriable
 ########################################
 	local param ret len tline line line2 line3 file tmp_file _dp
@@ -808,14 +893,14 @@ function __set_dest_path()
 function __new_line()
 {
 ########################################
-#Usage:__new_line
+#Usage: __new_line
 ########################################
 	printf "\n"
 }
 function __echo_line()
 {
 ########################################
-#Usage:__echo_line width is_start is_end
+#Usage: __echo_line width is_start is_end
 ########################################
 	local width is_start is_end len n
 
@@ -840,7 +925,7 @@ function __echo_line()
 function __echo_title()
 {
 ########################################
-#Usage:__echo_title title
+#Usage: __echo_title title
 ########################################
 	local title utitle len flen flen1
 
@@ -860,7 +945,7 @@ function __echo_title()
 function __echo_center()
 {
 ########################################
-#Usage:__echo_center str width color
+#Usage: __echo_center str width color
 ########################################
 	local str len flen flen1 color
 
@@ -882,7 +967,7 @@ function __echo_center()
 function __print_string()
 {
 ########################################
-#Usage:__print_string head text width
+#Usage: __print_string head text width
 ########################################
 	local head uhead text body ubody
 	head="$1"
@@ -904,7 +989,7 @@ function __print_string()
 function __echo_string_unicode()
 {
 ########################################
-#Usage:__echo_string_unicode head text
+#Usage: __echo_string_unicode head text
 ########################################
 	local head text n realLength len preLen char needCut i needCut cutText lastChar nextChar cutTextLen
 
@@ -960,7 +1045,7 @@ function __echo_string_unicode()
 function __echo_string_ascii()
 {
 ########################################
-#Usage:__echo_string_ascii info
+#Usage: __echo_string_ascii info
 #		in_width must large than single str len
 ########################################
     local str len char_len width in_width ch is_head tmp_str head_str body_str head_len body_len
@@ -1004,7 +1089,7 @@ function __echo_string_ascii()
 function __echo_string()
 {
 ########################################
-#Usage:__echo_string text
+#Usage: __echo_string text
 ########################################
 	local str unicode head text
 
@@ -1024,7 +1109,7 @@ function __echo_string()
 function __echo_discription()
 {
 ########################################
-#Usage:__echo_discription info
+#Usage: __echo_discription info
 ########################################
 	local str
 	str="$1"
@@ -1049,7 +1134,7 @@ function _wait_process__()
 function __show_progressbar()
 {
 ########################################
-#Usage:__show_progressbar speed command param
+#Usage: __show_progressbar speed command param
 ########################################
 	local callback speed pid
 
@@ -1085,7 +1170,7 @@ function _show_list__()
 function __exec_target()
 {
 ########################################
-#Usage:__exec_target callback target
+#Usage: __exec_target callback target
 #	if have _TARGET_ in callback, replace by target
 #	else do callback target
 ########################################
@@ -1113,7 +1198,7 @@ function __exec_target()
 function __exec_command()
 {
 	########################################
-	#Usage:__exec_command callback
+	#Usage: __exec_command callback
 	#note: when you want your command result show in window
 	#you should use __exec_command before command
 	########################################
@@ -1591,7 +1676,7 @@ function _show_menu_window__()
 function __show_menu()
 {
 	########################################
-	#Usage:__show_menu disp [tag command item ...]
+	#Usage: __show_menu disp [tag command item ...]
 	########################################
 	if [ "$_WINDOW_" = "1" ];then
 		_show_menu_window__ "$@"
@@ -1641,7 +1726,7 @@ function _input_box_window__()
 function __input_box()
 {
 	########################################
-	#Usage:__input_box info [result save in global _result_]
+	#Usage: __input_box info [result save in global _result_]
 	########################################
 	if [ "$_WINDOW_" = "1" ];then
 		_input_box_window__ "$@"
@@ -1684,7 +1769,7 @@ function _msgbox_window__()
 function __msgbox()
 {
 	########################################
-	#Usage:__msgbox title info
+	#Usage: __msgbox title info
 	########################################
 	if [ "$_WINDOW_" = "1" ];then
 		_msgbox_window__ "$@"
@@ -1734,7 +1819,7 @@ function __gcc_build()
 function __init()
 {
 	########################################
-	#Usage:__init
+	#Usage: __init
 	########################################
 	_declare_global_variables__
 
