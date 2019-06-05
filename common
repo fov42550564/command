@@ -466,8 +466,9 @@ function __atom(){
 ########################################
 #Usage: __atom dir/file
 ########################################
-	local dir
-	dir=`cygpath -w "$@"`
+	local dir path
+  path=`__get_full_path "$@"`
+	dir=`cygpath -w "$path"`
 	atom=$HOME/AppData/Local/atom/atom
 	$atom "$dir"
 }
