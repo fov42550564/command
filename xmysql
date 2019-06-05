@@ -18,7 +18,12 @@ function createMysql (commands, options) {
         password: '123456',
         database: DATA_BASE,
     });
-    command(commands, { ...options, connection });
+
+    function completer(linePartial) {
+        return [['fang', 'yun', 'jiang'], linePartial];
+    }
+
+    command(commands, { ...options, connection, completer });
 }
 async function getFieldsOfTable(self, table, connection) {
     if (!tableFieldCache[table]) {
@@ -68,9 +73,13 @@ async function executeSQL(line, { connection }) {
     }
     line = await format(this, line, connection);
     const results = await querySQL(this, connection, line);
-    results.forEach(o=>{
-        this.showJson(formatResult(o), _prettyShell);
-    });
+    if (results.forEach) {
+        results.forEach(o=>{
+            this.showJson(formatResult(o), _prettyShell);
+        });
+    } else {
+        this.showJson(results, _prettyShell);
+    }
     this.prompt();
 }
 async function showDatabases(line, { connection }) {

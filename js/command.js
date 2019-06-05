@@ -6,7 +6,7 @@ const osHomedir = require('os-homedir');
 
 module.exports = (cmds, options = {}) => {
     const historyPath = path.join(osHomedir(), `.xn_${options.prompt || 'common'}_history`);
-    const rl = readline.createInterface(process.stdin, process.stdout);
+    const rl = readline.createInterface(process.stdin, process.stdout, options.completer);
     const _prompt = options.prompt;
     delete options.prompt;
     rl.setPrompt( _prompt ? `${_prompt} > ` : '> ');
