@@ -554,7 +554,7 @@ function __rm_files()
 		if __mac;then
 			pbpaste|xargs -I bbbb rm -fr bbbb
 		else
-			cat /dev/clipboard|xargs -I bbbb rm -fr bbbb
+			cat /dev/clipboard|sed -e 's/$.*//'|xargs -I bbbb rm bbbb
 		fi
 	fi
 }
