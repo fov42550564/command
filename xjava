@@ -238,7 +238,7 @@ function addCommonHeader() {
 
 function runCodeForXJ() {
 	cd $HOME/command/java
-	javac Test.java -classpath ${m2_classpath}
+	javac Test.java -classpath ${m2_classpath} -Xlint:unchecked
 	if [ $? -ne 0 ];then
 		return
 	fi

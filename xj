@@ -11,7 +11,14 @@ let codes = [];
 
 function getDefaultHeaders() {
     const text = shell.exec(`xjava -k ""`, { silent:true }).stdout;
-    return text ? text.split('\n').filter(o=>o) : [];
+    let list = text ? text.split('\n').filter(o=>o) : [];
+    list = [
+        ...list,
+        "import com.remobile.moment.Moment;",
+        "import static com.remobile.moment.Moment.moment;",
+        "import java.util.*;",
+    ];
+    return list;
 }
 function getFullCode(hasLineNumber) {
     let _headers, _codes;
@@ -24,6 +31,19 @@ function getFullCode(hasLineNumber) {
         _codes = codes;
     }
     return `${_headers.join('\n')}\npublic class Test {\n  public static void main(String[] args) {\n    ${_codes.join('\n    ')}\n  }\n}`;
+}
+function clearCodes(line) {
+    const list = line.split(/\s+/);
+    const indexes = [];
+    for (const item of list) {
+        if (+item == item) {
+            indexes.push(+item);
+        } else {
+            const t = item.split('-');
+            indexes.splice(0, 0, ..._.range(t[0], t[1]*1+1));
+        }
+    }
+    indexes.sort();
 }
 function clearCode(index) {
     if (index) {
@@ -99,7 +119,7 @@ function showHelp () {
     this.print('    <q|exit>: exit');
     this.print('    <j|jar>: 显示和查看classpath的jar包');
     this.print('    <d|header>: 显示和查看固定的header');
-    this.print('    <c|clear>: 清除缓存的内容，如果后面有数字，则清除对应的内容');
+    this.print('    <c|clear>: 清除缓存的内容，如果后面有数字，则清除对应的内容, c 1-6 7 8-9');
     this.print('    <s|show>: 显示缓存的内容');
     this.print('    <r|run>: 运行存在的代码');
     this.print('');
@@ -110,7 +130,7 @@ const COMMANDS = {
     'q|exit': function () { this.close() },
     'j|jar': showJar,
     'd|header': showHeaders,
-    'c|clear': clearCode,
+    'c|clear': clearCodes,
     's|show': showCode,
     'r|run': runCode,
     'default': appendCode,
