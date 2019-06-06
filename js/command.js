@@ -5,7 +5,41 @@ const path = require('path');
 const osHomedir = require('os-homedir');
 
 module.exports = (cmds, options = {}) => {
+    let lastLine;
     const historyPath = path.join(osHomedir(), `.xn_${options.prompt || 'common'}_history`);
+    const deleteLeft = readline.Interface.prototype._deleteLeft;
+    const insertString = readline.Interface.prototype._insertString;
+    const ttyWrite = readline.Interface.prototype._ttyWrite;
+
+    readline.Interface.prototype._deleteLeft = function() {
+        deleteLeft.call(this);
+        lastLine = this.line;
+        this.historyIndex = -1;
+    };
+    readline.Interface.prototype._insertString = function(c) {
+        insertString.call(this, c);
+        lastLine = this.line;
+        this.historyIndex = -1;
+    };
+    readline.Interface.prototype._ttyWrite = function(s, key = {}) {
+        if (!(key.ctrl || key.meta)) {
+            if (key.name === 'up' || key.name === 'down') {
+                const history = this.history;
+                if (lastLine) {
+                    const reg = new RegExp(`^${lastLine}`);
+                    this.history = history.filter(o => reg.test(o));
+                }
+                if (key.name === 'up') {
+                    this._historyPrev();
+                } else if (key.name === 'down') {
+                    this._historyNext();
+                }
+                this.history = history;
+                return;
+            }
+        }
+        ttyWrite.call(this, s, key);
+    };
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout,
