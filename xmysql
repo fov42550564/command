@@ -18,9 +18,11 @@ function createMysql (commands, options) {
         password: '123456',
         database: DATA_BASE,
     });
-
+    // 添加表，字段的自动完成
     function completer(linePartial) {
-        return [['fang', 'yun', 'jiang'], linePartial];
+        list = [ ...(options.completer||[]), 'select' ];
+        const found = list.filter((o) => o.startsWith(linePartial));
+        return [found.length ? found : list, linePartial];
     }
 
     command(commands, { ...options, connection, completer });
@@ -58,8 +60,10 @@ function querySQL(self, connection, query) {
     return new Promise(resolve=>{
         connection.query(query, (err, results) => {
             if (err) {
-                self.error(err);
-                self.prompt();
+                if (self) {
+                    self.error(err);
+                    self.prompt();
+                }
                 resolve([]);
             } else {
                 resolve(results);
