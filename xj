@@ -33,8 +33,14 @@ function getFullCode(hasLineNumber) {
     return `${_headers.join('\n')}\npublic class Test {\n  public static void main(String[] args) {\n    ${_codes.join('\n    ')}\n  }\n}`;
 }
 function clearCodes(line) {
+    if (!line) {
+        codes = [];
+        headers = getDefaultHeaders();
+        this.prompt();
+        return;
+    }
     const list = line.split(/\s+/);
-    const indexes = [];
+    let indexes = [];
     for (const item of list) {
         if (+item == item) {
             indexes.push(+item);
@@ -43,22 +49,13 @@ function clearCodes(line) {
             indexes.splice(0, 0, ..._.range(t[0], t[1]*1+1));
         }
     }
-    indexes.sort();
-}
-function clearCode(index) {
-    if (index) {
-        index--;
-        const len = headers.length;
-        if (index < len) {
-            headers.splice(index, 1);
-        } else {
-            codes.splice(index-len, 1);
-        }
-        runCode.call(this);
-    } else {
-        codes = [];
-        headers = getDefaultHeaders();
-    }
+    indexes = indexes.map(o => +o - 1).sort();
+    const len = headers.length;
+    const hIndexes = indexes.filter(o => o < len);
+    const dIndexes = indexes.filter(o => o >= len).map(o => o - len);
+    _.remove(headers, (o, k) => _.includes(hIndexes, k));
+    _.remove(codes, (o, k) => _.includes(dIndexes, k));
+    showCode.call(this);
     this.prompt();
 }
 function showCode() {
