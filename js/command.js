@@ -4,11 +4,27 @@ const fs = require('fs-extra');
 const path = require('path');
 const osHomedir = require('os-homedir');
 
+function checkCommand(cmds, line) {
+    for (let key in cmds) {
+        let reg = key;
+        if (/\|/.test(reg)) {
+            reg = key.split('|');
+            reg = new RegExp(`^(${reg.join('|')})($|\\s+)`);
+        } else if (!(key instanceof RegExp)) {
+            reg = new RegExp(`^${reg}($|\\s+)`);
+        }
+        if (reg.test(line)) {
+            return key;
+        }
+    }
+}
 module.exports = (cmds, options = {}) => {
     let lastLine;
     const historyPath = path.join(osHomedir(), `.xn_${options.prompt || 'common'}_history`);
     const deleteLeft = readline.Interface.prototype._deleteLeft;
     const insertString = readline.Interface.prototype._insertString;
+    const addHistory = readline.Interface.prototype._addHistory;
+    const newLine = readline.Interface.prototype._line;
     const ttyWrite = readline.Interface.prototype._ttyWrite;
 
     readline.Interface.prototype._deleteLeft = function() {
@@ -20,6 +36,17 @@ module.exports = (cmds, options = {}) => {
         insertString.call(this, c);
         lastLine = this.line;
         this.historyIndex = -1;
+    };
+    readline.Interface.prototype._addHistory = function() {
+        const line = this.line.trim();
+        if (checkCommand(cmds, line)) {
+            return line;
+        }
+        return addHistory.call(this);
+    };
+    readline.Interface.prototype._line = function() {
+        lastLine = undefined;
+        newLine.call(this);
     };
     readline.Interface.prototype._ttyWrite = function(s, key = {}) {
         if (!(key.ctrl || key.meta)) {
@@ -51,26 +78,15 @@ module.exports = (cmds, options = {}) => {
     delete options.prompt;
     rl.setPrompt( _prompt ? `${_prompt} > ` : '> ');
     fs.createFileSync(historyPath);
-    const history = fs.readFileSync(historyPath, 'utf8').toString().split('\n').slice(0, -1).reverse();
-    const _addHistory = rl._addHistory;
-    rl._addHistory = () => {
-        const last = rl.history[0];
-        const line = _addHistory.call(rl);
-        if (line.length > 0 && line != last) {
-            fs.appendFileSync(historyPath, line + '\n');
-        }
-        return line;
-    };
-    if (rl.history instanceof Array) {
-        rl.history.push.apply(rl.history, history);
-    }
+    rl.history = fs.readFileSync(historyPath, 'utf8').toString().split('\n').filter(o => o && o.trim());
     rl.on('SIGINT', () => {
         rl.clearLine();
         rl.prompt(true);
     });
     rl.on('close', () => {
+        fs.writeFileSync(historyPath, rl.history.join('\n'));
         console.log('');
-        console.log('Goodbye!');
+        console.log('bye');
         process.exit(0);
     });
     const cmd = {
@@ -117,17 +133,10 @@ module.exports = (cmds, options = {}) => {
         },
     };
     rl.on('line', line => {
-        for (let key in cmds) {
-            const func = cmds[key];
-            if (/\|/.test(key)) {
-                key = key.split('|');
-                key = new RegExp(`^(${key.join('|')})($|\\s+)`);
-            } else if (!(key instanceof RegExp)) {
-                key = new RegExp(`^${key}($|\\s+)`);
-            }
-            if (key.test(line)) {
-                return func.call(cmd, line.replace(key, ''), options);
-            }
+        line = line.trim();
+        const key = checkCommand(cmds, line);
+        if (key) {
+            return cmds[key].call(cmd, line.replace(key, ''), options);
         }
         if (cmds['default']) {
             cmds['default'].call(cmd, line, options);
