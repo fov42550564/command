@@ -3,18 +3,19 @@ const readline = require('readline');
 const fs = require('fs-extra');
 const path = require('path');
 const osHomedir = require('os-homedir');
+const _ = require('lodash');
 
 function checkCommand(cmds, line) {
     for (let key in cmds) {
-        let reg = key;
-        if (/\|/.test(reg)) {
-            reg = key.split('|');
-            reg = new RegExp(`^(${reg.join('|')})($|\\s+)`);
+        const func = cmds[key];
+        if (/\|/.test(key)) {
+            key = key.split('|');
+            key = new RegExp(`^(${key.join('|')})($|\\s+)`);
         } else if (!(key instanceof RegExp)) {
-            reg = new RegExp(`^${reg}($|\\s+)`);
+            key = new RegExp(`^${key}($|\\s+)`);
         }
-        if (reg.test(line)) {
-            return key;
+        if (key.test(line)) {
+            return { key, func };
         }
     }
 }
@@ -131,12 +132,28 @@ module.exports = (cmds, options = {}) => {
         close() {
             rl.close();
         },
+        dropHistory() {
+            rl.history = _.drop(rl.history);
+        },
+        showHistory(n = 10) {
+            const _history = _.slice(rl.history, 0, n).map((o, i) => `${i+1}: ${o}`);
+            this.print(_history.join('\n'), 'blue');
+            this.prompt();
+        },
+        useHistory(n = 1) {
+            const line = rl.history[+n-1];
+            if (line && line.length) {
+                rl.line = line;
+                rl.cursor = line.length;
+                rl._refreshLine();
+            }
+        },
     };
     rl.on('line', line => {
         line = line.trim();
-        const key = checkCommand(cmds, line);
-        if (key) {
-            return cmds[key].call(cmd, line.replace(key, ''), options);
+        const ret = checkCommand(cmds, line);
+        if (ret) {
+            return ret.func.call(cmd, line.replace(ret.key, '').trim()||undefined, options);
         }
         if (cmds['default']) {
             cmds['default'].call(cmd, line, options);

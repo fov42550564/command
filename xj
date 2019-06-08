@@ -99,6 +99,7 @@ function runCode(isHeader) {
             } else {
                 codes = _.dropRight(codes);
             }
+            this.dropHistory();
             this.print(stderr, 'red');
         } else if (stdout) {
             this.print(text, 'blue');
@@ -117,6 +118,8 @@ function showHelp () {
     this.print('    <d|header>: 显示和查看固定的header');
     this.print('    <c|clear>: 清除缓存的内容，如果后面有数字，则清除对应的内容, c 1-6 7 8-9');
     this.print('    <s|show>: 显示缓存的内容');
+    this.print('    <sh|showHistory> [n = 10]: 显示n个历史');
+    this.print('    <uh|useHistory> [index = 1]: 按照序号使用历史');
     this.print('    <r|run>: 运行存在的代码');
     this.print('');
     this.prompt();
@@ -124,6 +127,8 @@ function showHelp () {
 const COMMANDS = {
     'h|help': showHelp,
     'q|exit': function () { this.close() },
+    'sh|showHistory': function (n) { this.showHistory(n) },
+    'uh|useHistory': function (n) { this.useHistory(n) },
     'j|jar': showJar,
     'd|header': showHeaders,
     'c|clear': clearCodes,
