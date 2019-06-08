@@ -16,7 +16,6 @@
     "mysql2": "1.6.5",
     "os-homedir": "1.0.2",
     "printf": "0.2.5",
-    "repl.history": "0.1.4",
     "shelljs": "0.7.8",
     "superagent": "3.5.2",
     "unzip": "0.1.11"

@@ -2,22 +2,71 @@
 
 'use strict';
 
-var path = require('path');
-var osHomedir = require('os-homedir');
-var replHistory = require('repl.history');
+const fs = require('fs-extra');
+const path = require('path');
+const osHomedir = require('os-homedir');
+const repl = require('repl');
 
-var repl = require('repl');
-var server = repl.start({
+let lastLine;
+const historyPath = path.join(osHomedir(), `.xn_repl_history`);
+const deleteLeft = repl.REPLServer.prototype.__proto__._deleteLeft;
+const insertString = repl.REPLServer.prototype.__proto__._insertString;
+const addHistory = repl.REPLServer.prototype.__proto__._addHistory;
+const newLine = repl.REPLServer.prototype.__proto__._line;
+const ttyWrite = repl.REPLServer.prototype.__proto__._ttyWrite;
+
+repl.REPLServer.prototype.__proto__._deleteLeft = function() {
+    deleteLeft.call(this);
+    lastLine = this.line;
+    this.historyIndex = -1;
+};
+repl.REPLServer.prototype.__proto__._insertString = function(c) {
+    insertString.call(this, c);
+    lastLine = this.line;
+    this.historyIndex = -1;
+};
+repl.REPLServer.prototype.__proto__._addHistory = function() {
+    const line = this.line.trim();
+    if (line === 'q' || line === 'exit') {
+        return line;
+    }
+    return addHistory.call(this);
+};
+repl.REPLServer.prototype.__proto__._line = function() {
+    lastLine = undefined;
+    newLine.call(this);
+};
+repl.REPLServer.prototype.__proto__._ttyWrite = function(s, key = {}) {
+    if (!(key.ctrl || key.meta)) {
+        if (key.name === 'up' || key.name === 'down') {
+            const history = this.history;
+            if (lastLine) {
+                const reg = new RegExp(`^${lastLine}`);
+                this.history = history.filter(o => reg.test(o));
+            }
+            if (key.name === 'up') {
+                this._historyPrev();
+            } else if (key.name === 'down') {
+                this._historyNext();
+            }
+            this.history = history;
+            return;
+        }
+    }
+    ttyWrite.call(this, s, key);
+};
+
+const server = repl.start({
     prompt: 'node > ',
     // allow strict mode via environment variable
     replMode: (process.env.NODE_REPL_MODE === 'strict' || process.argv.indexOf('--use_strict') !== -1) ? repl.REPL_MODE_STRICT : repl.REPL_MODE_MAGIC
 });
+fs.createFileSync(historyPath);
+server.removeHistoryDuplicates = true;
+server.historySize = 10000;
+server.history = fs.readFileSync(historyPath, 'utf8').toString().split('\n').filter(o => o && o.trim());
 
-// save repl history
-replHistory(server, path.join(osHomedir(), '.n_repl_history'));
-
-var _ = require('lodash').runInContext(server.context);
-
+const _ = require('lodash').runInContext(server.context);
 Object.defineProperty(server.context, '_', {
     'configurable': true,
     'enumerable': false,
@@ -26,7 +75,7 @@ Object.defineProperty(server.context, '_', {
     }
 });
 
-var moment = require('moment');
+const moment = require('moment');
 Object.defineProperty(server.context, 'moment', {
     'configurable': true,
     'enumerable': false,
@@ -35,7 +84,7 @@ Object.defineProperty(server.context, 'moment', {
     }
 });
 
-var shell = require('shelljs');
+const shell = require('shelljs');
 Object.defineProperty(server.context, 'shell', {
     'configurable': true,
     'enumerable': false,
@@ -44,12 +93,24 @@ Object.defineProperty(server.context, 'shell', {
     }
 });
 
-var events = server.rli._events;
-events.line = _.wrap(events.line, function (line, cmd) {
-    if (/_\s*=|moment\s*=/.test(cmd)) {
-        console.error('can not change const variable');
-        cmd = '';
+const events = server._events;
+events.line = _.wrap(events.line, function (cmd, line) {
+    line = line.trim();
+    if (line === 'q' || line==='exit') {
+        return this.close();
     }
-    line[0](cmd); // actual command execution
-    line[1](cmd); // history persistance
+    if (/_\s*=|moment\s*=/.test(line)) {
+        console.error('can not change const variable');
+        line = '';
+    }
+    cmd(line);
 });
+events.SIGINT = function() {
+    this.clearLine();
+    this.prompt(true);
+};
+events.close = function() {
+    fs.writeFileSync(historyPath, this.history.join('\n'));
+    console.log('bye');
+    process.exit(0);;
+};
