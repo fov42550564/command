@@ -35,6 +35,8 @@ shopt -s nocaseglob
 alias cp='__cp'
 alias mv='__mv'
 alias rm='__rm'
+alias trm=`which rm`
+alias rmr='__recover'
 alias rmf='__rm_files'
 #path
 alias path='echo -e ${PATH//:/\\n}'

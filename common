@@ -477,7 +477,7 @@ function __cp()
 ########################################
 #Usage: __cp file1 file2
 ########################################
-	local name var1
+	local name
 	if ! [ -a "$1" ];then
 		echo "$1 not exits"
 		return $_FALSE_
@@ -486,13 +486,10 @@ function __cp()
 	name=`basename $1`
 	if [ -d "$2" ];then
 		if [ -a "$2/$name" ]; then
-			echo mv "$2/$name" "$HOME/.Trash/$name.$(date '+%Y-%m-%d-%H-%M-%S')"
-			mv "$2/$name" "$HOME/.Trash/$name.$(date '+%Y-%m-%d-%H-%M-%S')"
+			__rm "$2/$name"
 		fi
 	elif [ -a "$2" ];then
-		var1=`basename "$2"`
-		echo mv "$2" "$HOME/.Trash/$var1.$(date '+%Y-%m-%d-%H-%M-%S')"
-		mv "$2" "$HOME/.Trash/$var1.$(date '+%Y-%m-%d-%H-%M-%S')"
+		__rm "$2"
 	fi
 	cp -fr "$1" "$2"
 	return $?
@@ -502,7 +499,7 @@ function __mv()
 ########################################
 #Usage: __mv file1 file2.
 ########################################
-	local name var1
+	local name
 	if ! [ -a "$1" ];then
 		echo "$1 not exits"
 		return $_FALSE_
@@ -511,13 +508,10 @@ function __mv()
 	name=`basename $1`
 	if [ -d "$2" ];then
 		if [ -a "$2/$name" ]; then
-			echo mv "$2/$name" "$HOME/.Trash/$name.$(date '+%Y-%m-%d-%H-%M-%S')"
-			mv "$2/$name" "$HOME/.Trash/$name.$(date '+%Y-%m-%d-%H-%M-%S')"
+			__rm "$2/$name"
 		fi
 	elif [ -a "$2" ];then
-		var1=`basename "$2"`
-		echo mv "$2" "$HOME/.Trash/$var1.$(date '+%Y-%m-%d-%H-%M-%S')"
-		mv "$2" "$HOME/.Trash/$var1.$(date '+%Y-%m-%d-%H-%M-%S')"
+		__rm "$2"
 	fi
 	mv "$1" "$2"
 	return $?
@@ -527,15 +521,58 @@ function __rm()
 ########################################
 #Usage: __rm file1 dir1 ...
 ########################################
-	local var var1
+	local var prefix orgin
+	prefix=$(date '+%Y-%m-%d-%H-%M-%S')
 	for var in "$@";do
 		if [ -a "$var" ];then
-			var1=`basename "$var"`
-			echo mv "$var" "$HOME/.Trash/$var1.$(date '+%Y-%m-%d-%H-%M-%S')"
-			mv "$var" "$HOME/.Trash/$var1.$(date '+%Y-%m-%d-%H-%M-%S')"
+			orgin=`__get_full_path "$var"`
+			orgin=${orgin////#}
+			echo mv "$var" "$HOME/.Trash/$prefix$orgin"
+			mv "$var" "$HOME/.Trash/$prefix$orgin"
 		else
 			echo "$var not exits"
 		fi
+	done
+	return $_TRUE_
+}
+function __recover()
+{
+########################################
+#Usage: __recover [-l|date]
+########################################
+	local orgin files file var var1
+	orgin=${PWD////#}
+
+	if [ -z "$1" -o "$1" = "-h" ];then
+		echo "rmr -l|date]"
+		return $_FALSE_
+	fi
+	if [ "$1" = "-l" ];then
+		i=1
+		files=(`ls $HOME/.Trash/*${orgin}*`)
+		for var in ${files[@]};do
+			var=${var##*/}
+			var=${var%%#*}/${var##*${orgin}#}
+			echo $i: ${var}
+			((i++))
+		done
+		return $_TRUE_
+	fi
+	files=(`ls $HOME/.Trash/${1}${orgin}* 2>/dev/null`)
+	for var in ${files[@]};do
+		var1="#${var#*#}"
+		file="${var1#${orgin}#}"
+		if [ "${file%#*}" != "$file" ];then
+			echo "先恢复子文件夹"
+			return $_FALSE_
+		fi
+	done
+
+	for var in ${files[@]};do
+		var1="#${var#*#}"
+		file="${var1#${orgin}#}"
+		echo __mv "$var" "$file"
+		__mv "$var" "$file"
 	done
 	return $_TRUE_
 }
@@ -683,7 +720,7 @@ function __backup_file()
 function __get_full_path()
 {
 ########################################
-#Usage: __get_unique_file file
+#Usage: __get_full_path file
 #	return "" if not exist
 ########################################
 	local path file flag
@@ -710,7 +747,6 @@ function __get_full_path()
 		fi
 	fi
 }
-
 function __extend_cd()
 {
 ########################################
