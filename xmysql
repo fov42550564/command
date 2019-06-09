@@ -8,40 +8,67 @@ const moment = require('moment');
 const command = require('./js/command');
 const _ = require('lodash');
 const DATA_BASE = 'db_smart_plate';
-const tableFieldCache = {};
+const cache = {};
 
 let _prettyShell = true;
-function createMysql (commands, options) {
+async function createMysql (commands, options) {
     const connection = mysql.createConnection({
         host: 'localhost',
         user: 'root',
         password: '123456',
         database: DATA_BASE,
     });
+    const tables = await getTables(null, connection);
+    let fileds = [];
+    for (const table of tables) {
+        const _fileds = await getFieldsOfTable(null, table, connection);
+        fileds = [...fileds, ..._fileds];
+    }
+    fileds = _.uniq(fileds);
     // 添加表，字段的自动完成
-    function completer(linePartial) {
-        list = [ ...(options.completer||[]), 'select' ];
+    function completer(line) {
+        const words = line.trimLeft().split(/\s/);
+        const linePartial = _.last(words);
+        let list = [];
+        if (words.length <= 1) {
+            list = ['select', 'update', 'delete'].filter((o) => o.startsWith(linePartial));
+        } else {
+            const preWord = _.toLower(_.nth(words, -2));
+            if (_.includes(['from', 'update', 'into'], preWord)) {
+                list = tables.filter((o) => o.startsWith(linePartial));
+            }  else {
+                list = fileds.filter((o) => o.startsWith(linePartial));
+            }
+        }
         const found = list.filter((o) => o.startsWith(linePartial));
         return [found.length ? found : list, linePartial];
     }
 
     command(commands, { ...options, connection, completer });
 }
-async function getFieldsOfTable(self, table, connection) {
-    if (!tableFieldCache[table]) {
-        tableFieldCache[table] = (await querySQL(self, connection, 'desc ' + table)).map(o=>o.Field);
+async function getTables(self, connection) {
+    if (!cache._tables) {
+        cache._tables = (await querySQL(self, connection, 'show tables')).map(o=>o[_.keys(o)[0]]);
     }
-    return tableFieldCache[table];
+    return cache._tables;
+}
+async function getFieldsOfTable(self, table, connection) {
+    if (!cache[table]) {
+        cache[table] = (await querySQL(self, connection, 'desc ' + table)).map(o=>o.Field);
+    }
+    return cache[table];
 }
 async function format(self, line, connection) {
-    const matches = line.match(/select.*\/(.*)\/.*from\s*(\w+)/);
+    const matches = line.match(/select(.*)from\s*(\w+)/);
     if (matches) {
-        const reg = new RegExp(matches[1], 'i');
-        const table = matches[2];
-        const results = await getFieldsOfTable(self, table, connection);
-        const fields = results.filter(o=>reg.test(o));
-        const allFields = [ 'id', ...line.replace(/select(.*)from/, '$1').split(',').filter(o=> !!o && !/\//.test(o)), ...fields ];
-        line = line.replace(/select.*from/, `select ${allFields.join(',')} from`);
+        let list = matches[1].split(/,|\s/).filter(o=>o);
+        if (!_.includes(list, "*")) {
+            list = list.map(o=>new RegExp(o, 'i'));
+            const table = matches[2];
+            const results = await getFieldsOfTable(self, table, connection);
+            const fields = results.filter(o=>_.some(list, r=>r.test(o))).join(',');
+            line = line.replace(/select.*from/, `select ${fields || '*'} from`);
+        }
     }
     return line;
 }
@@ -122,8 +149,6 @@ function showHelp () {
     this.print('    l: showTables');
     this.print('    d [table]: showTableDescript');
     this.print('    _: togglePrettyShell');
-    this.print('');
-    this.print('    select id, /xx yy/ from table');
     this.print('');
     this.prompt();
 }
