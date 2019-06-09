@@ -76,6 +76,9 @@ function format(line) {
     return line;
 }
 function appendCode(line) {
+    if (!line) {
+        return this.prompt();
+    }
     const lastWord = _.last(line);
     if (!_.includes(['}', ';'], lastWord)) {
         line = `${line};`;
