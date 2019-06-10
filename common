@@ -475,45 +475,71 @@ function __atom(){
 function __cp()
 {
 ########################################
-#Usage: __cp file1 file2
+#Usage: __cp file1 file2 [-r]
 ########################################
-	local name
+	local arr i r item f1 f2 tmp name
+	arr=("$@")
+	for ((i=0; i<${#arr[@]}; i++));do
+		item=${arr[i]}
+		case "$item" in
+			"-r")r=1;;
+			*)[ -z "$f1" ]&&f1="$item"||f2="$item";;
+		esac
+	done
+	if [ -n "$r" ];then
+		tmp="$f1"
+		f1="$f2"
+		f2="$tmp"
+	fi
 	if ! [ -a "$1" ];then
 		echo "$1 not exits"
 		return $_FALSE_
 	fi
 
-	name=`basename $1`
-	if [ -d "$2" ];then
-		if [ -a "$2/$name" ]; then
-			__rm "$2/$name"
+	name=`basename $f1`
+	if [ -d "$f2" ];then
+		if [ -a "$f2/$name" ]; then
+			__rm "$f2/$name"
 		fi
-	elif [ -a "$2" ];then
-		__rm "$2"
+	elif [ -a "$f2" ];then
+		__rm "$f2"
 	fi
-	cp -fr "$1" "$2"
+	cp -fr "$f1" "$f2"
 	return $?
 }
 function __mv()
 {
 ########################################
-#Usage: __mv file1 file2.
+#Usage: __mv file1 file2 [-r].
 ########################################
-	local name
-	if ! [ -a "$1" ];then
-		echo "$1 not exits"
+	local arr i r item f1 f2 tmp name
+	arr=("$@")
+	for ((i=0; i<${#arr[@]}; i++));do
+		item=${arr[i]}
+		case "$item" in
+			"-r")r=1;;
+			*)[ -z "$f1" ]&&f1="$item"||f2="$item";;
+		esac
+	done
+	if [ -n "$r" ];then
+        tmp="$f1"
+        f1="$f2"
+        f2="$tmp"
+    fi
+	if ! [ -a "$f1" ];then
+		echo "$f1 not exits"
 		return $_FALSE_
 	fi
 
-	name=`basename $1`
-	if [ -d "$2" ];then
-		if [ -a "$2/$name" ]; then
-			__rm "$2/$name"
+	name=`basename $f1`
+	if [ -d "$f2" ];then
+		if [ -a "$f2/$name" ]; then
+			__rm "$f2/$name"
 		fi
-	elif [ -a "$2" ];then
-		__rm "$2"
+	elif [ -a "$f2" ];then
+		__rm "$f2"
 	fi
-	mv "$1" "$2"
+	mv "$f1" "$f2"
 	return $?
 }
 function __rm()
