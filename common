@@ -549,7 +549,7 @@ function __recover()
 	fi
 	if [ "$1" = "-l" ];then
 		i=1
-		files=(`ls $HOME/.Trash/*${orgin}*`)
+		files=(`ls $HOME/.Trash|grep "${orgin}"`)
 		for var in ${files[@]};do
 			var=${var##*/}
 			var=${var%%#*}/${var##*${orgin}#}
