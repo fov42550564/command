@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source ~/command/common
-ip="192.168.0.190"
+ip="192.168.0.249"
 password=123
 _remote_root=/root/whxx/
 _oper=0

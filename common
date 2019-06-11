@@ -584,7 +584,7 @@ function __recover()
 		done
 		return $_TRUE_
 	fi
-	files=(`ls $HOME/.Trash/${1}${orgin}* 2>/dev/null`)
+	files=(`ls $HOME/.Trash|grep "${1}${orgin}"`)
 	for var in ${files[@]};do
 		var1="#${var#*#}"
 		file="${var1#${orgin}#}"
@@ -597,8 +597,8 @@ function __recover()
 	for var in ${files[@]};do
 		var1="#${var#*#}"
 		file="${var1#${orgin}#}"
-		echo __mv "$var" "$file"
-		__mv "$var" "$file"
+		echo __mv "$HOME/.Trash/$var" "$file"
+		__mv "$HOME/.Trash/$var" "$file"
 	done
 	return $_TRUE_
 }
