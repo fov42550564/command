@@ -22,7 +22,7 @@ android_skd_jar=~/android/android-sdk-macosx/platforms/android-10/android.jar
 classpath_file=~/.java_classpath
 header_file=~/.java_header
 m2_jar=(`cat ${classpath_file} 2>/dev/null`)
-m2_classpath=".:moment-1.0.0.jar"
+m2_classpath=".:moment-1.0.0.jar:underscore-1.45.jar"
 for x in "${m2_jar[@]}";do
 	m2_classpath="${x}:${m2_classpath}"
 done
