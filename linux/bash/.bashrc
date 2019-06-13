@@ -33,7 +33,9 @@ shopt -s nocaseglob
 
 #confirm to do command
 alias cp='__cp'
+alias tcp=`which cp`
 alias mv='__mv'
+alias tmv=`which mv`
 alias rm='__rm'
 alias trm=`which rm`
 alias rmr='__recover'
