@@ -152,40 +152,6 @@ alias mhcd='cd /Volumes/home/方运江'
 alias mhopen='open /Volumes/home/方运江'
 alias mhmv='cp /Volumes/home/方运江/*'
 
-#set_path
-export PATH=$PATH:~/command
-if __mac;then
-    export PATH=/usr/local/opt/gnu-sed/libexec/gnubin:$PATH
-    export PATH=/usr/local/opt/findutils/libexec/gnubin:$PATH
-    export PATH=$PATH:/usr/local/lib/node_modules/cordova/bin:~/tools/phantomjs-2.1.1-macosx/bin:~/tools/wasm:~/tools/wabt
-elif __linux;then
-    export PATH=$PATH:/root/tools/node/bin:/root/tools/node/lib/node_modules/npm/bin/node-gyp-bin:/root/tools/mongodb/bin
-    export JAVA_HOME=~/tools/jdk1.8.0_144
-fi
-
-#ndk
-alias ndk='ndk-build'
-if __windows;then
-    export ANDROID_NDK_HOME=~/f/android/android-ndk-r9d
-    export ANDROID_SDK_HOME=~/f/android/android-sdk
-else
-    export ANDROID_NDK_HOME=~/tools/android-ndk-r10e
-    export ANDROID_SDK_HOME=~/Library/Android/sdk
-    #export ANDROID_SDK_HOME=/usr/local/opt/android-sdk
-fi
-export ANDROID_NDK_PREFIX=$ANDROID_NDK_HOME/toolchains/arm-linux-androideabi-4.6/prebuilt/darwin-x86/bin/arm-linux-androideabi
-export ANDROID_SDK_PLATFORM_TOOLS=$ANDROID_SDK_HOME/platform-tools
-export ANDROID_SDK_TOOLS=$ANDROID_SDK_HOME/tools
-export PATH="$PATH:$ANDROID_NDK_HOME:$ANDROID_SDK_TOOLS:$ANDROID_SDK_PLATFORM_TOOLS"
-#export NDK_MODULE_PATH=~/Desktop/cocos2d-x-2.2.2/cocos2dx/platform/third_party/android/prebuilt:~/Desktop/cocos2d-x-2.2.2
-#
-export ANDROID_HOME=~/Library/Android/sdk
-
-# spring
-export M2_HOME=~/tools/apache-maven-3.6.0
-export PATH=$PATH:$M2_HOME/bin
-
-
 #vim
 alias vi='vim'
 alias clearvim='rm -fr ~/.data/swap'
@@ -235,12 +201,44 @@ export NVM_DIR="/Users/apple/.nvm"
 #npm
 alias cnpm="npm --registry=https://registry.npm.taobao.org"
 
-#hadoop
-export HADOOP_HOME=~/tools/hadoop-2.7.3
-export PATH=$PATH:$HADOOP_HOME/bin
-export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
-export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib"
+#set_path
+export PATH=$PATH:~/command
+if __mac;then
+    export PATH=/usr/local/opt/gnu-sed/libexec/gnubin:$PATH
+    export PATH=/usr/local/opt/findutils/libexec/gnubin:$PATH
+    export PATH=$PATH:/usr/local/lib/node_modules/cordova/bin:~/tools/phantomjs-2.1.1-macosx/bin:~/tools/wasm:~/tools/wabt
+elif __linux;then
+    export PATH=$PATH:/root/tools/node/bin:/root/tools/node/lib/node_modules/npm/bin/node-gyp-bin:/root/tools/mongodb/bin
+    export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.212.b04-0.el7_6.x86_64
+    export CLASSPATH=.:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar
+    export PATH=$JAVA_HOME/bin:$PATH
+fi
+
+#only for mac
+if __mac;then
+    alias ndk='ndk-build'
+    export ANDROID_NDK_HOME=~/tools/android-ndk-r10e
+    export ANDROID_SDK_HOME=~/Library/Android/sdk
+    #export ANDROID_SDK_HOME=/usr/local/opt/android-sdk
+    export ANDROID_NDK_PREFIX=$ANDROID_NDK_HOME/toolchains/arm-linux-androideabi-4.6/prebuilt/darwin-x86/bin/arm-linux-androideabi
+    export ANDROID_SDK_PLATFORM_TOOLS=$ANDROID_SDK_HOME/platform-tools
+    export ANDROID_SDK_TOOLS=$ANDROID_SDK_HOME/tools
+    export PATH="$PATH:$ANDROID_NDK_HOME:$ANDROID_SDK_TOOLS:$ANDROID_SDK_PLATFORM_TOOLS"
+    #export NDK_MODULE_PATH=~/Desktop/cocos2d-x-2.2.2/cocos2dx/platform/third_party/android/prebuilt:~/Desktop/cocos2d-x-2.2.2
+    #
+    export ANDROID_HOME=~/Library/Android/sdk
+
+    # spring
+    export M2_HOME=~/tools/apache-maven-3.6.0
+    export PATH=$PATH:$M2_HOME/bin
+
+    #hadoop
+    export HADOOP_HOME=~/tools/hadoop-2.7.3
+    export PATH=$PATH:$HADOOP_HOME/bin
+    export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
+    export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib"
 
 
-export EMSDK=~/tools/emsdk-portable
-export PATH=$PATH:$EMSDK/emscripten/1.37.35
+    export EMSDK=~/tools/emsdk-portable
+    export PATH=$PATH:$EMSDK/emscripten/1.37.35
+fi
