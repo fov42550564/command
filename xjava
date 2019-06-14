@@ -72,6 +72,11 @@ function xjavaCreateClass()
 	package=$(xjavaGetPackage "$class_name")
 	file_name=$(xjavaGetFileName "$package" "$class_name")
 
+	if [ -z "${class_name}" ];then
+		echo "请输入类名"
+		exit
+	fi
+
 	mkdir -p src
 	__backup_file "$file_name"
 
