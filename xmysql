@@ -27,8 +27,8 @@ async function createMysql (commands, options) {
     fileds = _.uniq(fileds);
     // 添加表，字段的自动完成
     function completer(line) {
-        const words = line.trimLeft().split(/\s/);
-        const linePartial = _.last(words);
+        const words = line.replace(/\s,\s/g, ',').trimLeft().split(/\s/);
+        const linePartial = _.last(_.last(words).split(','));
         let list = [];
         if (words.length <= 1) {
             list = ['select', 'update', 'delete'].filter((o) => o.startsWith(linePartial));
