@@ -34,7 +34,7 @@ async function createMysql (commands, options) {
             list = ['select', 'update', 'delete'].filter((o) => o.startsWith(linePartial));
         } else {
             const preWord = _.toLower(_.nth(words, -2));
-            if (_.includes(['from', 'update', 'into'], preWord)) {
+            if (_.includes(['from', 'update', 'into', 'ls'], preWord)) {
                 list = tables.filter((o) => o.startsWith(linePartial));
             }  else {
                 list = fileds.filter((o) => o.startsWith(linePartial));
@@ -113,28 +113,27 @@ async function executeSQL(line, { connection }) {
     }
     this.prompt();
 }
-async function showDatabases(line, { connection }) {
-    this.print('databases :', 'red');
-    const results = await querySQL(this, connection, 'show databases');
-    this.print(results.map(o=>o.Database).join('  '), 'green');
-    this.prompt();
-}
+
 async function showTables(line, { connection }) {
-    let results = await querySQL(this, connection, 'select database() as db');
-    this.print('tables in '+ results[0].db +' :', 'red');
-    results = await querySQL(this, connection, 'show tables');
-    if (results) {
-        this.print(_.map(results, o=>o[_.keys(o)[0]]).join('  '), 'green');
+    if (!line) { // show tables
+        let results = await querySQL(this, connection, 'select database() as db');
+        this.print('tables in '+ results[0].db +' :', 'red');
+        results = await querySQL(this, connection, 'show tables');
+        if (results) {
+            this.print(_.map(results, o=>o[_.keys(o)[0]]).join('  '), 'green');
+            this.prompt();
+        }
+    } else if (line === '-') { // show databases
+        this.print('databases :', 'red');
+        const results = await querySQL(this, connection, 'show databases');
+        this.print(results.map(o=>o.Database).join('  '), 'green');
+        this.prompt();
+    } else { // show table fileds
+        line = line.replace(/[^\w]*/g, '');
+        const fileds = await getFieldsOfTable(this, line, connection);
+        this.print(fileds.join('  '), 'green');
         this.prompt();
     }
-}
-async function showTableDescript(table, { connection }) {
-    let results = await querySQL(this, connection, 'desc ' + table);
-    this.print('desc '+ table +' :', 'green');
-    results.forEach(o=>{
-        this.showJson(o, _prettyShell);
-    });
-    this.prompt();
 }
 function togglePrettyShell() {
     _prettyShell = !_prettyShell;
@@ -145,9 +144,7 @@ function showHelp () {
     this.print('commands:', 'blue');
     this.print('    <h|help>: show help');
     this.print('    <q|exit>: exit');
-    this.print('    ls: showDatabases');
-    this.print('    l: showTables');
-    this.print('    d [table]: showTableDescript');
+    this.print('    ls: showTables|ls -: showDatabases|ls table: showTableFields');
     this.print('    _: togglePrettyShell');
     this.print('');
     this.prompt();
@@ -155,9 +152,7 @@ function showHelp () {
 const COMMANDS = {
     'h|help': showHelp,
     'q|exit': function () { this.close() },
-    'ls': showDatabases,
-    'l': showTables,
-    'd': showTableDescript,
+    'ls': showTables,
     '_': togglePrettyShell,
     'default': executeSQL,
 };
