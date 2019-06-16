@@ -235,7 +235,7 @@ function git_revert_to_version() {
 
 function git_update_and_commit() {
 	local hasupdate
-	hasupdate=$(git pl|sed -n '/Already up-to-date/p')
+	hasupdate=$(git pl|sed -n '/Already up[ -]to[ -]date/p')
 	if [ -z "$hasupdate" ];then
 		echo "fix conflit then commit"
 		exit
