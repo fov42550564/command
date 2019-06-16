@@ -235,8 +235,7 @@ function git_revert_to_version() {
 
 function git_update_and_commit() {
 	local hasupdate
-	git pl
-	hasupdate=$(git st|sed -n '/Already up-to-date/p')
+	hasupdate=$(git pl|sed -n '/Already up-to-date/p')
 	if [ -z "$hasupdate" ];then
 		echo "fix conflit then commit"
 		exit
@@ -254,7 +253,11 @@ function git_command() {
 		fi
 	fi
 	if [ "$amend" = "" -a "$1" = "commit" -o "$1" = "ci" -o "$1" = "cm" -o "$1" = "cip" -o "$1" = "cmp" ];then
-		git pl
+		hasupdate=$(git pl|sed -n '/Already up[ -]to[ -]date/p')
+		if [ -z "$hasupdate" ];then
+			echo "fix conflit then commit"
+			exit
+		fi
 	fi
 	if [ "$1" = "cip" -o "$1" = "cmp" ];then
 		cmd="$1"
