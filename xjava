@@ -8,7 +8,6 @@
 #############################################
 source ~/command/common
 
-
 _full_class_name=""
 _jarfile=""
 _path=""
@@ -21,10 +20,14 @@ _check=0
 android_skd_jar=~/android/android-sdk-macosx/platforms/android-10/android.jar
 classpath_file=~/.java_classpath
 header_file=~/.java_header
+sep=":"
+if __windows;then
+	sep=";"
+fi
 m2_jar=(`cat ${classpath_file} 2>/dev/null`)
-m2_classpath=".:moment-1.0.0.jar:underscore-1.45.jar"
+m2_classpath=".${sep}moment-1.0.0.jar${sep}underscore-1.45.jar"
 for x in "${m2_jar[@]}";do
-	m2_classpath="${x}:${m2_classpath}"
+	m2_classpath="${x}${sep}${m2_classpath}"
 done
 
 function xjavaGetPackage()
@@ -243,11 +246,11 @@ function addCommonHeader() {
 
 function runCodeForXJ() {
 	cd $HOME/command/java
-	javac Test.java -classpath ${m2_classpath} -Xlint:unchecked
+	javac Test.java -classpath "${m2_classpath}" -Xlint:unchecked
 	if [ $? -ne 0 ];then
 		return
 	fi
-	java -cp ${m2_classpath} Test
+	java -cp "${m2_classpath}" Test
 }
 
 function xjavaShowHelp()

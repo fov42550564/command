@@ -6,11 +6,12 @@ const path = require('path');
 const fs = require('fs-extra');
 const _ = require('lodash');
 const shell = require('shelljs');
+const xjava = process.platform !== 'win32' ? 'xjava' : `"${shell.env.SHELL}" "${ path.join(osHomedir(), 'command/xjava').replace(/\\/g, '/')}"`;
 let headers = getDefaultHeaders();
 let codes = [];
 
 function getDefaultHeaders() {
-    const text = shell.exec(`xjava -k ""`, { silent:true }).stdout;
+    const text = shell.exec(`${xjava} -k ""`, { silent:true }).stdout;
     let list = text ? text.split('\n').filter(o=>o) : [];
     list = [
         ...list,
@@ -65,11 +66,11 @@ function showCode() {
     this.prompt();
 }
 function showJar(line) {
-    this.print(shell.exec(`xjava -d "${line}"`, { silent:true }).stdout, 'blue');
+    this.print(shell.exec(`${xjava} -d "${line}"`, { silent:true }).stdout, 'blue');
     this.prompt();
 }
 function showHeaders(line) {
-    this.print(shell.exec(`xjava -k "${line}"`, { silent:true }).stdout, 'blue');
+    this.print(shell.exec(`${xjava} -k "${line}"`, { silent:true }).stdout, 'blue');
     this.prompt();
 }
 function format(line) {
@@ -98,7 +99,7 @@ function appendCode(line) {
 function runCode(isHeader) {
     const text = getFullCode();
     fs.writeFileSync(path.join(osHomedir(), 'command/java/Test.java'), text);
-    shell.exec('xjava -s', { silent:true }, (code, stdout, stderr) => {
+    shell.exec(`${xjava} -s`, { silent:true }, (code, stdout, stderr) => {
         if (stderr) {
             if (isHeader) {
                 headers = _.dropRight(headers);
