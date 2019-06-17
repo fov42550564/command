@@ -198,7 +198,7 @@ function xjavaCompressionJar()
 
 function xjavaCreateJniNativeFile()
 {
-	local class_name package file_name header_file src_file
+	local class_name package file_name head_file src_file
 
 	class_name=${_full_class_name##*.}
 	package=$(xjavaGetPackage "$class_name")
@@ -207,19 +207,19 @@ function xjavaCreateJniNativeFile()
 	xjavaGetJniFlag "$file_name"
 	[ $_jni -eq 0 ]&&return
 
-	header_file=jni/$class_name"jni.h"
+	head_file=jni/$class_name"jni.h"
 	src_file=jni/$class_name"jni.c"
 
 	mkdir -p jni
 	mkdir -p  bin/classes
 
-	javah -classpath bin/classes -o $header_file -jni $_full_class_name||return $_FALSE_
+	javah -classpath bin/classes -o $head_file -jni $_full_class_name||return $_FALSE_
 
 	__backup_file "$src_file"
 	echo "#include <stdio.h>" > $src_file
 	echo "#include \""$class_name"jni.h\"" >> $src_file
 	echo  >> $src_file
-	sed -n '/JNIEXPORT/,/);/p' $header_file|sed 'N;s/\n//'|sed 's/  (/(/;s/;/{\n\tprintf("hello jni\\n");\n}/;s/JNIEnv \*/JNIEnv *env/;s/jobject/jobject obj/;s/jclass/jclass cls/' >> $src_file
+	sed -n '/JNIEXPORT/,/);/p' $head_file|sed 'N;s/\n//'|sed 's/  (/(/;s/;/{\n\tprintf("hello jni\\n");\n}/;s/JNIEnv \*/JNIEnv *env/;s/jobject/jobject obj/;s/jclass/jclass cls/' >> $src_file
 	echo  >> $src_file
 	return $_TRUE_
 }
@@ -238,7 +238,7 @@ function addClassPath() {
 
 function addCommonHeader() {
 	if [ -n "$_header" ];then
-		echo "$_header" >> ${header_file}
+		echo "${_header%%;*};" >> ${header_file}
 	else
 		cat ${header_file} 2>/dev/null
 	fi
