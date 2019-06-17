@@ -17,7 +17,6 @@ function getDefaultHeaders() {
         ...list,
         "import com.remobile.moment.Moment;",
         "import static com.remobile.moment.Moment.moment;",
-        "import static com.remobile.moment.Moment.moment;",
         "import com.github.underscore.Predicate;",
         "import com.github.underscore.lodash.U;",
         "import java.util.*;",
