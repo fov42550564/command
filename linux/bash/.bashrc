@@ -141,6 +141,7 @@ function wh() { cd $(which "$1"); }
 alias di='__diff'
 
 #git
+alias tgit=`which git`
 alias git='xgit'
 
 #copy
