@@ -358,7 +358,8 @@ function __ask()
 		*)return $_FALSE_;;
 	esac
 }
-function __diff() {
+function __diff()
+{
 ########################################
 #Usage:di [-r|-d|-rd] path1|file1 path2|file2 [-a]
 #e.g: di f1 f2
@@ -462,7 +463,8 @@ function __open()
 	dir=`cygpath -w "$@"`
 	explorer "$dir"
 }
-function __atom(){
+function __atom()
+{
 ########################################
 #Usage: __atom dir/file
 ########################################
@@ -472,27 +474,22 @@ function __atom(){
 	atom=$HOME/AppData/Local/atom/atom
 	$atom "$dir"
 }
-function __cp()
+function __simple_cp()
 {
 ########################################
-#Usage: __cp file1 file2 [-r]
+#Usage: __simple_cp file1 file2
 ########################################
-	local arr i r item f1 f2 tmp name
-	arr=("$@")
-	for ((i=0; i<${#arr[@]}; i++));do
-		item=${arr[i]}
-		case "$item" in
-			"-r")r=1;;
-			*)[ -z "$f1" ]&&f1="$item"||f2="$item";;
-		esac
-	done
-	if [ -n "$r" ];then
-		tmp="$f1"
-		f1="$f2"
-		f2="$tmp"
+	local f1 f2
+	f1="$1"
+	f2="$2"
+	if ! [ -a "$f1" ];then
+		echo "$f1 not exits"
+		return $_FALSE_
 	fi
-	if ! [ -a "$1" ];then
-		echo "$1 not exits"
+	if [ "$f1" = "$f2" ];then
+		if [ "$3" != "force" ];then
+			echo "invalid oper"
+		fi
 		return $_FALSE_
 	fi
 
@@ -507,13 +504,14 @@ function __cp()
 	cp -fr "$f1" "$f2"
 	return $?
 }
-function __mv()
+function __cp()
 {
 ########################################
-#Usage: __mv file1 file2 [-r].
+#Usage: __cp file1 file2 [-r]
 ########################################
-	local arr i r item f1 f2 tmp name
+	local arr n i r item f1 f2 tmp name
 	arr=("$@")
+	n="$#"
 	for ((i=0; i<${#arr[@]}; i++));do
 		item=${arr[i]}
 		case "$item" in
@@ -522,12 +520,55 @@ function __mv()
 		esac
 	done
 	if [ -n "$r" ];then
-        tmp="$f1"
-        f1="$f2"
-        f2="$tmp"
-    fi
+		tmp="$f1"
+		f1="$f2"
+		f2="$tmp"
+	fi
+	if [ "$n" -lt 2 ];then
+		echo "invalid oper"
+		return $_FALSE_
+	elif [ "$n" -eq 2 ];then
+		if [ -n "$r" ];then
+			echo "invalid oper"
+			return $_FALSE_
+		fi
+		__simple_cp "$f1" "$f2"
+		return $?
+	elif [ -n "$r" ];then
+		if [ "$n" -eq 3 ];then
+			__simple_cp "$f1" "$f2"
+			return $?
+		else
+			echo "invalid oper"
+			return $_FALSE_
+		fi
+	else
+		if ! [ -d "${arr[n-1]}" ];then
+			echo "invalid oper"
+			return $_FALSE_
+		fi
+		for ((i=0; i<n-1; i++));do
+			__simple_cp "${arr[i]}" "${arr[n-1]}" force
+		done
+		return $_TRUE_
+	fi
+}
+function __simple_mv()
+{
+########################################
+#Usage: __simple_mv file1 file2
+########################################
+	local f1 f2
+	f1="$1"
+	f2="$2"
 	if ! [ -a "$f1" ];then
 		echo "$f1 not exits"
+		return $_FALSE_
+	fi
+	if [ "$f1" = "$f2" ];then
+		if [ "$3" != "force" ];then
+			echo "invalid oper"
+		fi
 		return $_FALSE_
 	fi
 
@@ -541,6 +582,55 @@ function __mv()
 	fi
 	mv "$f1" "$f2"
 	return $?
+}
+function __mv()
+{
+########################################
+#Usage: __mv file1 file2 [-r]
+########################################
+	local arr n i r item f1 f2 tmp name
+	arr=("$@")
+	n="$#"
+	for ((i=0; i<${#arr[@]}; i++));do
+		item=${arr[i]}
+		case "$item" in
+			"-r")r=1;;
+			*)[ -z "$f1" ]&&f1="$item"||f2="$item";;
+		esac
+	done
+	if [ -n "$r" ];then
+		tmp="$f1"
+		f1="$f2"
+		f2="$tmp"
+	fi
+	if [ "$n" -lt 2 ];then
+		echo "invalid oper"
+		return $_FALSE_
+	elif [ "$n" -eq 2 ];then
+		if [ -n "$r" ];then
+			echo "invalid oper"
+			return $_FALSE_
+		fi
+		__simple_mv "$f1" "$f2"
+		return $?
+	elif [ -n "$r" ];then
+		if [ "$n" -eq 3 ];then
+			__simple_mv "$f1" "$f2"
+			return $?
+		else
+			echo "invalid oper"
+			return $_FALSE_
+		fi
+	else
+		if ! [ -d "${arr[n-1]}" ];then
+			echo "invalid oper"
+			return $_FALSE_
+		fi
+		for ((i=0; i<n-1; i++));do
+			__simple_mv "${arr[i]}" "${arr[n-1]}" force
+		done
+		return $_TRUE_
+	fi
 }
 function __rm()
 {
