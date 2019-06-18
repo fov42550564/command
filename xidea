@@ -30,9 +30,10 @@ function gen_service_code() {
 
     cd $path/src/main/java/com
     cpath=`getFilePath $cls`
+    vim -e -s -c ":%s/\r//g" -c ":wq" "$cpath"
     #line=`cat $cpath|grep "public .*$name"|sed 's/.*public\s*//;s/\s*{//'`
     comment=`sed -n '/PostMapping.*'$name'"/{x;p};h' $cpath`
-    line=`sed -n '/public .*'$name'(/,/) {/p' $cpath|sed 's/.*public\s*//;s/\s*{//;s/@IfNull.*)\s*//;'| sed '/Long userId/d' | sed ':label;N;s/\n/<--br-->/;b label'`
+    line=`sed -n '/public .*'$name'(/,/) {/p' $cpath|sed 's/.*public\s*//;s/\s*{//;s/@IfNull.*)\s*//;'| sed '/Long userId/d' | sed ':label;N;s/\n/<--br-->/g;b label'`
     echo $line
     sname=`echo $cls|sed 's/C\(.\)$/S\1/'`
     spath=`getFilePath $sname`

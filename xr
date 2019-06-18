@@ -14,7 +14,7 @@ _newnameFlag=0
 
 function showHelp() {
     echo "Usage:"
-    echo "  xr oldname:newname [-r|-c]"
+    echo "  xr oldname:newname [-r|-c|-f]"
     echo "  默认替换剪切板的内容"
     echo "  -r: 进入某一个目录，将目录里面的文件按规则重命名，将文件中的内容按照规则替换"
     echo "  -c [folder]: 拷贝目录后，再替换"
