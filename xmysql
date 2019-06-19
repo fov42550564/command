@@ -113,7 +113,6 @@ async function executeSQL(line, { connection }) {
     }
     this.prompt();
 }
-
 async function showTables(line, { connection }) {
     if (!line) { // show tables
         let results = await querySQL(this, connection, 'select database() as db');
@@ -135,6 +134,17 @@ async function showTables(line, { connection }) {
         this.prompt();
     }
 }
+async function showTableLines(line, { connection }) {
+    let list = line.replace(/\s,\s/g, ',').trim().split(/\s/);
+    const table = list[0];
+    let limit = _.last(list);
+    if (typeof limit === 'number') {
+        list = _.dropRight();
+    } else {
+        limit = 1;
+    }
+
+}
 function togglePrettyShell() {
     _prettyShell = !_prettyShell;
     this.print('pretty format change to ' + _prettyShell);
@@ -144,7 +154,10 @@ function showHelp () {
     this.print('commands:', 'blue');
     this.print('    <h|help>: show help');
     this.print('    <q|exit>: exit');
-    this.print('    ls: showTables|ls -: showDatabases|ls table: showTableFields');
+    this.print('    ls(l): showTables|ls -: showDatabases|ls table: showTableFields');
+    this.print('    show(s): showTableLines');
+    this.print('    modify(s): modifyTable');
+    this.print('    remove(s): removeTable');
     this.print('    _: togglePrettyShell');
     this.print('');
     this.prompt();
@@ -152,8 +165,11 @@ function showHelp () {
 const COMMANDS = {
     'h|help': showHelp,
     'q|exit': function () { this.close() },
-    'ls': showTables,
-    '_': togglePrettyShell,
+    'l|ls': showTables,
+    's|show': showTableLines,
+    'm|modify': modifyTable,
+    'r|remove': removeTable,
+    '-': togglePrettyShell,
     'default': executeSQL,
 };
 
