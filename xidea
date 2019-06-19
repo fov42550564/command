@@ -33,8 +33,8 @@ function gen_service_code() {
     vim -e -s -c ":%s/\r//g" -c ":wq" "$cpath"
     #line=`cat $cpath|grep "public .*$name"|sed 's/.*public\s*//;s/\s*{//'`
     comment=`sed -n '/PostMapping.*'$name'"/{x;p};h' $cpath`
-    line=`sed -n '/public .*'$name'(/,/) {/p' $cpath|sed 's/.*public\s*//;s/\s*{//;s/@IfNull.*)\s*//;'| sed '/Long userId/d' | sed ':label;N;s/\n/<--br-->/g;b label'`
-    echo $line
+    line=`sed -n '/public .*'$name'(/,/) {/p' $cpath|sed 's/.*public\s*//;s/\s*{//;s/@IfNull[^)]*)\s*//;'| sed '/Long userId/d' | sed ':label;N;s/\n/<--br-->/g;b label'`
+    #echo $line
     sname=`echo $cls|sed 's/C\(.\)$/S\1/'`
     spath=`getFilePath $sname`
     vim -e -s -c ":/^}/s#.*#${comment}\r\t${line};\r\r}#" -c ":%s/<--br-->/\r/g" -c ":wq" "$spath"
@@ -206,6 +206,22 @@ function gen_setter_getter() {
     done
 }
 
+function genrate_param() {
+    if __mac ;then
+        pbpaste|sed 's#\s*//.*$##'|sed 's/.* //'|pbcopy
+    else
+         cat /dev/clipboard|sed 's#\s*//.*$##'|sed 's/.* //' > /dev/clipboard
+    fi
+}
+
+function clear_ifnull() {
+    if __mac ;then
+        pbpaste|sed 's/@IfNull[^)]*)\s*//'|pbcopy
+    else
+         cat /dev/clipboard|sed 's/@IfNull[^)]*)\s*//' > /dev/clipboard
+    fi
+}
+
 function show_help()
 {
 	local -a list
@@ -214,6 +230,8 @@ function show_help()
 	list=("${list[@]}" "  -s [class:function]: generate service code")
 	list=("${list[@]}" "  -f [file:oldName:newName]: copy file")
 	list=("${list[@]}" "  -c [oldClass:newClass]: copy Controller Service and ServerImpl")
+	list=("${list[@]}" "  -p: genrate param without comment in clipboard")
+	list=("${list[@]}" "  -i: delete @IfNull in clipboard")
 	list=("${list[@]}" "  -h: show help")
 	__msgbox "${list[@]}"
 }
@@ -228,12 +246,14 @@ function main()
 		exit
 	fi
 
-	while getopts :s:f:c:h opt;do
+	while getopts :s:f:c:pih opt;do
 		oper_right=1
 		case $opt in
 			s)_oper=0;param="$OPTARG";;
 			f)_oper=1;param="$OPTARG";;
 			c)_oper=2;param="$OPTARG";;
+			p)_oper=3;;
+			i)_oper=4;;
 			*)show_help;exit;;
 		esac
 	done
@@ -242,6 +262,8 @@ function main()
 		0)gen_service_code $param;;
 		1)copy_file $param;;
 		2)copy_class $param;;
+		3)genrate_param;;
+		4)clear_ifnull;;
 	esac
 }
 
