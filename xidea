@@ -222,6 +222,14 @@ function clear_ifnull() {
     fi
 }
 
+function genrate_param_for_js() {
+    if __mac ;then
+        pbpaste|sed "s#.* \(\w\+\)[,]*\s*\(//.*\)#\1: '', \2#"|pbcopy
+    else
+         cat /dev/clipboard|sed "s#.* \(\w\+\)[,]*\s*\(//.*\)#\1: '', \2#" > /dev/clipboard
+    fi
+}
+
 function show_help()
 {
 	local -a list
@@ -231,6 +239,7 @@ function show_help()
 	list=("${list[@]}" "  -f [file:oldName:newName]: copy file")
 	list=("${list[@]}" "  -c [oldClass:newClass]: copy Controller Service and ServerImpl")
 	list=("${list[@]}" "  -p: genrate param without comment in clipboard")
+	list=("${list[@]}" "  -j: genrate param for js")
 	list=("${list[@]}" "  -i: delete @IfNull in clipboard")
 	list=("${list[@]}" "  -h: show help")
 	__msgbox "${list[@]}"
@@ -246,7 +255,7 @@ function main()
 		exit
 	fi
 
-	while getopts :s:f:c:pih opt;do
+	while getopts :s:f:c:pijh opt;do
 		oper_right=1
 		case $opt in
 			s)_oper=0;param="$OPTARG";;
@@ -254,6 +263,7 @@ function main()
 			c)_oper=2;param="$OPTARG";;
 			p)_oper=3;;
 			i)_oper=4;;
+			j)_oper=5;;
 			*)show_help;exit;;
 		esac
 	done
@@ -264,6 +274,7 @@ function main()
 		2)copy_class $param;;
 		3)genrate_param;;
 		4)clear_ifnull;;
+        5)genrate_param_for_js;;
 	esac
 }
 

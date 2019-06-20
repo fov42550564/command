@@ -145,6 +145,39 @@ async function showTableLines(line, { connection }) {
     }
 
 }
+async function modifyTable(line, { connection }) {
+    let list = line.replace(/\s,\s/g, ',').trim().split(/\s/);
+    const table = list[0];
+    let limit = _.last(list);
+    if (typeof limit === 'number') {
+        list = _.dropRight();
+    } else {
+        limit = 1;
+    }
+
+}
+async function removeTable(line, { connection }) {
+    let list = line.replace(/\s,\s/g, ',').trim().split(/\s/);
+    const table = list[0];
+    let limit = _.last(list);
+    if (typeof limit === 'number') {
+        list = _.dropRight();
+    } else {
+        limit = 1;
+    }
+
+}
+async function copyTableRows(line, { connection }) {
+    let list = line.replace(/\s,\s/g, ',').trim().split(/\s/);
+    const table = list[0];
+    let limit = _.last(list);
+    if (typeof limit === 'number') {
+        list = _.dropRight();
+    } else {
+        limit = 1;
+    }
+
+}
 function togglePrettyShell() {
     _prettyShell = !_prettyShell;
     this.print('pretty format change to ' + _prettyShell);
@@ -169,6 +202,7 @@ const COMMANDS = {
     's|show': showTableLines,
     'm|modify': modifyTable,
     'r|remove': removeTable,
+    'c|copy': copyTableRows,
     '-': togglePrettyShell,
     'default': executeSQL,
 };
