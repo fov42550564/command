@@ -18,15 +18,16 @@ platforms_linux=3
 
 function install_single()
 {
-    local src_file dst_file
-    src_file=$1;dst_file=$2
-    if ! [ -L ~/$dst_file ];then
-        echo "backup $dst_file"
-        mv ~/${dst_file} ~/${_backdir}/${dst_file} 2>/dev/null
-        echo "install $dst_file"
-        ln -s ${_src_path}/$src_file $dst_file
+    local src_file dest_file suffer
+    src_file=$1;dest_file=$2
+    suffer=$(date '+%Y-%m-%d-%H-%M-%S')
+    echo "backup $dest_file"
+    mv ~/${dest_file} ~/${_backdir}/${dest_file}-suffer 2>/dev/null
+    echo "install $dest_file"
+    if (($_platforms&$platforms_windows));then
+        cp ${_src_path}/$src_file ~/$dest_file
     else
-        echo "warning:$dst_file have installed"
+        ln -s ${_src_path}/$src_file ~/$dest_file
     fi
 }
 
