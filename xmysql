@@ -21,8 +21,8 @@ async function createMysql (commands, options) {
     const tables = await getTables(null, connection);
     let allFileds = [];
     for (const table of tables) {
-        const fileds = await initFieldsOfTable(null, table, connection);
-        allFileds = [...allFileds, ...fileds];
+        const fields = await initFieldsOfTable(null, table, connection);
+        allFileds = [...allFileds, ...fields];
     }
     allFileds = _.uniq(allFileds);
     // 添加表，字段的自动完成
@@ -40,8 +40,8 @@ async function createMysql (commands, options) {
                 const prePreWord = _.toLower(_.nth(words, -3));
                 if (prePreWord === 's') {
                     const table = preWord;
-                    const fileds = CACHE[table];
-                    list = fileds.filter((o) => o.startsWith(linePartial));
+                    const fields = CACHE[table];
+                    list = fields.filter((o) => o.startsWith(linePartial));
                 } else {
                     list = allFileds.filter((o) => o.startsWith(linePartial));
                 }
@@ -82,6 +82,16 @@ async function formatFields(self, table, line, connection) {
     list = list.map(o => new RegExp(o.replace('<', '^').replace('>', '$'), 'i'));
 
     return allFields.filter(o=>_.some(list, r=>r.test(o))).join(',');
+}
+function formatLine(line) {
+    return line
+    .replace(/\s,\s/g, ',')
+    .replace(/\s=\s/g, '=')
+    .replace(/\s~\s/g, '~')
+    .replace(/\s\|\s/g, '|')
+    .replace(/\s&\s/g, '&')
+    .replace(/\s#\s/g, '#')
+    .trim().split(/\s/).filter(o=>o);
 }
 async function getTables(self, connection) {
     if (!CACHE._tables) {
@@ -146,10 +156,10 @@ async function showTables(line, { connection }) {
         const results = await querySQL(this, connection, 'show databases');
         this.print(results.map(o=>o.Database).join('  '), 'green');
         this.prompt();
-    } else { // show table fileds
+    } else { // show table fields
         line = line.replace(/[^\w]*/g, '');
-        const fileds = getFieldsOfTable(line);
-        this.print(fileds.join('  '), 'green');
+        const fields = getFieldsOfTable(line);
+        this.print(fields.join('  '), 'green');
         this.prompt();
     }
 }
@@ -166,15 +176,7 @@ function formatCond(line) {
     .replace(/#([\w,]*)/g, ' IN ($1)');
 }
 async function showTableLines (line, { connection }) {
-    let list = line
-    .replace(/\s,\s/g, ',')
-    .replace(/\s=\s/g, '=')
-    .replace(/\s~\s/g, '~')
-    .replace(/\s\|\s/g, '|')
-    .replace(/\s&\s/g, '&')
-    .replace(/\s#\s/g, '#')
-    .trim().split(/\s/).filter(o=>o);
-
+    let list = formatLine(line);
     const table = list[0];
     if (!table) {
         this.error('invalid oper');
@@ -184,45 +186,108 @@ async function showTableLines (line, { connection }) {
     let limit = _.last(list);
     if (+limit == limit) {
         list = _.dropRight(list);
+        limit = +limit ? `LIMIT ${limit}` : '';
     } else {
-        limit = 1;
+        limit = 'LIMIT 1';
     }
     const fields = await formatFields(this, table, list[0], connection);
     const cond = formatCond(list[1]);
-    await executeSQL(this, `SELECT ${fields} FROM ${table} ${cond} LIMIT ${limit}`, connection);
+    await executeSQL(this, `SELECT ${fields} FROM ${table} ${cond} ${limit}`, connection);
 }
 async function modifyTable(line, { connection }) {
-    let list = line.replace(/\s,\s/g, ',').trim().split(/\s/);
+    let list = formatLine(line);
     const table = list[0];
-    let limit = _.last(list);
-    if (typeof limit === 'number') {
-        list = _.dropRight();
-    } else {
-        limit = 1;
+    if (!table) {
+        this.error('invalid oper');
+        this.prompt();
     }
-
+    list = _.drop(list);
+    let limit = _.last(list);
+    if (+limit == limit) {
+        list = _.dropRight(list);
+        limit = +limit ? `LIMIT ${limit}` : '';
+    } else {
+        limit = 'LIMIT 1';
+    }
+    const setFields = list[0];
+    const cond = formatCond(list[1]);
+    await executeSQL(this, `UPDATE ${table} SET ${setFields} ${cond} ${limit}`, connection);
 }
 async function removeTable(line, { connection }) {
-    let list = line.replace(/\s,\s/g, ',').trim().split(/\s/);
+    let list = formatLine(line);
     const table = list[0];
-    let limit = _.last(list);
-    if (typeof limit === 'number') {
-        list = _.dropRight();
-    } else {
-        limit = 1;
+    if (!table) {
+        this.error('invalid oper');
+        this.prompt();
     }
-
+    list = _.drop(list);
+    let limit = _.last(list);
+    if (+limit == limit) {
+        list = _.dropRight(list);
+        limit = +limit ? `LIMIT ${limit}` : '';
+    } else {
+        limit = 'LIMIT 1';
+    }
+    const fields = await formatFields(this, table, list[0], connection);
+    const cond = formatCond(list[1]);
+    await executeSQL(this, `DELETE FROM ${table} ${cond} ${limit}`, connection);
 }
 async function copyTableRows(line, { connection }) {
-    let list = line.replace(/\s,\s/g, ',').trim().split(/\s/);
+    let list = formatLine(line);
     const table = list[0];
-    let limit = _.last(list);
-    if (typeof limit === 'number') {
-        list = _.dropRight();
-    } else {
-        limit = 1;
+    if (!table) {
+        this.error('invalid oper');
+        this.prompt();
     }
-
+    list = _.drop(list);
+    let limit = _.last(list);
+    if (+limit == limit) {
+        list = _.dropRight(list);
+        limit = +limit ? `LIMIT ${limit}` : '';
+    } else {
+        limit = 'LIMIT 1';
+    }
+    let condStr = '';
+    let setFields =[];
+    if (!list[1]) {
+        setFields = [];
+        condStr = list[0];
+    } else {
+        setFields = list[0].split(',').map(o=>o.split('='));
+        condStr = list[1];
+    }
+    const cond = formatCond(condStr);
+    const docs = await querySQL(this, connection, `SELECT * FROM ${table} ${cond} ${limit}`);
+    const fields = getFieldsOfTable(table).filter(o=>o!=='id');
+    for (const doc of docs) {
+        const values = fields.map(o=>{
+            // f1=$f1+1
+            const setField = _.find(setFields, m=>m[0]===o);
+            if (setField) {
+                let setValue = setField[1];
+                const matches = setValue.match(/\$\w+/g);
+                if (matches) {
+                    const tmps = matches.map(o=>o.replace('\$', ''));
+                    for (const tmp of tmps) {
+                        setValue = setValue.replace('$'+tmp, doc[tmp]);
+                    }
+                }
+                if (/[+-\\*/]/.test(setValue)) {
+                    return eval(eval(setValue));
+                }
+                return setValue;
+            }
+            const item = doc[o];
+            if (item instanceof Date) {
+                return 'NULL';
+            }
+            if (doc[o] !== undefined) {
+                return JSON.stringify(doc[o]);
+            }
+            return 'NULL';
+        });
+        await executeSQL(this, `INSERT INTO ${table} (${fields.join(',')}) VALUES (${values.join(',')})`, connection);
+    }
 }
 function togglePrettyShell() {
     _prettyShell = !_prettyShell;
@@ -235,9 +300,9 @@ function showHelp () {
     this.print('    <q|exit>: exit');
     this.print('    ls(l): showTables|ls -: showDatabases|ls table: showTableFields');
     this.print('    s(show): showTableLines # s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
-    this.print('    m(modify): modifyTable');
-    this.print('    r(remove): removeTable');
-    this.print('    c(copy): copyTableRows');
+    this.print('    m(modify): modifyTable # m table f1=xx,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
+    this.print('    r(remove): removeTable # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
+    this.print('    c(copy): copyTableRows # c table f1=$f1+1,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
     this.print('    _: togglePrettyShell');
     this.print('');
     this.prompt();
