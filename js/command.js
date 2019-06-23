@@ -19,6 +19,9 @@ function checkCommand(cmds, line) {
         }
     }
 }
+function checkHistory(cmds, options, line) {
+    return checkCommand(_.omit(cmds, options.history || []), line);
+}
 module.exports = (cmds, options = {}) => {
     let lastLine;
     const historyPath = path.join(osHomedir(), `.xn_${options.prompt || 'common'}_history`);
@@ -40,7 +43,7 @@ module.exports = (cmds, options = {}) => {
     };
     readline.Interface.prototype._addHistory = function() {
         const line = this.line.trim();
-        if (checkCommand(cmds, line)) {
+        if (checkHistory(cmds, options, line)) {
             return line;
         }
         return addHistory.call(this);
