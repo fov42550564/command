@@ -22,7 +22,7 @@ function install_single()
     src_file=$1;dest_file=$2
     suffer=$(date '+%Y-%m-%d-%H-%M-%S')
     echo "backup $dest_file"
-    mv ~/${dest_file} ~/${_backdir}/${dest_file}-suffer 2>/dev/null
+    mv ~/${dest_file} ~/${_backdir}/${dest_file}-${suffer} 2>/dev/null
     echo "install $dest_file"
     if (($_platforms&$platforms_windows));then
         cp ${_src_path}/$src_file ~/$dest_file
