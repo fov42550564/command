@@ -133,6 +133,7 @@ function showHelp () {
 const COMMANDS = {
     'h|help': showHelp,
     'q|exit': function () { this.close() },
+    'cls': function() { this.clear() },
     'sh|showHistory': function (n) { this.showHistory(n) },
     'uh|useHistory': function (n) { this.useHistory(n) },
     'j|jar': showJar,

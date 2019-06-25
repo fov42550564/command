@@ -3,6 +3,7 @@ const readline = require('readline');
 const fs = require('fs-extra');
 const path = require('path');
 const osHomedir = require('os-homedir');
+const shell = require('shelljs');
 const _ = require('lodash');
 
 function checkCommand(cmds, line) {
@@ -134,6 +135,10 @@ module.exports = (cmds, options = {}) => {
         },
         close() {
             rl.close();
+        },
+        clear() {
+            shell.exec('printf "\33c\e[3J"');
+            this.prompt();
         },
         dropHistory() {
             rl.history = _.drop(rl.history);

@@ -324,6 +324,7 @@ function showHelp () {
 const COMMANDS = {
     'h|help': showHelp,
     'q|exit': function () { this.close() },
+    'cls': function() { this.clear() },
     'l|ls': showTables,
     's': showTableLines,
     'm': modifyTable,
