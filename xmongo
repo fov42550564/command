@@ -40,6 +40,106 @@ async function createMongo (commands, options) {
 
     command(commands, { ...options, db, completer });
 }
+function dropBrack(line) {
+    while (_.first(line) === '(' && _.last(line) === ')') {
+        line = line.substr(1, line.length-2);
+    }
+    return line;
+}
+function parseItem(item) {
+    const list = item.match(/(\w+)(>=|>|=|<=|<|~|#)(.*)/);
+    if (!list) {
+        return null;
+    }
+    const key = list[1];
+    const oper = list[2];
+    const value = list[3];
+
+    if (key === undefined || oper === undefined || value === undefined) {
+        return null;
+    }
+    switch (oper) {
+        case '>':
+            return { [key]: { $gt: +value } };
+        case '>=':
+            return { [key]: { $gte: +value } };
+        case '=':
+            if (/<|>/.test(value)) {
+                return { [key]: new RegExp(value.replace(/</, '^').replace(/>/, '$')) };
+            }
+            return { [key]: +value == value ? +value : value };
+        case '<':
+            return { [key]: { $lt: +value } };
+        case '<=':
+            return { [key]: { $lte: +value } };
+        case '~':
+            return { [key]: new RegExp(value.replace(/</, '^').replace(/>/, '$')) };
+        case '#':
+            return { [key]: { $in: value.split(',') } };
+    }
+    return null;
+}
+function parseAnd(line) {
+    if (!/\||&/.test(line)) {
+        return parseItem(line);
+    }
+    const list = [];
+    let i = -1, max = line.length - 1, item = '', match = 0;
+    while (i++ < max) {
+        const ch = line[i];
+        if (ch === '(') {
+            match++;
+        } else if (ch === ')') {
+            match--;
+        }
+        if (ch === '&' && match === 0) {
+            list.push(parseAnd(dropBrack(item)));
+            item='';
+        } else {
+            item=`${item}${ch}`;
+        }
+    }
+    if (match === 0) { // 如果括号不匹配，则丢弃
+        if (line === item) {
+            item && list.push(parseOr(dropBrack(item)));
+        } else {
+            item && list.push(parseAnd(dropBrack(item)));
+        }
+    }
+    return list.length > 1 ? { $and: list } : list[0];
+}
+function parseOr(line) {
+    if (!/\||&/.test(line)) {
+        return parseItem(line);
+    }
+    const list = [];
+    let i = -1, max = line.length - 1, item = '', match = 0;
+    while (i++ < max) {
+        const ch = line[i];
+        if (ch === '(') {
+            match++;
+        } else if (ch === ')') {
+            match--;
+        }
+        if (ch === '|' && match === 0) {
+            list.push(parseOr(dropBrack(item)));
+            item='';
+        } else {
+            item=`${item}${ch}`;
+        }
+    }
+    if (match === 0) { // 如果括号不匹配，则丢弃
+        if (line === item) {
+            item && list.push(parseAnd(dropBrack(item)));
+        } else {
+            item && list.push(parseOr(dropBrack(item)));
+        }
+    }
+    return list.length > 1 ? { $or: list } : list[0];
+}
+function formatCond(line) {
+    return parseOr(dropBrack(line));
+}
 async function format(self, line, db) {
     const matches = line.match(/select(.*)from\s*(\w+)/);
     if (matches) {
@@ -61,14 +161,16 @@ function formatResult(obj) {
     return obj;
 }
 async function formatFields(db, table, line) {
-    if (!line) {
-        return '*';
+    if (!line || line === '*') {
+        return {};
     }
     let list = line.split(',');
     const allFields = await getFieldsOfTable(db, table);
     list = list.map(o => new RegExp(o.replace('<', '^').replace('>', '$'), 'i'));
 
-    return allFields.filter(o=>_.some(list, r=>r.test(o))).join(',');
+    const fields = {};
+    allFields.filter(o=>_.some(list, r=>r.test(o))).forEach(o=>fields[o] = 1);
+    return fields;
 }
 function formatLine(line) {
     return line
@@ -134,24 +236,12 @@ async function showTables(line, { db }) {
         this.prompt();
     }
 }
-function formatCond(line) {
-    if (!line) {
-        return '';
-    }
-    return 'WHERE ' + line
-    .replace(/&/g, ' AND ')
-    .replace(/\|/g, ' OR ')
-    .replace(/~/g, ' LIKE ')
-    .replace(/</g, '%')
-    .replace(/>/g, '%')
-    .replace(/#([\w,]*)/g, ' IN ($1)');
-}
 async function showTableLines (line, { db }) {
     let list = formatLine(line);
     const table = list[0];
     if (!table) {
         this.error('invalid oper');
-        this.prompt();
+        return this.prompt();
     }
     list = _.drop(list);
     let limit = _.last(list);
@@ -161,16 +251,27 @@ async function showTableLines (line, { db }) {
     } else {
         limit = 'LIMIT 1';
     }
-    const fields = await formatFields(db, table, list[0]);
-    const cond = formatCond(list[1]);
-    console.log(`SELECT ${fields} FROM ${table} ${cond} ${limit}`, db);
+    let _fields, _cond;
+    if (list.length == 1) {
+        if (/>=|>|=|<=|<|~|#/.test(list[0])) {
+            _cond = list[0];
+        } else {
+            _fields = list[0];
+        }
+    } else if (list.length > 1) {
+        _fields = list[0];
+        _cond = list[1];
+    }
+    const fields = await formatFields(db, table, _fields);
+    const cond = formatCond(_cond);
+    console.log(`SELECT ${JSON.stringify(fields)} FROM ${table} ${JSON.stringify(cond)} ${limit}`, db);
 }
 async function modifyTable(line, { db }) {
     let list = formatLine(line);
     const table = list[0];
     if (!table) {
         this.error('invalid oper');
-        this.prompt();
+        return this.prompt();
     }
     list = _.drop(list);
     let limit = _.last(list);
@@ -181,6 +282,10 @@ async function modifyTable(line, { db }) {
         limit = 'LIMIT 1';
     }
     const setFields = list[0];
+    if (!setFields) {
+        this.error('invalid oper');
+        return this.prompt();
+    }
     const cond = formatCond(list[1]);
     await executeSQL(this, `UPDATE ${table} SET ${setFields} ${cond} ${limit}`, db);
 }
@@ -189,7 +294,7 @@ async function removeTable(line, { db }) {
     const table = list[0];
     if (!table) {
         this.error('invalid oper');
-        this.prompt();
+        return this.prompt();
     }
     list = _.drop(list);
     let limit = _.last(list);
@@ -199,8 +304,7 @@ async function removeTable(line, { db }) {
     } else {
         limit = 'LIMIT 1';
     }
-    const fields = await formatFields(db, table, list[0]);
-    const cond = formatCond(list[1]);
+    const cond = formatCond(list[0]);
     await executeSQL(this, `DELETE FROM ${table} ${cond} ${limit}`, db);
 }
 async function copyTableRows(line, { db }) {
@@ -208,7 +312,7 @@ async function copyTableRows(line, { db }) {
     const table = list[0];
     if (!table) {
         this.error('invalid oper');
-        this.prompt();
+        return this.prompt();
     }
     list = _.drop(list);
     let limit = _.last(list);
