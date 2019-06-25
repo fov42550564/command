@@ -54,7 +54,7 @@ async function createMysql (commands, options) {
     command(commands, { ...options, db, completer });
 }
 async function format(self, line, db) {
-    const matches = line.match(/select(.*)from\s*(\w+)/);
+    const matches = line.match(/select([^.]*)from\s*(\w+)/);
     if (matches) {
         let list = matches[1].split(/,|\s/).filter(o=>o).join(',');
         const fields = await formatFields(this, matches[2], list, db);
