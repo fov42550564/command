@@ -12,16 +12,16 @@ const CACHE = {};
 
 let _prettyShell = true;
 async function createMysql (commands, options) {
-    const connection = mysql.createConnection({
+    const db = mysql.createConnection({
         host: process.argv[2] || 'localhost',
         user: 'root',
         password: '123456',
         database: DATA_BASE,
     });
-    const tables = await getTables(null, connection);
+    const tables = await getTables(null, db);
     let allFileds = [];
     for (const table of tables) {
-        const fields = await initFieldsOfTable(null, table, connection);
+        const fields = await initFieldsOfTable(null, table, db);
         allFileds = [...allFileds, ...fields];
     }
     allFileds = _.uniq(allFileds);
@@ -51,13 +51,13 @@ async function createMysql (commands, options) {
         return [found.length ? found : list, linePartial];
     }
 
-    command(commands, { ...options, connection, completer });
+    command(commands, { ...options, db, completer });
 }
-async function format(self, line, connection) {
+async function format(self, line, db) {
     const matches = line.match(/select(.*)from\s*(\w+)/);
     if (matches) {
         let list = matches[1].split(/,|\s/).filter(o=>o).join(',');
-        const fields = await formatFields(this, matches[2], list, connection);
+        const fields = await formatFields(this, matches[2], list, db);
         line = line.replace(/select.*from/, `select ${fields} from`);
     }
     return line;
@@ -73,8 +73,8 @@ function formatResult(obj) {
     }
     return obj;
 }
-async function formatFields(self, table, line, connection) {
-    if (!line) {
+async function formatFields(self, table, line, db) {
+    if (!line || line === '*') {
         return '*';
     }
     let list = line.split(',');
@@ -93,14 +93,14 @@ function formatLine(line) {
     .replace(/\s#\s/g, '#')
     .trim().split(/\s/).filter(o=>o);
 }
-async function getTables(self, connection) {
+async function getTables(self, db) {
     if (!CACHE._tables) {
-        CACHE._tables = (await querySQL(self, connection, 'show tables')).map(o=>o[_.keys(o)[0]]);
+        CACHE._tables = (await querySQL(self, db, 'show tables')).map(o=>o[_.keys(o)[0]]);
     }
     return CACHE._tables;
 }
-async function initFieldsOfTable(self, table, connection) {
-    CACHE[table] = (await querySQL(self, connection, 'desc ' + table)).map(o=>o.Field);
+async function initFieldsOfTable(self, table, db) {
+    CACHE[table] = (await querySQL(self, db, 'desc ' + table)).map(o=>o.Field);
     return CACHE[table];
 }
 function getFieldsOfTable(table) {
@@ -109,9 +109,9 @@ function getFieldsOfTable(table) {
     }
     return CACHE[table];
 }
-function querySQL(self, connection, query) {
+function querySQL(self, db, query) {
     return new Promise(resolve=>{
-        connection.query(query, (err, results) => {
+        db.query(query, (err, results) => {
             if (err) {
                 if (self) {
                     self.error(err);
@@ -124,8 +124,8 @@ function querySQL(self, connection, query) {
         });
     })
 }
-async function executeSQL(self, line, connection) {
-    const results = await querySQL(self, connection, line);
+async function executeSQL(self, line, db) {
+    const results = await querySQL(self, db, line);
     if (results.forEach) {
         results.forEach(o=>{
             self.showJson(formatResult(o), _prettyShell);
@@ -135,25 +135,25 @@ async function executeSQL(self, line, connection) {
     }
     self.prompt();
 }
-async function executeLine(line, { connection }) {
+async function executeLine(line, { db }) {
     if (!line) {
         return this.prompt();
     }
-    line = await format(this, line, connection);
-    await executeSQL(this, line, connection);
+    line = await format(this, line, db);
+    await executeSQL(this, line, db);
 }
-async function showTables(line, { connection }) {
+async function showTables(line, { db }) {
     if (!line) { // show tables
-        let results = await querySQL(this, connection, 'select database() as db');
+        let results = await querySQL(this, db, 'select database() as db');
         this.print('tables in '+ results[0].db +' :', 'red');
-        results = await querySQL(this, connection, 'show tables');
+        results = await querySQL(this, db, 'show tables');
         if (results) {
             this.print(_.map(results, o=>o[_.keys(o)[0]]).join('  '), 'green');
             this.prompt();
         }
     } else if (line === '-') { // show databases
         this.print('databases :', 'red');
-        const results = await querySQL(this, connection, 'show databases');
+        const results = await querySQL(this, db, 'show databases');
         this.print(results.map(o=>o.Database).join('  '), 'green');
         this.prompt();
     } else { // show table fields
@@ -175,7 +175,7 @@ function formatCond(line) {
     .replace(/>/g, '%')
     .replace(/#([\w,]*)/g, ' IN ($1)');
 }
-async function showTableLines (line, { connection }) {
+async function showTableLines (line, { db }) {
     let list = formatLine(line);
     const table = list[0];
     if (!table) {
@@ -190,11 +190,22 @@ async function showTableLines (line, { connection }) {
     } else {
         limit = 'LIMIT 1';
     }
-    const fields = await formatFields(this, table, list[0], connection);
-    const cond = formatCond(list[1]);
-    await executeSQL(this, `SELECT ${fields} FROM ${table} ${cond} ${limit}`, connection);
+    let _fields, _cond;
+    if (list.length == 1) {
+        if (/>=|>|=|<=|<|~|#/.test(list[0])) {
+            _cond = list[0];
+        } else {
+            _fields = list[0];
+        }
+    } else if (list.length > 1) {
+        _fields = list[0];
+        _cond = list[1];
+    }
+    const fields = await formatFields(this, table, _fields, db);
+    const cond = formatCond(_cond);
+    await executeSQL(this, `SELECT ${fields} FROM ${table} ${cond} ${limit}`, db);
 }
-async function modifyTable(line, { connection }) {
+async function modifyTable(line, { db }) {
     let list = formatLine(line);
     const table = list[0];
     if (!table) {
@@ -211,9 +222,9 @@ async function modifyTable(line, { connection }) {
     }
     const setFields = list[0];
     const cond = formatCond(list[1]);
-    await executeSQL(this, `UPDATE ${table} SET ${setFields} ${cond} ${limit}`, connection);
+    await executeSQL(this, `UPDATE ${table} SET ${setFields} ${cond} ${limit}`, db);
 }
-async function removeTable(line, { connection }) {
+async function removeTable(line, { db }) {
     let list = formatLine(line);
     const table = list[0];
     if (!table) {
@@ -228,11 +239,11 @@ async function removeTable(line, { connection }) {
     } else {
         limit = 'LIMIT 1';
     }
-    const fields = await formatFields(this, table, list[0], connection);
+    const fields = await formatFields(this, table, list[0], db);
     const cond = formatCond(list[1]);
-    await executeSQL(this, `DELETE FROM ${table} ${cond} ${limit}`, connection);
+    await executeSQL(this, `DELETE FROM ${table} ${cond} ${limit}`, db);
 }
-async function copyTableRows(line, { connection }) {
+async function copyTableRows(line, { db }) {
     let list = formatLine(line);
     const table = list[0];
     if (!table) {
@@ -257,7 +268,7 @@ async function copyTableRows(line, { connection }) {
         condStr = list[1];
     }
     const cond = formatCond(condStr);
-    const docs = await querySQL(this, connection, `SELECT * FROM ${table} ${cond} ${limit}`);
+    const docs = await querySQL(this, db, `SELECT * FROM ${table} ${cond} ${limit}`);
     const fields = getFieldsOfTable(table).filter(o=>o!=='id');
     for (const doc of docs) {
         const values = fields.map(o=>{
@@ -286,7 +297,7 @@ async function copyTableRows(line, { connection }) {
             }
             return 'NULL';
         });
-        await executeSQL(this, `INSERT INTO ${table} (${fields.join(',')}) VALUES (${values.join(',')})`, connection);
+        await executeSQL(this, `INSERT INTO ${table} (${fields.join(',')}) VALUES (${values.join(',')})`, db);
     }
 }
 function togglePrettyShell() {
