@@ -138,6 +138,9 @@ function parseOr(line) {
     return list.length > 1 ? { $or: list } : list[0];
 }
 function formatCond(line) {
+    if (!line) {
+        return {};
+    }
     return parseOr(dropBrack(line));
 }
 async function format(self, line, db) {
@@ -251,7 +254,7 @@ async function showTableLines (line, { db }) {
     }
     let _fields, _cond;
     if (list.length == 1) {
-        if (/>=|>|=|<=|<|~|#/.test(list[0])) {
+        if (/>=|>\w|=|<=|<\w|~|#/.test(list[0])) {
             _cond = list[0];
         } else {
             _fields = list[0];
@@ -263,7 +266,7 @@ async function showTableLines (line, { db }) {
     const fields = await formatFields(db, table, _fields);
     const cond = formatCond(_cond);
 
-    db[table].find().limit(limit).toArray((err, docs)=>{
+    db[table].find(cond, fields).limit(limit).toArray((err, docs)=>{
         if (err) {
             this.print('no record', 'red');
         } else {
