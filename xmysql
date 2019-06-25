@@ -179,8 +179,7 @@ async function showTableLines (line, { db }) {
     let list = formatLine(line);
     const table = list[0];
     if (!table) {
-        this.error('invalid oper');
-        return this.prompt();
+        return this.error('invalid oper');
     }
     list = _.drop(list);
     let limit = _.last(list);
@@ -209,8 +208,7 @@ async function modifyTable(line, { db }) {
     let list = formatLine(line);
     const table = list[0];
     if (!table) {
-        this.error('invalid oper');
-        return this.prompt();
+        return this.error('invalid oper');
     }
     list = _.drop(list);
     let limit = _.last(list);
@@ -222,8 +220,7 @@ async function modifyTable(line, { db }) {
     }
     const setFields = list[0];
     if (!setFields) {
-        this.error('invalid oper');
-        return this.prompt();
+        return this.error('invalid oper');
     }
     const cond = formatCond(list[1]);
     await executeSQL(this, `UPDATE ${table} SET ${setFields} ${cond} ${limit}`, db);
@@ -232,8 +229,7 @@ async function removeTable(line, { db }) {
     let list = formatLine(line);
     const table = list[0];
     if (!table) {
-        this.error('invalid oper');
-        return this.prompt();
+        return this.error('invalid oper');
     }
     list = _.drop(list);
     let limit = _.last(list);
@@ -250,8 +246,7 @@ async function copyTableRows(line, { db }) {
     let list = formatLine(line);
     const table = list[0];
     if (!table) {
-        this.error('invalid oper');
-        return this.prompt();
+        return this.error('invalid oper');
     }
     list = _.drop(list);
     let limit = _.last(list);

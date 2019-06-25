@@ -240,16 +240,14 @@ async function showTableLines (line, { db }) {
     let list = formatLine(line);
     const table = list[0];
     if (!table) {
-        this.error('invalid oper');
-        return this.prompt();
+        return this.error('invalid oper');
     }
     list = _.drop(list);
     let limit = _.last(list);
     if (+limit == limit) {
         list = _.dropRight(list);
-        limit = +limit ? `LIMIT ${limit}` : '';
     } else {
-        limit = 'LIMIT 1';
+        limit = 1;
     }
     let _fields, _cond;
     if (list.length == 1) {
@@ -264,14 +262,20 @@ async function showTableLines (line, { db }) {
     }
     const fields = await formatFields(db, table, _fields);
     const cond = formatCond(_cond);
-    console.log(`SELECT ${JSON.stringify(fields)} FROM ${table} ${JSON.stringify(cond)} ${limit}`, db);
+
+    db[table].find().limit(limit).toArray((err, docs)=>{
+        if (err) {
+            this.print('no record', 'red');
+        } else {
+            this.showJson(docs, true);
+        }
+    });
 }
 async function modifyTable(line, { db }) {
     let list = formatLine(line);
     const table = list[0];
     if (!table) {
-        this.error('invalid oper');
-        return this.prompt();
+        return this.error('invalid oper');
     }
     list = _.drop(list);
     let limit = _.last(list);
@@ -283,8 +287,7 @@ async function modifyTable(line, { db }) {
     }
     const setFields = list[0];
     if (!setFields) {
-        this.error('invalid oper');
-        return this.prompt();
+        return this.error('invalid oper');
     }
     const cond = formatCond(list[1]);
     await executeSQL(this, `UPDATE ${table} SET ${setFields} ${cond} ${limit}`, db);
@@ -293,8 +296,7 @@ async function removeTable(line, { db }) {
     let list = formatLine(line);
     const table = list[0];
     if (!table) {
-        this.error('invalid oper');
-        return this.prompt();
+        return this.error('invalid oper');
     }
     list = _.drop(list);
     let limit = _.last(list);
@@ -311,8 +313,7 @@ async function copyTableRows(line, { db }) {
     let list = formatLine(line);
     const table = list[0];
     if (!table) {
-        this.error('invalid oper');
-        return this.prompt();
+        return this.error('invalid oper');
     }
     list = _.drop(list);
     let limit = _.last(list);

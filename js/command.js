@@ -95,25 +95,29 @@ module.exports = (cmds, options = {}) => {
         process.exit(0);
     });
     const cmd = {
-        print (msg = '', color) {
-            process.stdout.clearLine();
-            process.stdout.cursorTo(0);
-            if (color) {
+        print (msg = '', color, follow) {
+            if (follow) {
                 this.color = color;
-            } else {
+            }
+            if (color) {
+                this.follow = follow;
+            }
+            if (!color && this.follow) {
                 color = this.color;
             }
+            process.stdout.clearLine();
+            process.stdout.cursorTo(0);
             msg = colors[color] && colors[color](msg) || msg;
             console.log(msg);
         },
-        showJson (obj, pretty) {
+        showJson (obj, pretty, color) {
             const msg = pretty ? JSON.stringify(obj, null, 2) : JSON.stringify(obj);
-            this.print(msg);
-            this.prompt();
+            this.print(msg, color);
+            rl.prompt(true);
         },
         log (msg) {
             this.print(msg);
-            this.prompt();
+            rl.prompt(true);
         },
         prompt () {
             rl.prompt(true);
@@ -123,11 +127,11 @@ module.exports = (cmds, options = {}) => {
         },
         success (msg) {
             this.print(msg, 'green');
-            this.prompt();
+            rl.prompt(true);
         },
         error (error) {
             this.print(error, 'red');
-            this.prompt();
+            rl.prompt(true);
         },
         fatal (error) {
             this.error(error);
@@ -137,8 +141,8 @@ module.exports = (cmds, options = {}) => {
             rl.close();
         },
         clear() {
-            shell.exec('printf "\33c\e[3J"');
-            this.prompt();
+            shell.exec('printf "\\33c\\e[3J"');
+            rl.prompt(true);
         },
         dropHistory() {
             rl.history = _.drop(rl.history);
@@ -146,7 +150,7 @@ module.exports = (cmds, options = {}) => {
         showHistory(n = 10) {
             const _history = _.slice(rl.history, 0, n).map((o, i) => `${i+1}: ${o}`);
             this.print(_history.join('\n'), 'blue');
-            this.prompt();
+            rl.prompt(true);
         },
         useHistory(n = 1) {
             const line = rl.history[+n-1];
