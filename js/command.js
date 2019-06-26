@@ -1,10 +1,11 @@
-const colors = require('colors/safe');
+const chalk = require("chalk");
 const readline = require('readline');
 const fs = require('fs-extra');
 const path = require('path');
 const osHomedir = require('os-homedir');
 const shell = require('shelljs');
 const _ = require('lodash');
+const hl = require('./hl');
 
 function checkCommand(cmds, line) {
     for (let key in cmds) {
@@ -107,12 +108,18 @@ module.exports = (cmds, options = {}) => {
             }
             process.stdout.clearLine();
             process.stdout.cursorTo(0);
-            msg = colors[color] && colors[color](msg) || msg;
+            msg = chalk[color] && chalk[color](msg) || msg;
             console.log(msg);
         },
-        showJson (obj, pretty, color) {
+        showJson (obj, pretty) {
             const msg = pretty ? JSON.stringify(obj, null, 2) : JSON.stringify(obj);
-            this.print(msg, color);
+            this.code(msg, 'json');
+            rl.prompt(true);
+        },
+        code (text, lang, hsBg) {
+            process.stdout.clearLine();
+            process.stdout.cursorTo(0);
+            console.log(hl(text, 'railscasts', lang, hsBg));
             rl.prompt(true);
         },
         log (msg) {
@@ -123,7 +130,7 @@ module.exports = (cmds, options = {}) => {
             rl.prompt(true);
         },
         question (msg, callback) {
-            rl.question(colors['blue'](msg), callback);
+            rl.question(chalk['blue'](msg), callback);
         },
         success (msg) {
             this.print(msg, 'green');

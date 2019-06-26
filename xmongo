@@ -270,7 +270,7 @@ async function showTableLines (line, { db }) {
         if (err) {
             this.print('no record', 'red');
         } else {
-            this.showJson(docs, true, 'green');
+            this.showJson(docs, _prettyShell);
         }
     });
 }
