@@ -708,9 +708,9 @@ function __rm_files()
 	__ask "确认要删除以上文件吗"
 	if [ $? = 0 ];then
 		if __mac;then
-			pbpaste|xargs -I bbbb rm -fr bbbb
+			pbpaste|xargs -I bbbb xrm bbbb
 		else
-			cat /dev/clipboard|sed -e 's/$.*//'|xargs -I bbbb rm -fr bbbb
+			cat /dev/clipboard|sed -e 's/$.*//'|xargs -I bbbb xrm bbbb
 		fi
 	fi
 }
