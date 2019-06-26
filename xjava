@@ -27,7 +27,7 @@ fi
 m2_jar=(`cat ${classpath_file} 2>/dev/null`)
 m2_classpath=".${sep}moment-1.0.0.jar${sep}underscore-1.45.jar"
 for x in "${m2_jar[@]}";do
-	m2_classpath="${x}${sep}${m2_classpath}"
+	m2_classpath="${m2_classpath}${sep}${x}"
 done
 
 function xjavaGetPackage()
@@ -159,7 +159,7 @@ function xjavaExecute()
 		xjavaCompileJava
 	fi
 	if [ $_android -eq 0 ];then
-		java -cp bin/classes:${m2_classpath} -Djava.library.path=libs $_full_class_name
+		java -cp bin/classes${sep}${m2_classpath} -Djava.library.path=libs $_full_class_name
 	else
 		echo "not complete!"
 	fi
