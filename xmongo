@@ -17,9 +17,7 @@ async function createMongo (commands, options) {
         const words = line.replace(/\s,\s/g, ',').trimLeft().split(/\s/);
         const linePartial = _.last(_.last(words).split(','));
         let list = [];
-        if (words.length <= 1) {
-            list = ['db'].filter((o) => o.startsWith(linePartial));
-        } else {
+        if (words.length > 1) {
             const preWord = _.toLower(_.nth(words, -2));
             if (_.includes(['ls', 's', 'm', 'r', 'c'], preWord)) {
                 list = tables.filter((o) => o.startsWith(linePartial));
@@ -167,12 +165,17 @@ async function formatFields(db, table, line) {
     if (!line || line === '*') {
         return {};
     }
+    let include = true;
+    if (line[0] === '-') {
+        include = false;
+        line = line.substr(1);
+    }
     let list = line.split(',');
     const allFields = await getFieldsOfTable(db, table);
     list = list.map(o => new RegExp(o.replace('<', '^').replace('>', '$'), 'i'));
 
     const fields = {};
-    allFields.filter(o=>_.some(list, r=>r.test(o))).forEach(o=>fields[o] = 1);
+    allFields.filter(o=>_.some(list, r=>r.test(o))).forEach(o=>fields[o] = include ? 1 : 0);
     return fields;
 }
 function formatLine(line) {

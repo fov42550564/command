@@ -77,11 +77,16 @@ async function formatFields(self, table, line, db) {
     if (!line || line === '*') {
         return '*';
     }
+    let method = _.filter;
+    if (line[0] === '-') {
+        method = _.reject;
+        line = line.substr(1);
+    }
     let list = line.split(',');
     const allFields = getFieldsOfTable(table);
     list = list.map(o => new RegExp(o.replace('<', '^').replace('>', '$'), 'i'));
 
-    return allFields.filter(o=>_.some(list, r=>r.test(o))).join(',');
+    return method(allFields, o=>_.some(list, r=>r.test(o))).join(',');
 }
 function formatLine(line) {
     return line
