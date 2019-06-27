@@ -99,6 +99,10 @@ events.line = _.wrap(events.line, function (cmd, line) {
     if (line === 'q' || line==='exit') {
         return this.close();
     }
+    if (line === 'cls') {
+        shell.exec('printf "\\33c\\e[3J"');
+        return this.prompt(true);
+    }
     if (/_\s*=|moment\s*=/.test(line)) {
         console.error('can not change const variable');
         line = '';

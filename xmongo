@@ -161,6 +161,33 @@ function formatResult(obj) {
     }
     return obj;
 }
+function formatUpdate(doc, line) {
+    if (!line) {
+        return null;
+    }
+    let list = line.split(',').filter(o=>o);
+    if (!list.length) {
+        return null;
+    }
+    const update = {};
+    for (const item of list) {
+        const items = item.split('=');
+        const key = items[0];
+        let value = items[1]||'';
+        const matches = _.uniq(value.match(/\$\w+/g));
+        for (const match of matches) {
+            value = value.replace(new RegExp(match.replace('$', '\\$'), 'g'), doc[match.replace('$', '')]);
+        }
+        if (/\+|-|\*|\//.test(value)) {
+            value = eval(value);
+        }
+        if (typeof doc[key] === 'number') {
+            value = +value;
+        }
+        update[key] = value;
+    }
+    return { $set: update };
+}
 async function formatFields(db, table, line) {
     if (!line || line === '*') {
         return {};
@@ -170,7 +197,7 @@ async function formatFields(db, table, line) {
         include = false;
         line = line.substr(1);
     }
-    let list = line.split(',');
+    let list = line.split(',').filter(o=>o);
     const allFields = await getFieldsOfTable(db, table);
     list = list.map(o => new RegExp(o.replace('<', '^').replace('>', '$'), 'i'));
 
@@ -287,16 +314,33 @@ async function modifyTable(line, { db }) {
     let limit = _.last(list);
     if (+limit == limit) {
         list = _.dropRight(list);
-        limit = +limit ? `LIMIT ${limit}` : '';
     } else {
-        limit = 'LIMIT 1';
-    }
-    const setFields = list[0];
-    if (!setFields) {
-        return this.error('invalid oper');
+        limit = 1;
     }
     const cond = formatCond(list[1]);
-    await executeSQL(this, `UPDATE ${table} SET ${setFields} ${cond} ${limit}`, db);
+    db[table].find(cond).limit(limit).toArray((err, docs)=>{
+        if (err) {
+            this.print('no record', 'red');
+        } else {
+            const update = formatUpdate(docs[0], list[0]);
+            if (!update) {
+                return this.error('invalid oper');
+            }
+            for (const doc of docs) {
+                db[table].findAndModify({
+                    query: { _id: doc._id },
+                    update,
+                    new: true
+                }, (err, ret) => {
+                    if (err) {
+                        this.print(err, 'red');
+                    } else {
+                        this.showJson(ret, _prettyShell);
+                    }
+                });
+            }
+        }
+    });
 }
 async function removeTable(line, { db }) {
     let list = formatLine(line);
