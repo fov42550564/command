@@ -11,6 +11,7 @@ const DATA_BASE = 'db_smart_plate';
 const CACHE = {};
 
 let _prettyShell = true;
+let _limit = 10;
 async function createMysql (commands, options) {
     const db = mysql.createConnection({
         host: process.argv[2] || 'localhost',
@@ -199,7 +200,7 @@ async function showTableLines (line, { db }) {
         list = _.dropRight(list);
         limit = +limit ? `LIMIT ${limit}` : '';
     } else {
-        limit = 'LIMIT 1';
+        limit = `LIMIT ${_limit}`;
     }
     let _fields, _cond;
     if (list.length == 1) {
@@ -228,7 +229,7 @@ async function modifyTable(line, { db }) {
         list = _.dropRight(list);
         limit = +limit ? `LIMIT ${limit}` : '';
     } else {
-        limit = 'LIMIT 1';
+        limit = `LIMIT ${_limit}`;
     }
     const setFields = list[0];
     if (!setFields) {
@@ -249,7 +250,7 @@ async function removeTable(line, { db }) {
         list = _.dropRight(list);
         limit = +limit ? `LIMIT ${limit}` : '';
     } else {
-        limit = 'LIMIT 1';
+        limit = `LIMIT ${_limit}`;
     }
     const cond = formatCond(list[0]);
     await executeSQL(this, `DELETE FROM ${table} ${cond} ${limit}`, db);
@@ -266,7 +267,7 @@ async function copyTableRows(line, { db }) {
         list = _.dropRight(list);
         limit = +limit ? `LIMIT ${limit}` : '';
     } else {
-        limit = 'LIMIT 1';
+        limit = `LIMIT ${_limit}`;
     }
     let condStr = '';
     let setFields =[];
@@ -315,6 +316,11 @@ function togglePrettyShell() {
     this.print('pretty format change to ' + _prettyShell);
     this.prompt();
 }
+function setDefaultLimit(line) {
+    _limit = +line || 10;
+    this.print('set limit to ' + _limit);
+    this.prompt();
+}
 function showHelp () {
     this.print('commands:', 'blue');
     this.print('    <h|help>: show help');
@@ -325,6 +331,7 @@ function showHelp () {
     this.print('    r(remove): removeTable # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
     this.print('    c(copy): copyTableRows # c table f1=$f1+1,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
     this.print('    _: togglePrettyShell');
+    this.print('    limit: setDefaultLimit');
     this.print('');
     this.prompt();
 }
@@ -338,6 +345,7 @@ const COMMANDS = {
     'r': removeTable,
     'c': copyTableRows,
     '-': togglePrettyShell,
+    'limit': setDefaultLimit,
     'default': executeLine,
 };
 

@@ -8,6 +8,7 @@ const DATA_BASE = 'fang';
 const CACHE = {};
 
 let _prettyShell = true;
+let _limit = 10;
 async function createMongo (commands, options) {
     const db = mongojs(DATA_BASE);
     const tables = await getTables(db);
@@ -59,35 +60,33 @@ function dropBrack(line) {
     return line;
 }
 function parseItem(item) {
-    const list = item.match(/(\w+)(>=|>|=|<=|<|~|#)(.*)/);
+    const list = item.match(/(\w+)(!=|>=|>|=|<=|<|~|#)(.*)/);
     if (!list) {
         return null;
     }
     const key = list[1];
     const oper = list[2];
-    const value = list[3];
+    let value = list[3];
 
     if (key === undefined || oper === undefined || value === undefined) {
         return null;
     }
+    if (value === 'null') {
+        value = null;
+    }
     switch (oper) {
-        case '>':
-            return { [key]: { $gt: +value } };
-        case '>=':
-            return { [key]: { $gte: +value } };
+        case '!=': return { [key]: { $ne: +value==value ? +value : value } };
+        case '>': return { [key]: { $gt: +value } };
+        case '>=': return { [key]: { $gte: +value } };
         case '=':
-            if (/<|>/.test(value)) {
-                return { [key]: new RegExp(value.replace(/</, '^').replace(/>/, '$')) };
-            }
-            return { [key]: +value == value ? +value : value };
-        case '<':
-            return { [key]: { $lt: +value } };
-        case '<=':
-            return { [key]: { $lte: +value } };
-        case '~':
+        if (/<|>/.test(value)) {
             return { [key]: new RegExp(value.replace(/</, '^').replace(/>/, '$')) };
-        case '#':
-            return { [key]: { $in: value.split(',') } };
+        }
+        return { [key]: +value == value ? +value : value };
+        case '<': return { [key]: { $lt: +value } };
+        case '<=': return { [key]: { $lte: +value } };
+        case '~': return { [key]: new RegExp(value.replace(/</, '^').replace(/>/, '$')) };
+        case '#': return { [key]: { $in: value.split(',') } };
     }
     return null;
 }
@@ -321,7 +320,7 @@ async function showTableLines (line, { db }) {
     if (+limit == limit) {
         list = _.dropRight(list);
     } else {
-        limit = 1;
+        limit = _limit;
     }
     let _fields, _cond;
     if (list.length == 1) {
@@ -337,7 +336,7 @@ async function showTableLines (line, { db }) {
     const fields = await formatFields(db, table, _fields);
     const cond = formatCond(_cond);
 
-    db[table].find(cond, fields).limit(limit).toArray((err, docs)=>{
+    db[table].find(cond, fields).limit(+limit).toArray((err, docs)=>{
         if (err) {
             this.print('no record', 'red');
         } else {
@@ -356,18 +355,15 @@ async function modifyTable(line, { db }) {
     if (+limit == limit) {
         list = _.dropRight(list);
     } else {
-        limit = 1;
+        limit = _limit;
     }
     const cond = formatCond(list[1]);
-    db[table].find(cond).limit(limit).toArray((err, docs)=>{
+    db[table].find(cond).limit(+limit).toArray((err, docs)=>{
         if (err) {
             this.print('no record', 'red');
         } else {
-            const update = formatUpdate(docs[0], list[0]);
-            if (!update) {
-                return this.error('invalid oper');
-            }
             for (const doc of docs) {
+                const update = formatUpdate(doc, list[0]) || [];
                 db[table].findAndModify({
                     query: { _id: doc._id },
                     update,
@@ -393,12 +389,28 @@ async function removeTable(line, { db }) {
     let limit = _.last(list);
     if (+limit == limit) {
         list = _.dropRight(list);
-        limit = +limit ? `LIMIT ${limit}` : '';
     } else {
-        limit = 'LIMIT 1';
+        limit = _limit;
     }
     const cond = formatCond(list[0]);
-    await executeSQL(this, `DELETE FROM ${table} ${cond} ${limit}`, db);
+    db[table].find(cond).limit(+limit).toArray((err, docs)=>{
+        if (err) {
+            this.print(err, 'red');
+        } else {
+            if (!docs.length) {
+                this.prompt();
+            }
+            for (const doc of docs) {
+                db[table].remove({ _id: doc._id }, true, (err, ret) => {
+                    if (err) {
+                        this.print(err, 'red');
+                    } else {
+                        this.showJson(ret, _prettyShell);
+                    }
+                });
+            }
+        }
+    });
 }
 async function copyTableRows(line, { db }) {
     let list = formatLine(line);
@@ -410,55 +422,49 @@ async function copyTableRows(line, { db }) {
     let limit = _.last(list);
     if (+limit == limit) {
         list = _.dropRight(list);
-        limit = +limit ? `LIMIT ${limit}` : '';
     } else {
-        limit = 'LIMIT 1';
+        limit = _limit;
     }
-    let condStr = '';
-    let setFields =[];
-    if (!list[1]) {
-        setFields = [];
-        condStr = list[0];
-    } else {
-        setFields = list[0].split(',').map(o=>o.split('='));
-        condStr = list[1];
-    }
-    const cond = formatCond(condStr);
-    const docs = await querySQL(this, db, `SELECT * FROM ${table} ${cond} ${limit}`);
-    const fields = await getFieldsOfTable(db, table).filter(o=>o!=='id');
-    for (const doc of docs) {
-        const values = fields.map(o=>{
-            // f1=$f1+1
-            const setField = _.find(setFields, m=>m[0]===o);
-            if (setField) {
-                let setValue = setField[1];
-                const matches = setValue.match(/\$\w+/g);
-                if (matches) {
-                    const tmps = matches.map(o=>o.replace('\$', ''));
-                    for (const tmp of tmps) {
-                        setValue = setValue.replace('$'+tmp, doc[tmp]);
+    const cond = formatCond(list[1]);
+    db[table].find(cond).limit(+limit).toArray((err, docs)=>{
+        if (err) {
+            this.print('no record', 'red');
+        } else {
+            if (!docs.length) {
+                this.prompt();
+            }
+            for (const doc of docs) {
+                const { _id, ..._doc } = doc;
+                db[table].save(_doc, (err, ret) => {
+                    if (err) {
+                        this.print(err, 'red');
+                    } else {
+                        const update = formatUpdate(_doc, list[0]) || {};
+                        db[table].findAndModify({
+                            query: { _id: ret._id },
+                            update,
+                            new: true
+                        }, (err, ret) => {
+                            if (err) {
+                                this.print(err, 'red');
+                            } else {
+                                this.showJson(ret, _prettyShell);
+                            }
+                        });
                     }
-                }
-                if (/[+-\\*/]/.test(setValue)) {
-                    return eval(eval(setValue));
-                }
-                return setValue;
+                });
             }
-            const item = doc[o];
-            if (item instanceof Date) {
-                return 'NULL';
-            }
-            if (doc[o] !== undefined) {
-                return JSON.stringify(doc[o]);
-            }
-            return 'NULL';
-        });
-        await executeSQL(this, `INSERT INTO ${table} (${fields.join(',')}) VALUES (${values.join(',')})`, db);
-    }
+        }
+    });
 }
 function togglePrettyShell() {
     _prettyShell = !_prettyShell;
     this.print('pretty format change to ' + _prettyShell);
+    this.prompt();
+}
+function setDefaultLimit(line) {
+    _limit = +line || 10;
+    this.print('set limit to ' + _limit);
     this.prompt();
 }
 function showHelp () {
@@ -471,6 +477,7 @@ function showHelp () {
     this.print('    r(remove): removeTable # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
     this.print('    c(copy): copyTableRows # c table f1=$f1+1,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
     this.print('    _: togglePrettyShell');
+    this.print('    limit: setDefaultLimit');
     this.print('');
     this.prompt();
 }
@@ -484,6 +491,7 @@ const COMMANDS = {
     'r': removeTable,
     'c': copyTableRows,
     '-': togglePrettyShell,
+    'limit': setDefaultLimit,
     'default': executeLine,
 };
 
