@@ -38,12 +38,19 @@ async function createMysql (commands, options) {
                 list = tables.filter((o) => o.startsWith(linePartial));
             }  else {
                 const prePreWord = _.toLower(_.nth(words, -3));
-                if (prePreWord === 's') {
+                if (_.includes(['s', 'm', 'r', 'c'], prePreWord)) {
                     const table = preWord;
                     const fields = CACHE[table];
                     list = fields.filter((o) => o.startsWith(linePartial));
                 } else {
-                    list = allFileds.filter((o) => o.startsWith(linePartial));
+                    const prePrePreWord = _.toLower(_.nth(words, -4));
+                    if (_.includes(['s', 'm', 'c'], prePrePreWord)) {
+                        const table = prePreWord;
+                        const fields = CACHE[table];
+                        list = fields.filter((o) => o.startsWith(linePartial));
+                    } else {
+                        list = allFileds.filter((o) => o.startsWith(linePartial));
+                    }
                 }
             }
         }

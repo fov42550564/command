@@ -12,6 +12,13 @@ async function createMongo (commands, options) {
     const db = mongojs(DATA_BASE);
     const tables = await getTables(db);
 
+    let allFileds = [];
+    for (const table of tables) {
+        const fields = await getFieldsOfTable(db, table);
+        allFileds = [...allFileds, ...fields];
+    }
+    allFileds = _.uniq(allFileds);
+
     // 添加表，字段的自动完成
     function completer(line) {
         const words = line.replace(/\s,\s/g, ',').trimLeft().split(/\s/);
@@ -23,12 +30,19 @@ async function createMongo (commands, options) {
                 list = tables.filter((o) => o.startsWith(linePartial));
             }  else {
                 const prePreWord = _.toLower(_.nth(words, -3));
-                if (prePreWord === 's') {
+                if (_.includes(['s', 'm', 'r', 'c'], prePreWord)) {
                     const table = preWord;
                     const fields = CACHE[table];
                     list = fields.filter((o) => o.startsWith(linePartial));
                 } else {
-                    list = allFileds.filter((o) => o.startsWith(linePartial));
+                    const prePrePreWord = _.toLower(_.nth(words, -4));
+                    if (_.includes(['s', 'm', 'c'], prePrePreWord)) {
+                        const table = prePreWord;
+                        const fields = CACHE[table];
+                        list = fields.filter((o) => o.startsWith(linePartial));
+                    } else {
+                        list = allFileds.filter((o) => o.startsWith(linePartial));
+                    }
                 }
             }
         }
@@ -169,25 +183,52 @@ function formatUpdate(doc, line) {
     if (!list.length) {
         return null;
     }
-    const update = {};
+    const set = {};
+    const unset = {};
     for (const item of list) {
         const items = item.split('=');
         const key = items[0];
         let value = items[1]||'';
+        if (value === 'null') {
+            set[key] = null;
+            continue;
+        }
+        if (value === '$unset') {
+            unset[key] = 1;
+            continue;
+        }
         const matches = _.uniq(value.match(/\$\w+/g));
         for (const match of matches) {
-            value = value.replace(new RegExp(match.replace('$', '\\$'), 'g'), doc[match.replace('$', '')]);
+            const refValue =  doc[match.replace('$', '')];
+            if (refValue != undefined) {
+                value = value.replace(new RegExp(match.replace('$', '\\$'), 'g'), refValue);
+            }
+        }
+        if (value === 'true') {
+            value = true;
+        } else if (value === 'false') {
+            value = false;
         }
         if (/\+|-|\*|\//.test(value)) {
-            value = eval(value);
+            try {
+                value = eval(value);
+            } catch(err) {}
         }
-        if (typeof doc[key] === 'number') {
+        if (doc[key] != undefined) {
+            if (typeof doc[key] === 'number') {
+                value = +value;
+            }
+            set[key] = value;
+            continue;
+        }
+        if (/^\d+(\.\d+)?$/.test(value)) {
             value = +value;
         }
-        update[key] = value;
+        set[key] = value;
     }
-    return { $set: update };
+    return { ...(_.size(set) ? { $set: set } : {}), ...(_.size(unset) ? { $unset: unset } : {}) };
 }
+
 async function formatFields(db, table, line) {
     if (!line || line === '*') {
         return {};
