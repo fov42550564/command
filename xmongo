@@ -181,11 +181,12 @@ async function format(self, line, db) {
     return line;
 }
 function formatResult(obj) {
+    if (obj instanceof Array) {
+        return obj.map(o=>formatResult(o));
+    }
     for (const key in obj) {
         const item = obj[key];
-        if (item instanceof Buffer) {
-            obj[key] = !!item.readInt8(0);
-        } else if (item instanceof Date) {
+        if (item instanceof Date) {
             obj[key] = moment(item).format('YYYY-MM-DD HH:mm:ss');
         }
     }
@@ -315,6 +316,9 @@ async function executeLine(line, { db }) {
     console.log(line);
     this.prompt();
 }
+function showJson(self, docs) {
+    self.showJson(formatResult(docs), _prettyShell);
+}
 async function showTables(line, { db }) {
     if (!line) { // show tables
         this.print('tables in '+ DATA_BASE +' :', 'red');
@@ -359,7 +363,7 @@ async function showTableLines (line, { db }) {
         if (err) {
             this.print('no record', 'red');
         } else {
-            this.showJson(docs, _prettyShell);
+            showJson(this, docs);
         }
     });
 }
@@ -391,7 +395,7 @@ async function modifyTable(line, { db }) {
                     if (err) {
                         this.print(err, 'red');
                     } else {
-                        this.showJson(ret, _prettyShell);
+                        showJson(this, ret);
                     }
                 });
             }
@@ -424,7 +428,7 @@ async function removeTable(line, { db }) {
                     if (err) {
                         this.print(err, 'red');
                     } else {
-                        this.showJson(ret, _prettyShell);
+                        showJson(this, ret);
                     }
                 });
             }
@@ -467,7 +471,7 @@ async function copyTableRows(line, { db }) {
                             if (err) {
                                 this.print(err, 'red');
                             } else {
-                                this.showJson(ret, _prettyShell);
+                                showJson(this, ret);
                             }
                         });
                     }
