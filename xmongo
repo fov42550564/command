@@ -60,7 +60,7 @@ function dropBrack(line) {
     return line;
 }
 function parseItem(item) {
-    const list = item.match(/(\w+)(!=|>=|>|=|<=|<|~|#)(.*)/);
+    const list = item.match(/(\w+)(!==|!=|>=|>|==|<=|<|=|~|#)(.*)/);
     if (!list) {
         return null;
     }
@@ -73,18 +73,35 @@ function parseItem(item) {
     }
     if (value === 'null') {
         value = null;
+    } else if (+value == value) {
+        value = +value
+    } else if (/^['"].*['"]$/.test(value)) {
+        value = value.replace(/^['"](.*)['"]$/, '$1');
     }
+
     switch (oper) {
-        case '!=': return { [key]: { $ne: +value==value ? +value : value } };
-        case '>': return { [key]: { $gt: +value } };
-        case '>=': return { [key]: { $gte: +value } };
-        case '=':
-        if (/<|>/.test(value)) {
-            return { [key]: new RegExp(value.replace(/</, '^').replace(/>/, '$')) };
+        case '!=':return { [key]: { $ne: value } };
+        case '!==':return { [key]: { $ne: value } };
+        case '>': return { [key]: { $gt: value } };
+        case '>=': return { [key]: { $gte: value } };
+        case '==':
+        case '=': {
+            if (/<|>/.test(value)) {
+                return { [key]: new RegExp(value.replace(/</, '^').replace(/>/, '$')) };
+            }
+            if (oper === '==') {
+                return { [key]: value };
+            }
+            const values = [ value ];
+            if (typeof value === 'number') {
+                values.push('' + value);
+            } else if (+value == value) {
+                values.push(+value);
+            }
+            return { [key]: { $in: values } };
         }
-        return { [key]: +value == value ? +value : value };
-        case '<': return { [key]: { $lt: +value } };
-        case '<=': return { [key]: { $lte: +value } };
+        case '<': return { [key]: { $lt: value } };
+        case '<=': return { [key]: { $lte: value } };
         case '~': return { [key]: new RegExp(value.replace(/</, '^').replace(/>/, '$')) };
         case '#': return { [key]: { $in: value.split(',') } };
     }
@@ -188,6 +205,14 @@ function formatUpdate(doc, line) {
         const items = item.split('=');
         const key = items[0];
         let value = items[1]||'';
+        if (value === 'true') {
+            set[key] = true;
+            continue;
+        }
+        if (value === 'false') {
+            set[key] = false;
+            continue;
+        }
         if (value === 'null') {
             set[key] = null;
             continue;
@@ -203,25 +228,15 @@ function formatUpdate(doc, line) {
                 value = value.replace(new RegExp(match.replace('$', '\\$'), 'g'), refValue);
             }
         }
-        if (value === 'true') {
-            value = true;
-        } else if (value === 'false') {
-            value = false;
-        }
         if (/\+|-|\*|\//.test(value)) {
             try {
                 value = eval(value);
             } catch(err) {}
         }
-        if (doc[key] != undefined) {
-            if (typeof doc[key] === 'number') {
-                value = +value;
-            }
-            set[key] = value;
-            continue;
-        }
-        if (/^\d+(\.\d+)?$/.test(value)) {
-            value = +value;
+        if (+value == value) {
+            value = +value
+        } else if (/^['"].*['"]$/.test(value)) {
+            value = value.replace(/^['"](.*)['"]$/, '$1');
         }
         set[key] = value;
     }
@@ -248,7 +263,10 @@ async function formatFields(db, table, line) {
 function formatLine(line) {
     return line
     .replace(/\s,\s/g, ',')
+    .replace(/\s!=\s/g, '!=')
+    .replace(/\s!==\s/g, '!==')
     .replace(/\s=\s/g, '=')
+    .replace(/\s==\s/g, '==')
     .replace(/\s~\s/g, '~')
     .replace(/\s\|\s/g, '|')
     .replace(/\s&\s/g, '&')
@@ -294,7 +312,8 @@ async function executeLine(line, { db }) {
         return this.prompt();
     }
     line = await format(this, line, db);
-    await executeSQL(this, line, db);
+    console.log(line);
+    this.prompt();
 }
 async function showTables(line, { db }) {
     if (!line) { // show tables
@@ -324,7 +343,7 @@ async function showTableLines (line, { db }) {
     }
     let _fields, _cond;
     if (list.length == 1) {
-        if (/>=|>\w|=|<=|<\w|~|#/.test(list[0])) {
+        if (/!=|!==|>=|>\w|==|=|<=|<\w|~|#/.test(list[0])) {
             _cond = list[0];
         } else {
             _fields = list[0];
