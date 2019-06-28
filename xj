@@ -105,7 +105,7 @@ function runCode(isHeader) {
             } else {
                 codes = _.dropRight(codes);
             }
-            this.dropHistory();
+            //this.dropHistory();
             this.print(stderr, 'red');
         } else if (stdout) {
             this.print(text, 'blue');

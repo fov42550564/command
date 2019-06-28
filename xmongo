@@ -4,8 +4,10 @@ const mongojs = require('mongojs');
 const moment = require('moment');
 const command = require('./js/command');
 const _ = require('lodash');
+const shell = require('shelljs');
 const DATA_BASE = 'fang';
 const CACHE = {};
+const MOCMD=`mongo 127.0.0.1:27017/${DATA_BASE} --eval`;
 
 let _prettyShell = true;
 let _limit = 10;
@@ -25,25 +27,31 @@ async function createMongo (commands, options) {
         const words = line.replace(/\s,\s/g, ',').trimLeft().split(/\s/);
         const linePartial = _.last(_.last(words).split(','));
         let list = [];
-        if (words.length > 1) {
-            const preWord = _.toLower(_.nth(words, -2));
-            if (_.includes(['ls', 's', 'm', 'r', 'c'], preWord)) {
-                list = tables.filter((o) => o.startsWith(linePartial));
-            }  else {
-                const prePreWord = _.toLower(_.nth(words, -3));
-                if (_.includes(['s', 'm', 'r', 'c'], prePreWord)) {
-                    const table = preWord;
+        if (words.length <= 1) {
+            const _linePartial = line.trim();
+            const _tables = tables.map(o=>`db.${o}`)
+            list = _tables.filter((o) => o.startsWith(_linePartial));
+            const found = list.filter((o) => o.startsWith(_linePartial));
+            return [found.length ? found : list, linePartial];
+        }
+
+        const preWord = _.toLower(_.nth(words, -2));
+        if (_.includes(['ls', 's', 'm', 'r', 'c'], preWord)) {
+            list = tables.filter((o) => o.startsWith(linePartial));
+        }  else {
+            const prePreWord = _.toLower(_.nth(words, -3));
+            if (_.includes(['s', 'm', 'r', 'c'], prePreWord)) {
+                const table = preWord;
+                const fields = CACHE[table];
+                list = fields.filter((o) => o.startsWith(linePartial));
+            } else {
+                const prePrePreWord = _.toLower(_.nth(words, -4));
+                if (_.includes(['s', 'm', 'c'], prePrePreWord)) {
+                    const table = prePreWord;
                     const fields = CACHE[table];
                     list = fields.filter((o) => o.startsWith(linePartial));
                 } else {
-                    const prePrePreWord = _.toLower(_.nth(words, -4));
-                    if (_.includes(['s', 'm', 'c'], prePrePreWord)) {
-                        const table = prePreWord;
-                        const fields = CACHE[table];
-                        list = fields.filter((o) => o.startsWith(linePartial));
-                    } else {
-                        list = allFileds.filter((o) => o.startsWith(linePartial));
-                    }
+                    list = allFileds.filter((o) => o.startsWith(linePartial));
                 }
             }
         }
@@ -170,15 +178,6 @@ function formatCond(line) {
         return {};
     }
     return parseOr(dropBrack(line));
-}
-async function format(self, line, db) {
-    const matches = line.match(/select(.*)from\s*(\w+)/);
-    if (matches) {
-        let list = matches[1].split(/,|\s/).filter(o=>o).join(',');
-        const fields = await formatFields(db, matches[2], list);
-        line = line.replace(/select.*from/, `select ${fields} from`);
-    }
-    return line;
 }
 function formatResult(obj) {
     if (obj instanceof Array) {
@@ -312,8 +311,19 @@ async function executeLine(line, { db }) {
     if (!line) {
         return this.prompt();
     }
-    line = await format(this, line, db);
-    console.log(line);
+    shell.exec(`${MOCMD} "${line}"`, { silent:true }, (code, stdout, stderr) => {
+        if (stderr) {
+            this.print(stderr, 'red');
+            this.prompt();
+        } else if (stdout) {
+            const list = stdout.split('\n').filter(o=>o && !/MongoDB|connecting|Implicit/.test(o));
+            for (let item of list) {
+                item = item.replace(/ObjectId\(([^)]*)\)/g, '$1');
+                item = item.replace(/ISODate\(([^)]*)\)/g, '$1');
+                showJson(this, JSON.parse(item));
+            }
+        }
+    });
     this.prompt();
 }
 function showJson(self, docs) {
