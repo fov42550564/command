@@ -561,8 +561,8 @@ function __simple_mv()
 #Usage: __simple_mv file1 file2
 ########################################
 	local f1 f2
-	f1="$1"
-	f2="$2"
+	f1=`echo $1|sed 's/__x__/ /g'`
+	f2=`echo $2|sed 's/__x__/ /g'`
 	if ! [ -a "$f1" ];then
 		echo "$f1 not exits"
 		return $_FALSE_
@@ -574,7 +574,7 @@ function __simple_mv()
 		return $_FALSE_
 	fi
 
-	name=`basename $f1`
+	name=`basename "$f1"`
 	if [ -d "$f2" ];then
 		if [ -a "$f2/$name" ]; then
 			__rm "$f2/$name"
@@ -639,14 +639,14 @@ function __rm()
 ########################################
 #Usage: __rm file1 dir1 ...
 ########################################
-	local var prefix orgin
+	local var prefix origin
 	prefix=$(date '+%Y-%m-%d-%H-%M-%S')
 	for var in "$@";do
 		if [ -a "$var" ];then
-			orgin=`__get_full_path "$var"`
-			orgin=${orgin////#}
-			echo mv "$var" "$HOME/.Trash/$prefix$orgin"
-			mv "$var" "$HOME/.Trash/$prefix$orgin"
+			origin=`__get_full_path "$var"`
+			origin=${origin////#}
+			echo mv "$var" "$HOME/.Trash/$prefix$origin"
+			mv "$var" "$HOME/.Trash/$prefix$origin"
 		else
 			echo "$var not exits"
 		fi
@@ -658,28 +658,28 @@ function __recover()
 ########################################
 #Usage: __recover [-l|date]
 ########################################
-	local orgin files file var var1
-	orgin=${PWD////#}
-
+	local origin files file var var1
+	origin=${PWD////#}
+	origin=`echo $origin|sed 's/\s/__x__/g'`
 	if [ -z "$1" -o "$1" = "-h" ];then
 		echo "rmr -l|date"
 		return $_FALSE_
 	fi
 	if [ "$1" = "-l" ];then
 		i=1
-		files=(`ls $HOME/.Trash|grep "${orgin}"`)
-		for var in ${files[@]};do
+		files=(`ls $HOME/.Trash|sed 's/\s/__x__/g'|grep "${origin}"`)
+		for var in "${files[@]}";do
 			var=${var##*/}
-			var=${var%%#*}/${var##*${orgin}#}
-			echo $i: ${var}
+			var=${var%%#*}/${var##*${origin}#}
+			echo $i: `echo $var|sed 's/__x__/ /g'`
 			((i++))
 		done
 		return $_TRUE_
 	fi
-	files=(`ls $HOME/.Trash|grep "${1}${orgin}"`)
+	files=(`ls $HOME/.Trash|sed 's/\s/__x__/g'|grep "${1}${origin}"`)
 	for var in ${files[@]};do
 		var1="#${var#*#}"
-		file="${var1#${orgin}#}"
+		file="${var1#${origin}#}"
 		if [ "${file%#*}" != "$file" ];then
 			echo "先恢复子文件夹"
 			return $_FALSE_
@@ -688,8 +688,13 @@ function __recover()
 
 	for var in ${files[@]};do
 		var1="#${var#*#}"
-		file="${var1#${orgin}#}"
-		echo __mv "$HOME/.Trash/$var" "$file"
+		file="${var1#${origin}#}"
+		_var=`echo $var|sed 's/__x__/ /g'`
+		if [ "$var" = "$_var" ];then
+			echo mv "$HOME/.Trash/$var" "$file"
+		else
+			echo mv "\"$HOME/.Trash/$_var\"" "$file"
+		fi
 		__mv "$HOME/.Trash/$var" "$file"
 	done
 	return $_TRUE_
