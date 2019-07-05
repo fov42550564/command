@@ -690,10 +690,19 @@ function __recover()
 		var1="#${var#*#}"
 		file="${var1#${origin}#}"
 		_var=`echo $var|sed 's/__x__/ /g'`
+		_file=`echo $file|sed 's/__x__/ /g'`
 		if [ "$var" = "$_var" ];then
-			echo mv "$HOME/.Trash/$var" "$file"
+			if [ "$file" = "$_file" ];then
+				echo mv "$HOME/.Trash/$var" "$file"
+			else
+				echo mv "$HOME/.Trash/$var" "\"$_file\""
+			fi
 		else
-			echo mv "\"$HOME/.Trash/$_var\"" "$file"
+			if [ "$file" = "$_file" ];then
+				echo mv "\"$HOME/.Trash/$_var\"" "$file"
+			else
+				echo mv "\"$HOME/.Trash/$_var\"" "\"$_file\""
+			fi
 		fi
 		__mv "$HOME/.Trash/$var" "$file"
 	done
