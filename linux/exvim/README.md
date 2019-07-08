@@ -1,2 +1,2 @@
-1. sh osx/install.sh
-2. sh osx/replace-my-vim.sh
+1. sh tools/install.sh
+2. sh tools/replace-my-vim.sh
