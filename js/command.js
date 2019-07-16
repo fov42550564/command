@@ -119,7 +119,7 @@ module.exports = (cmds, options = {}) => {
         code (text, lang, hsBg) {
             process.stdout.clearLine();
             process.stdout.cursorTo(0);
-            console.log(hl(text, 'railscasts', lang, hsBg));
+            console.log(hl(text, process.platform === 'win32' ? 'railscasts' : 'github', lang, hsBg));
             rl.prompt(true);
         },
         log (msg) {
