@@ -85,6 +85,9 @@ async function formatFields(self, table, line, db) {
     if (!line || line === '*') {
         return '*';
     }
+    if (/\(/.test(line)) {
+        return line;
+    }
     let method = _.filter;
     if (line[0] === '-') {
         method = _.reject;
