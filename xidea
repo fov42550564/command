@@ -214,6 +214,14 @@ function genrate_param() {
     fi
 }
 
+function genrate_param_from_entity() {
+    if __mac ;then
+        pbpaste|sed '/@Column/d'|sed 's/private //'|sed -n 'h;$!{n;G};p'|sed -n '{N;s/\n/\t/p}'|sed 's/\s\+/ /g;s/;/,/;$s/,//'|pbcopy
+    else
+         cat /dev/clipboard|sed '/@Column/d'|sed 's/private //'|sed -n 'h;$!{n;G};p'|sed -n '{N;s/\n/\t/p}'|sed 's/\s\+/ /g;s/;/,/;$s/,//' > /dev/clipboard
+    fi
+}
+
 function clear_ifnull() {
     if __mac ;then
         pbpaste|sed 's/@IfNull[^)]*)\s*//'|pbcopy
@@ -238,6 +246,7 @@ function show_help()
 	list=("${list[@]}" "  -s [class:function]: generate service code")
 	list=("${list[@]}" "  -f [file:oldName:newName]: copy file")
 	list=("${list[@]}" "  -c [oldClass:newClass]: copy Controller Service and ServerImpl")
+	list=("${list[@]}" "  -e: genrate param from entity in clipboard")
 	list=("${list[@]}" "  -p: genrate param without comment in clipboard")
 	list=("${list[@]}" "  -j: genrate param for js")
 	list=("${list[@]}" "  -i: delete @IfNull in clipboard")
@@ -255,7 +264,7 @@ function main()
 		exit
 	fi
 
-	while getopts :s:f:c:pijh opt;do
+	while getopts :s:f:c:peijh opt;do
 		oper_right=1
 		case $opt in
 			s)_oper=0;param="$OPTARG";;
@@ -264,6 +273,7 @@ function main()
 			p)_oper=3;;
 			i)_oper=4;;
 			j)_oper=5;;
+			e)_oper=6;;
 			*)show_help;exit;;
 		esac
 	done
@@ -275,6 +285,7 @@ function main()
 		3)genrate_param;;
 		4)clear_ifnull;;
         5)genrate_param_for_js;;
+        6)genrate_param_from_entity;;
 	esac
 }
 
