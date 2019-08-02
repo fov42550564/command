@@ -156,6 +156,8 @@ alias mhmv='cp /Volumes/home/方运江/*'
 #vim
 alias vi='vim'
 alias clearvim='rm -fr ~/.data/swap'
+#.DS
+alias clearmac='find -name .DS_* -exec rm {} \;'
 
 #react
 function react() { cp "${HOME}/command/linux/atom/snippets/react${1}.cson" "${HOME}/.atom/packages/react/snippets/JavaScript (JSX).cson"; }
