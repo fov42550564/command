@@ -132,6 +132,10 @@ module.exports = (cmds, options = {}) => {
         question (msg, callback) {
             rl.question(chalk['blue'](msg), callback);
         },
+        verbose (msg) {
+            this.print(msg, 'gray');
+            rl.prompt(true);
+        },
         success (msg) {
             this.print(msg, 'green');
             rl.prompt(true);

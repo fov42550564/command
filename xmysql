@@ -10,6 +10,7 @@ const _ = require('lodash');
 const DATA_BASE = 'db_smart_plate';
 const CACHE = {};
 
+let _verbose = true;
 let _prettyShell = true;
 let _limit = 10;
 async function createMysql (commands, options) {
@@ -126,6 +127,13 @@ function getFieldsOfTable(table) {
     return CACHE[table];
 }
 function querySQL(self, db, query) {
+    if (_verbose) {
+        if (self) {
+            self.verbose(query);
+        } else {
+            console.log(query);
+        }
+    }
     return new Promise(resolve=>{
         db.query(query, (err, results) => {
             if (err) {
@@ -184,6 +192,8 @@ function formatCond(line) {
         return '';
     }
     return 'WHERE ' + line
+    .replace(/!=null|!=NULL/g, ' is not null ')
+    .replace(/=null|=NULL/g, ' is null ')
     .replace(/&/g, ' AND ')
     .replace(/\|/g, ' OR ')
     .replace(/~/g, ' LIKE ')
@@ -207,7 +217,7 @@ async function showTableLines (line, { db }) {
     }
     let _fields, _cond;
     if (list.length == 1) {
-        if (/>=|>\w|=|<=|<\w|~|#/.test(list[0])) {
+        if (/!=|>=|>\w|=|<=|<\w|~|#/.test(list[0])) {
             _cond = list[0];
         } else {
             _fields = list[0];
@@ -319,6 +329,11 @@ function togglePrettyShell() {
     this.print('pretty format change to ' + _prettyShell);
     this.prompt();
 }
+function toggleVerbose() {
+    _verbose = !_verbose;
+    this.print('verbose format change to ' + _verbose);
+    this.prompt();
+}
 function setDefaultLimit(line) {
     _limit = +line || 10;
     this.print('set limit to ' + _limit);
@@ -334,6 +349,7 @@ function showHelp () {
     this.print('    r(remove): removeTable # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
     this.print('    c(copy): copyTableRows # c table f1=$f1+1,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
     this.print('    _: togglePrettyShell');
+    this.print('    verbose: toggleVerbose');
     this.print('    limit: setDefaultLimit');
     this.print('');
     this.prompt();
@@ -348,6 +364,7 @@ const COMMANDS = {
     'r': removeTable,
     'c': copyTableRows,
     '-': togglePrettyShell,
+    'verbose': toggleVerbose,
     'limit': setDefaultLimit,
     'default': executeLine,
 };
