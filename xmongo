@@ -9,6 +9,7 @@ const DATA_BASE = 'fang';
 const CACHE = {};
 const MOCMD=`mongo 127.0.0.1:27017/${DATA_BASE} --eval`;
 
+let _verbose = true;
 let _prettyShell = true;
 let _limit = 10;
 async function createMongo (commands, options) {
@@ -369,6 +370,9 @@ async function showTableLines (line, { db }) {
     const fields = await formatFields(db, table, _fields);
     const cond = formatCond(_cond);
 
+    if (_verbose) {
+        this.verbose(`db.${table}.find(${cond}, ${fields}).limit(${+limit})`);
+    }
     db[table].find(cond, fields).limit(+limit).toArray((err, docs)=>{
         if (err) {
             this.print('no record', 'red');
@@ -391,6 +395,9 @@ async function modifyTable(line, { db }) {
         limit = _limit;
     }
     const cond = formatCond(list[1]);
+    if (_verbose) {
+        this.verbose(`db.${table}.update(${cond}).limit(${+limit})`);
+    }
     db[table].find(cond).limit(+limit).toArray((err, docs)=>{
         if (err) {
             this.print('no record', 'red');
@@ -426,6 +433,9 @@ async function removeTable(line, { db }) {
         limit = _limit;
     }
     const cond = formatCond(list[0]);
+    if (_verbose) {
+        this.verbose(`db.${table}.remove(${cond}).limit(${+limit})`);
+    }
     db[table].find(cond).limit(+limit).toArray((err, docs)=>{
         if (err) {
             this.print(err, 'red');
@@ -459,6 +469,9 @@ async function copyTableRows(line, { db }) {
         limit = _limit;
     }
     const cond = formatCond(list[1]);
+    if (_verbose) {
+        this.verbose(`db.${table}.copy(${cond}).to(${update}).limit(${+limit})`);
+    }
     db[table].find(cond).limit(+limit).toArray((err, docs)=>{
         if (err) {
             this.print('no record', 'red');
@@ -495,6 +508,11 @@ function togglePrettyShell() {
     this.print('pretty format change to ' + _prettyShell);
     this.prompt();
 }
+function toggleVerbose() {
+    _verbose = !_verbose;
+    this.print('verbose format change to ' + _verbose);
+    this.prompt();
+}
 function setDefaultLimit(line) {
     _limit = +line || 10;
     this.print('set limit to ' + _limit);
@@ -510,6 +528,7 @@ function showHelp () {
     this.print('    r(remove): removeTable # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
     this.print('    c(copy): copyTableRows # c table f1=$f1+1,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
     this.print('    _: togglePrettyShell');
+    this.print('    verbose: toggleVerbose');
     this.print('    limit: setDefaultLimit');
     this.print('');
     this.prompt();
@@ -524,6 +543,7 @@ const COMMANDS = {
     'r': removeTable,
     'c': copyTableRows,
     '-': togglePrettyShell,
+    'verbose': toggleVerbose,
     'limit': setDefaultLimit,
     'default': executeLine,
 };
