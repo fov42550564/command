@@ -94,6 +94,8 @@ async function formatFields(self, table, line, db) {
 }
 function formatLine(line) {
     return line
+    .replace(/"[^"]+"/g, o=>o.replace(' ', '&nbsp;'))
+    .replace(/'[^']+'/g, o=>o.replace(' ', '&nbsp;'))
     .replace(/\s,\s/g, ',')
     .replace(/\s!=\s/g, '!=')
     .replace(/\s=\s/g, '=')
@@ -101,7 +103,7 @@ function formatLine(line) {
     .replace(/\s\|\s/g, '|')
     .replace(/\s&\s/g, '&')
     .replace(/\s#\s/g, '#')
-    .trim().split(/\s/).filter(o=>o);
+    .trim().split(/\s/).filter(o=>o).map(o=>o.replace('&nbsp;', ' '));
 }
 async function getTables(self, db) {
     if (!CACHE._tables) {
@@ -183,7 +185,7 @@ function formatCond(line) {
     .replace(/~[^&)|]+/g, o=>{let m = o[1]==='<'?o.slice(2):`%${o.substr(1)}`;return _.last(m)==='>'?` LIKE "${m.slice(0, -1)}"`:` LIKE "${m}%"`})
     .replace(/!=null|!=NULL/g, ' is not null ')
     .replace(/=null|=NULL/g, ' is null ')
-    .replace(/(>=|<=|!=|=)([^&)|]+)/g, (o, m, n)=>`${m}${m==='='||m==='!='?`"${n}"`: n}`)
+    .replace(/(>=|<=|!=|=)([^&)|]+)/g, (o, m, n)=>`${m}${(m==='='||m==='!=')&&((n[0]!==`"`&& _.last(n)!==`"`)&&(n[0]!==`'`&& _.last(n)!==`'`))?`"${n}"`: n}`)
     .replace(/&/g, ' AND ')
     .replace(/\|/g, ' OR ')
     .replace(/#([\w,]*)/g, ' IN ($1)');
