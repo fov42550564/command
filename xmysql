@@ -62,15 +62,6 @@ async function createMysql (commands, options) {
 
     command(commands, { ...options, db, completer });
 }
-async function format(self, line, db) {
-    const matches = line.match(/select([^.]*)from\s*(\w+)/);
-    if (matches) {
-        let list = matches[1].split(/,|\s/).filter(o=>o).join(',');
-        const fields = await formatFields(this, matches[2], list, db);
-        line = line.replace(/select.*from/, `select ${fields} from`);
-    }
-    return line;
-}
 function formatResult(obj) {
     for (const key in obj) {
         const item = obj[key];
@@ -159,7 +150,6 @@ async function executeLine(line, { db }) {
     if (!line) {
         return this.prompt();
     }
-    line = await format(this, line, db);
     await executeSQL(this, line, db);
 }
 async function showTables(line, { db }) {
