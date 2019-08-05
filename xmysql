@@ -94,6 +94,7 @@ async function formatFields(self, table, line, db) {
 function formatLine(line) {
     return line
     .replace(/\s,\s/g, ',')
+    .replace(/\s!=\s/g, '!=')
     .replace(/\s=\s/g, '=')
     .replace(/\s~\s/g, '~')
     .replace(/\s\|\s/g, '|')
@@ -178,13 +179,12 @@ function formatCond(line) {
         return '';
     }
     return 'WHERE ' + line
+    .replace(/~[^&)|]+/g, o=>{let m = o[1]==='<'?o.slice(2):`%${o.substr(1)}`;return _.last(m)==='>'?` LIKE "${m.slice(0, -1)}"`:` LIKE "${m}%"`})
     .replace(/!=null|!=NULL/g, ' is not null ')
     .replace(/=null|=NULL/g, ' is null ')
+    .replace(/(>=|<=|!=|=)([^&)|]+)/g, (o, m, n)=>`${m}${m==='='||m==='!='?`"${n}"`: n}`)
     .replace(/&/g, ' AND ')
     .replace(/\|/g, ' OR ')
-    .replace(/~/g, ' LIKE ')
-    .replace(/</g, '%')
-    .replace(/>/g, '%')
     .replace(/#([\w,]*)/g, ' IN ($1)');
 }
 async function showTableLines (line, { db }) {
