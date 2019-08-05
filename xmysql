@@ -10,7 +10,7 @@ const _ = require('lodash');
 const DATA_BASE = 'db_smart_plate';
 const CACHE = {};
 
-let _verbose = true;
+let _verbose = false;
 let _prettyShell = true;
 let _limit = 10;
 async function createMysql (commands, options) {
@@ -345,7 +345,7 @@ function showHelp () {
     this.print('    r(remove): removeTable # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
     this.print('    c(copy): copyTableRows # c table f1=$f1+1,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
     this.print('    _: togglePrettyShell');
-    this.print('    verbose: toggleVerbose');
+    this.print('    v: toggleVerbose');
     this.print('    limit: setDefaultLimit');
     this.print('');
     this.prompt();
@@ -360,7 +360,7 @@ const COMMANDS = {
     'r': removeTable,
     'c': copyTableRows,
     '-': togglePrettyShell,
-    'verbose': toggleVerbose,
+    'v': toggleVerbose,
     'limit': setDefaultLimit,
     'default': executeLine,
 };
