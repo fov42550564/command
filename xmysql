@@ -329,7 +329,7 @@ function showHelp () {
     this.print('commands:', 'blue');
     this.print('    <h|help>: show help');
     this.print('    <q|exit>: exit');
-    this.print('    ls(l): showTables|ls -: showDatabases|ls table: showTableFields');
+    this.print('    ls: showTables|ls -: showDatabases|ls table: showTableFields');
     this.print('    s(show): showTableLines # s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
     this.print('    m(modify): modifyTable # m table f1=xx,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
     this.print('    r(remove): removeTable # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
@@ -344,7 +344,7 @@ const COMMANDS = {
     'h|help': showHelp,
     'q|exit': function () { this.close() },
     'cls': function() { this.clear() },
-    'l|ls': showTables,
+    'ls': showTables,
     's': showTableLines,
     'm': modifyTable,
     'r': removeTable,

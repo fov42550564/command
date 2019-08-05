@@ -308,24 +308,38 @@ async function getFieldsOfTable(db, table) {
     }
     return CACHE[table];
 }
+async function nativeMongo(line) {
+    return new Promise(resolve=>{
+        if (!line) {
+            resolve();
+        }
+        shell.exec(`${MOCMD} "${line}"`, { silent:true }, (code, stdout, stderr) => {
+            if (stderr) {
+                resolve();
+            } else if (stdout) {
+                const list = stdout.split('\n').filter(o=>o && !/MongoDB|connecting|Implicit/.test(o));
+                if (!list.length) {
+                    return resolve();
+                }
+                for (let item of list) {
+                    item = item.replace(/ObjectId\(([^)]*)\)/g, '$1');
+                    item = item.replace(/ISODate\(([^)]*)\)/g, '$1');
+                    let ret;
+                    try {
+                        ret = JSON.parse(item);
+                    } catch (e) {}
+                    resolve(ret);
+                }
+            }
+        });
+    });
+}
 async function executeLine(line, { db }) {
-    if (!line) {
+    const ret = await nativeMongo(line);
+    if (!ret) {
         return this.prompt();
     }
-    shell.exec(`${MOCMD} "${line}"`, { silent:true }, (code, stdout, stderr) => {
-        if (stderr) {
-            this.print(stderr, 'red');
-            this.prompt();
-        } else if (stdout) {
-            const list = stdout.split('\n').filter(o=>o && !/MongoDB|connecting|Implicit/.test(o));
-            for (let item of list) {
-                item = item.replace(/ObjectId\(([^)]*)\)/g, '$1');
-                item = item.replace(/ISODate\(([^)]*)\)/g, '$1');
-                showJson(this, JSON.parse(item));
-            }
-        }
-    });
-    this.prompt();
+    showJson(this, ret);
 }
 function showJson(self, docs) {
     self.showJson(formatResult(docs), _prettyShell);
@@ -335,6 +349,11 @@ async function showTables(line, { db }) {
         this.print('tables in '+ DATA_BASE +' :', 'red');
         const tables = await getTables(db);
         this.print(tables.join('  '), 'green');
+        this.prompt();
+    } else if (line === '-') { // show databases
+        this.print('databases :', 'red');
+        const dbs = await nativeMongo('db.getMongo().getDBs().databases.map(o=>o.name)');
+        this.print(dbs.join('  '), 'green');
         this.prompt();
     } else { // show table fields
         line = line.replace(/[^\w]*/g, '');
@@ -522,7 +541,7 @@ function showHelp () {
     this.print('commands:', 'blue');
     this.print('    <h|help>: show help');
     this.print('    <q|exit>: exit');
-    this.print('    ls(l): showTables|ls -: showDatabases|ls table: showTableFields');
+    this.print('    ls: showTables|ls -: showDatabases|ls table: showTableFields');
     this.print('    s(show): showTableLines # s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
     this.print('    m(modify): modifyTable # m table f1=xx,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
     this.print('    r(remove): removeTable # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
@@ -537,7 +556,7 @@ const COMMANDS = {
     'h|help': showHelp,
     'q|exit': function () { this.close() },
     'cls': function() { this.clear() },
-    'l|ls': showTables,
+    'ls': showTables,
     's': showTableLines,
     'm': modifyTable,
     'r': removeTable,
