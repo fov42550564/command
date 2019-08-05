@@ -127,12 +127,8 @@ function getFieldsOfTable(table) {
     return CACHE[table];
 }
 function querySQL(self, db, query) {
-    if (_verbose) {
-        if (self) {
-            self.verbose(query);
-        } else {
-            console.log(query);
-        }
+    if (_verbose && self) {
+        self.verbose(query);
     }
     return new Promise(resolve=>{
         db.query(query, (err, results) => {
