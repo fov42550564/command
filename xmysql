@@ -61,6 +61,7 @@ async function createMysql (commands, options) {
     }
 
     command(commands, { ...options, db, completer });
+    _verbose = true;
 }
 function formatResult(obj) {
     for (const key in obj) {
