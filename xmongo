@@ -5,11 +5,11 @@ const moment = require('moment');
 const command = require('./js/command');
 const _ = require('lodash');
 const shell = require('shelljs');
-const DATA_BASE = 'fang';
+const DATA_BASE = 'db_smart_plate';
 const CACHE = {};
 const MOCMD=`mongo 127.0.0.1:27017/${DATA_BASE} --eval`;
 
-let _verbose = false;
+let _verbose = true;
 let _prettyShell = true;
 let _limit = 10;
 async function createMongo (commands, options) {
@@ -102,7 +102,9 @@ function parseItem(item) {
                 return { [key]: value };
             }
             const values = [ value ];
-            if (typeof value === 'number') {
+            if (/^[a-z0-9]{24}$/.test(value)) {
+                values.push(mongojs.ObjectId(value));
+            } else if (typeof value === 'number') {
                 values.push('' + value);
             } else if (+value == value) {
                 values.push(+value);
@@ -323,6 +325,7 @@ async function nativeMongo(line) {
                 }
                 for (let item of list) {
                     item = item.replace(/ObjectId\(([^)]*)\)/g, '$1');
+                    item = item.replace(/NumberLong\(([^)]*)\)/g, '$1');
                     item = item.replace(/ISODate\(([^)]*)\)/g, '$1');
                     let ret;
                     try {
@@ -390,7 +393,7 @@ async function showTableLines (line, { db }) {
     const cond = formatCond(_cond);
 
     if (_verbose) {
-        this.verbose(`db.${table}.find(${cond}, ${fields}).limit(${+limit})`);
+        this.verbose(`db.${table}.find(${JSON.stringify(cond)}, ${JSON.stringify(fields)}).limit(${+limit})`);
     }
     db[table].find(cond, fields).limit(+limit).toArray((err, docs)=>{
         if (err) {
@@ -415,14 +418,21 @@ async function modifyTable(line, { db }) {
     }
     const cond = formatCond(list[1]);
     if (_verbose) {
-        this.verbose(`db.${table}.update(${cond}).limit(${+limit})`);
+        this.verbose(JSON.stringify(cond));
     }
     db[table].find(cond).limit(+limit).toArray((err, docs)=>{
-        if (err) {
+        if (err || !docs.length) {
             this.print('no record', 'red');
+            this.prompt();
         } else {
             for (const doc of docs) {
-                const update = formatUpdate(doc, list[0]) || [];
+                const update = formatUpdate(doc, list[0]);
+                if (!update) {
+                    continue;
+                }
+                if (_verbose) {
+                    this.verbose(`db.${table}.update(${doc._id}, ${JSON.stringify(update)}).limit(${+limit})`);
+                }
                 db[table].findAndModify({
                     query: { _id: doc._id },
                     update,
@@ -453,7 +463,7 @@ async function removeTable(line, { db }) {
     }
     const cond = formatCond(list[0]);
     if (_verbose) {
-        this.verbose(`db.${table}.remove(${cond}).limit(${+limit})`);
+        this.verbose(`db.${table}.remove(${JSON.stringify(cond)}).limit(${+limit})`);
     }
     db[table].find(cond).limit(+limit).toArray((err, docs)=>{
         if (err) {
@@ -489,7 +499,7 @@ async function copyTableRows(line, { db }) {
     }
     const cond = formatCond(list[1]);
     if (_verbose) {
-        this.verbose(`db.${table}.copy(${cond}).to(${update}).limit(${+limit})`);
+        this.verbose(`db.${table}.copy(${JSON.stringify(cond)}).to(${JSON.stringify(update)}).limit(${+limit})`);
     }
     db[table].find(cond).limit(+limit).toArray((err, docs)=>{
         if (err) {
