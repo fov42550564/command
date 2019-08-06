@@ -93,6 +93,15 @@ Object.defineProperty(server.context, 'shell', {
     }
 });
 
+// log
+Object.defineProperty(server.context, 'log', {
+    'configurable': true,
+    'enumerable': false,
+    'get': function () {
+        return function(...args) { console.log(...args); };
+    }
+});
+
 const events = server._events;
 events.line = _.wrap(events.line, function (cmd, line) {
     line = line.trim();
