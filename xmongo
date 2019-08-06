@@ -194,10 +194,34 @@ function formatResult(obj) {
     }
     return obj;
 }
+// 转化 [] 和  {} 中的逗号
+function replaceUpdateLine(line) {
+    let i = -1, max = line.length - 1, newLine = '', amatch = 0, bmatch = 0;
+    while (i++ < max) {
+        let ch = line[i];
+        if (ch === '[') {
+            amatch++;
+        } else if (ch === ']') {
+            amatch--;
+        }
+        if (ch === '{') {
+            bmatch++;
+        } else if (ch === '}') {
+            bmatch--;
+        }
+        if ((amatch > 0 || bmatch > 0) && ch===',') {
+            ch='&comma;';
+        }
+        newLine=`${newLine}${ch}`;
+    }
+    return newLine;
+}
 function formatUpdate(doc, line) {
     if (!line) {
         return null;
     }
+    line = replaceUpdateLine(line);
+
     let list = line.split(',').filter(o=>o);
     if (!list.length) {
         return null;
@@ -208,6 +232,7 @@ function formatUpdate(doc, line) {
         const items = item.split('=');
         const key = items[0];
         let value = items[1]||'';
+        value = value.replace(/&comma;/g, ',');
         if (value === 'true') {
             set[key] = true;
             continue;
@@ -263,8 +288,33 @@ async function formatFields(db, table, line) {
     allFields.filter(o=>_.some(list, r=>r.test(o))).forEach(o=>fields[o] = include ? 1 : 0);
     return fields;
 }
-function formatLine(line) {
+function formatLine(self, line) {
+    let i = -1, max = line.length - 1, newLine = '', amatch = 0, bmatch = 0, cmatch = 0;
+    while (i++ < max) {
+        let ch = line[i];
+        if (ch === '[') {
+            amatch++;
+        } else if (ch === ']') {
+            amatch--;
+        }
+        if (ch === '{') {
+            bmatch++;
+        } else if (ch === '}') {
+            bmatch--;
+        }
+        if (ch === '(') {
+            cmatch++;
+        } else if (ch === ')') {
+            cmatch--;
+        }
+    }
+    if (amatch || bmatch || cmatch) {
+        self.error('括号不匹配');
+        return [];
+    }
     return line
+    .replace(/"[^"]+"/g, o=>o.replace(' ', '&nbsp;'))
+    .replace(/'[^']+'/g, o=>o.replace(' ', '&nbsp;'))
     .replace(/\s,\s/g, ',')
     .replace(/\s!=\s/g, '!=')
     .replace(/\s!==\s/g, '!==')
@@ -274,7 +324,7 @@ function formatLine(line) {
     .replace(/\s\|\s/g, '|')
     .replace(/\s&\s/g, '&')
     .replace(/\s#\s/g, '#')
-    .trim().split(/\s/).filter(o=>o);
+    .trim().split(/\s/).filter(o=>o).map(o=>o.replace('&nbsp;', ' '));
 }
 function getCollectionNames(db) {
     return new Promise(resolve=>{
@@ -370,7 +420,7 @@ async function showTables(line, { db }) {
     }
 }
 async function showTableLines (line, { db }) {
-    let list = formatLine(line);
+    let list = formatLine(this, line);
     const table = list[0];
     if (!table) {
         return this.error('invalid oper');
@@ -408,7 +458,7 @@ async function showTableLines (line, { db }) {
     });
 }
 async function modifyTable(line, { db }) {
-    let list = formatLine(line);
+    let list = formatLine(this, line);
     const table = list[0];
     if (!table) {
         return this.error('invalid oper');
@@ -430,6 +480,7 @@ async function modifyTable(line, { db }) {
             this.prompt();
         } else {
             for (const doc of docs) {
+                this.verbose(list[0]);
                 const update = formatUpdate(doc, list[0]);
                 if (!update) {
                     continue;
@@ -437,6 +488,7 @@ async function modifyTable(line, { db }) {
                 if (_verbose) {
                     this.verbose(`db.${table}.update(${doc._id}, ${JSON.stringify(update)}).limit(${+limit})`);
                 }
+                return;
                 db[table].findAndModify({
                     query: { _id: doc._id },
                     update,
@@ -453,7 +505,7 @@ async function modifyTable(line, { db }) {
     });
 }
 async function removeTable(line, { db }) {
-    let list = formatLine(line);
+    let list = formatLine(this, line);
     const table = list[0];
     if (!table) {
         return this.error('invalid oper');
@@ -489,7 +541,7 @@ async function removeTable(line, { db }) {
     });
 }
 async function copyTableRows(line, { db }) {
-    let list = formatLine(line);
+    let list = formatLine(this, line);
     const table = list[0];
     if (!table) {
         return this.error('invalid oper');
