@@ -310,11 +310,15 @@ async function getFieldsOfTable(db, table) {
     }
     return CACHE[table];
 }
-async function nativeMongo(line) {
+async function nativeMongo(self, line) {
     return new Promise(resolve=>{
         if (!line) {
             resolve();
         }
+        if (self && _verbose) {
+            self.verbose(`${MOCMD} "${line}"`)
+        }
+        line = line.replace(/\$/g, '\\$');
         shell.exec(`${MOCMD} "${line}"`, { silent:true }, (code, stdout, stderr) => {
             if (stderr) {
                 resolve();
@@ -338,7 +342,7 @@ async function nativeMongo(line) {
     });
 }
 async function executeLine(line, { db }) {
-    const ret = await nativeMongo(line);
+    const ret = await nativeMongo(this, line);
     if (!ret) {
         return this.prompt();
     }
