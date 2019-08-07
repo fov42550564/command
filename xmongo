@@ -84,8 +84,6 @@ function parseItem(item) {
         value = null;
     } else if (+value == value) {
         value = +value
-    } else if (/^['"].*['"]$/.test(value)) {
-        value = value.replace(/^['"](.*)['"]$/, '$1');
     }
 
     switch (oper) {
@@ -95,26 +93,44 @@ function parseItem(item) {
         case '>=': return { [key]: { $gte: value } };
         case '==':
         case '=': {
-            if (/<|>/.test(value)) {
-                return { [key]: new RegExp(value.replace(/</, '^').replace(/>/, '$')) };
-            }
             if (oper === '==') {
                 return { [key]: value };
             }
-            const values = [ value ];
             if (/^[a-z0-9]{24}$/.test(value)) {
-                values.push(mongojs.ObjectId(value));
-            } else if (typeof value === 'number') {
+                return mongojs.ObjectId(value);
+            }
+            const values = [];
+            if (typeof value === 'number') {
                 values.push('' + value);
             } else if (+value == value) {
                 values.push(+value);
             }
-            return { [key]: { $in: values } };
+            if (values.length) {
+                values.push(value);
+                return { [key]: { $in: values } };
+            }
+            return { [key]: value };
         }
         case '<': return { [key]: { $lt: value } };
         case '<=': return { [key]: { $lte: value } };
-        case '~': return { [key]: new RegExp(value.replace(/</, '^').replace(/>/, '$')) };
-        case '#': return { [key]: { $in: value.split(',') } };
+        case '~': {
+            value = ''+value;
+            return { [key]: new RegExp(value.replace(/</, '^').replace(/>/, '$')) };
+        }
+        case '#': {
+            const list = value.split(',');
+            const _list = [];
+            for (const item of list) {
+                if (/^['"].*['"]$/.test(item)) {
+                    _list.push(item.replace(/^['"](.*)['"]$/, '$1'));
+                } else if (+item == item) {
+                    _list.push(+item);
+                } else {
+                    _list.push(item);
+                }
+            }
+            return { [key]: { $in: _list } };
+        }
     }
     return null;
 }
@@ -270,7 +286,6 @@ function formatUpdate(doc, line) {
     }
     return { ...(_.size(set) ? { $set: set } : {}), ...(_.size(unset) ? { $unset: unset } : {}) };
 }
-
 async function formatFields(db, table, line) {
     if (!line || line === '*') {
         return {};
@@ -325,6 +340,14 @@ function formatLine(self, line) {
     .replace(/\s&\s/g, '&')
     .replace(/\s#\s/g, '#')
     .trim().split(/\s/).filter(o=>o).map(o=>o.replace('&nbsp;', ' '));
+}
+function j2s(obj) {
+    return JSON.stringify(obj, (k, v)=>{
+        if (v instanceof RegExp) {
+            return v.toString();
+        }
+        return v;
+    });
 }
 function getCollectionNames(db) {
     return new Promise(resolve=>{
@@ -447,7 +470,7 @@ async function showTableLines (line, { db }) {
     const cond = formatCond(_cond);
 
     if (_verbose) {
-        this.verbose(`db.${table}.find(${JSON.stringify(cond)}, ${JSON.stringify(fields)}).limit(${+limit})`);
+        this.verbose(`db.${table}.find(${j2s(cond)}, ${j2s(fields)}).limit(${+limit})`);
     }
     db[table].find(cond, fields).limit(+limit).toArray((err, docs)=>{
         if (err) {
@@ -472,7 +495,7 @@ async function modifyTable(line, { db }) {
     }
     const cond = formatCond(list[1]);
     if (_verbose) {
-        this.verbose(JSON.stringify(cond));
+        this.verbose(j2s(cond));
     }
     db[table].find(cond).limit(+limit).toArray((err, docs)=>{
         if (err || !docs.length) {
@@ -486,7 +509,7 @@ async function modifyTable(line, { db }) {
                     continue;
                 }
                 if (_verbose) {
-                    this.verbose(`db.${table}.update(${doc._id}, ${JSON.stringify(update)}).limit(${+limit})`);
+                    this.verbose(`db.${table}.update(${doc._id}, ${j2s(update)}).limit(${+limit})`);
                 }
                 return;
                 db[table].findAndModify({
@@ -519,7 +542,7 @@ async function removeTable(line, { db }) {
     }
     const cond = formatCond(list[0]);
     if (_verbose) {
-        this.verbose(`db.${table}.remove(${JSON.stringify(cond)}).limit(${+limit})`);
+        this.verbose(`db.${table}.remove(${j2s(cond)}).limit(${+limit})`);
     }
     db[table].find(cond).limit(+limit).toArray((err, docs)=>{
         if (err) {
@@ -555,7 +578,7 @@ async function copyTableRows(line, { db }) {
     }
     const cond = formatCond(list[1]);
     if (_verbose) {
-        this.verbose(`db.${table}.copy(${JSON.stringify(cond)}).to(${JSON.stringify(update)}).limit(${+limit})`);
+        this.verbose(`db.${table}.copy(${j2s(cond)}).to(${j2s(update)}).limit(${+limit})`);
     }
     db[table].find(cond).limit(+limit).toArray((err, docs)=>{
         if (err) {
