@@ -511,7 +511,6 @@ async function modifyTable(line, { db }) {
                 if (_verbose) {
                     this.verbose(`db.${table}.update(${doc._id}, ${j2s(update)}).limit(${+limit})`);
                 }
-                return;
                 db[table].findAndModify({
                     query: { _id: doc._id },
                     update,

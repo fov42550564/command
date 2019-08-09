@@ -141,7 +141,7 @@ function startDirServer(port, dir) {
     })
 }
 
-function createServerFile(filename) {
+function createServerFile(filename, port) {
     code = 'var express = require("express");';
     code += '\nvar bodyParser = require("body-parser");';
     code += '\nvar fs = require("fs");';
@@ -157,8 +157,8 @@ function createServerFile(filename) {
     code += '\n    res.send("hello");';
     code += '\n});';
     code += '\n';
-    code += '\napp.listen(3000, function() {';
-    code += '\n    console.log("server listen on: http://localhost:3000");';
+    code += '\napp.listen('+port+', function() {';
+    code += '\n    console.log("server listen on: http://localhost:'+port+'");';
     code += '\n});';
     fs.writeFileSync(filename, code);
 }
@@ -194,7 +194,7 @@ if (param === '-h' || param === '--help') {
     console.log('xserver opts');
     console.log('');
     console.log('   -h|--help: show help');
-    console.log('   -c|--create: create a app.js file for nodejs server');
+    console.log('   -c|--create [port]: create a app.js file for nodejs server');
     console.log('   -u|--upload: upload files with multer');
     console.log('   -i|--image [name]: show iphone6 size for image');
     console.log('   -d|--dir [name]: show dir file list');
@@ -203,7 +203,7 @@ if (param === '-h' || param === '--help') {
 } else if (param === '-u' || param === '--upload') {
     startUploadServer(port);
 } else if (param === '-c' || param === '--create') {
-    createServerFile('app.js');
+    createServerFile('app.js', param1);
 } else if (param === '-i' || param === '--image') {
     startServer(port);
     openChrome('http:'+ip+':'+port+'/'+param1, true);

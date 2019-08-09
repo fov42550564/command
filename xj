@@ -9,6 +9,7 @@ const shell = require('shelljs');
 const xjava = process.platform !== 'win32' ? 'xjava' : `"${shell.env.SHELL}" "${ path.join(osHomedir(), 'command/xjava').replace(/\\/g, '/')}"`;
 let headers = getDefaultHeaders();
 let codes = [];
+let _mode = false;
 
 function getDefaultHeaders() {
     const text = shell.exec(`${xjava} -k ""`, { silent:true }).stdout;
@@ -22,6 +23,7 @@ function getDefaultHeaders() {
         "import java.util.Arrays;",
         "import java.util.*;",
         "import org.apache.commons.lang3.*;",
+        "import com.alibaba.fastjson.*;",
     ];
     return list;
 }
@@ -37,8 +39,27 @@ function getFullCode(hasLineNumber) {
     }
     return `${_headers.join('\n')}\npublic class Test {\n  public static void main(String[] args) {\n    ${_codes.join('\n    ')}\n  }\n}`;
 }
+function syncCodeFromFile() {
+    const text = fs.readFileSync(path.join(osHomedir(), 'command/java/Test.java'), 'utf8');
+    const lines = _.dropRight(text.split('\n').filter(o=>o.trim()), 2);
+    let code = false;
+    headers = [];
+    codes = [];
+    for (const line of lines) {
+        if (/public class Test|public static void main/.test(line)) {
+            code = true;
+        } else {
+            code && codes.push(line.trim()) || headers.push(line.trim());
+        }
+    }
+    this.prompt();
+}
 function clearCodes(line) {
     if (!line) {
+        text = getFullCode();
+        const file = path.join(osHomedir(), '.xn_java_code_history');
+        fs.appendFileSync(file, '\n\n==========================\n\n');
+        fs.appendFileSync(file, text);
         codes = [];
         headers = getDefaultHeaders();
     } else {
@@ -95,17 +116,26 @@ function appendCode(line) {
     } else {
         codes.push(format(line));
     }
-    runCode.call(this, isHeader);
+    if (_mode) {
+        runCode.call(this, isHeader, true);
+    }
 }
-function runCode(isHeader) {
-    const text = getFullCode();
-    fs.writeFileSync(path.join(osHomedir(), 'command/java/Test.java'), text);
+function runCode(isHeader, isRunMemory) {
+    let text;
+    if (isRunMemory) {
+        text = getFullCode();
+        fs.writeFileSync(path.join(osHomedir(), 'command/java/Test.java'), text);
+    } else {
+        text = fs.readFileSync(path.join(osHomedir(), 'command/java/Test.java'));
+    }
     shell.exec(`${xjava} -s`, { silent:true }, (code, stdout, stderr) => {
         if (stderr) {
-            if (isHeader) {
-                headers = _.dropRight(headers);
-            } else {
-                codes = _.dropRight(codes);
+            if (isRunMemory) {
+                if (isHeader) {
+                    headers = _.dropRight(headers);
+                } else {
+                    codes = _.dropRight(codes);
+                }
             }
             //this.dropHistory();
             this.print(stderr, 'red');
@@ -118,6 +148,17 @@ function runCode(isHeader) {
         this.prompt();
     });
 }
+function openCode() {
+    const file = path.join(osHomedir(), 'command/java/Test.java');
+    this.verbose(file);
+    shell.exec(`atom ${file}`, { silent:true });
+    this.prompt();
+}
+function toggleMode() {
+    _mode = !_mode;
+    this.print('模式切换至 ' + (_mode ? '及时运行' : '代码运行'));
+    this.prompt();
+}
 function showHelp () {
     this.print('commands:', 'blue');
     this.print('    <h|help>: show help');
@@ -128,7 +169,10 @@ function showHelp () {
     this.print('    <s|show>: 显示缓存的内容');
     this.print('    <sh|showHistory> [n = 10]: 显示n个历史');
     this.print('    <uh|useHistory> [index = 1]: 按照序号使用历史');
+    this.print('    <sync|syncCodeFromFile>: 同步文件的代码到内存');
+    this.print('    <a|atom>: 使用atom打开Test.java文件');
     this.print('    <r|run>: 运行存在的代码');
+    this.print('    _: 切换及时运行和代码运行');
     this.print('');
     this.prompt();
 }
@@ -138,12 +182,15 @@ const COMMANDS = {
     'cls': function() { this.clear() },
     'sh|showHistory': function (n) { this.showHistory(n) },
     'uh|useHistory': function (n) { this.useHistory(n) },
+    'sync|syncCodeFromFile': syncCodeFromFile,
     'j|jar': showJar,
     'd|header': showHeaders,
     'c|clear': clearCodes,
     's|show': showCode,
-    'r|run': runCode,
+    'a|atom': openCode,
+    'r|run': function() { runCode.call(this) },
+    '_': toggleMode,
     'default': appendCode,
 };
 
-command(COMMANDS, { prompt: 'java' });
+command(COMMANDS, { prompt: 'java', callback: syncCodeFromFile });

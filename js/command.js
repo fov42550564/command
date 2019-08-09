@@ -159,7 +159,7 @@ module.exports = (cmds, options = {}) => {
             rl.history = _.drop(rl.history);
         },
         showHistory(n = 10) {
-            const _history = _.slice(rl.history, 0, n).map((o, i) => `${i+1}: ${o}`);
+            const _history = !n ? rl.history : _.slice(rl.history, 0, n).map((o, i) => `${i+1}: ${o}`);
             this.print(_history.join('\n'), 'blue');
             rl.prompt(true);
         },
@@ -184,6 +184,7 @@ module.exports = (cmds, options = {}) => {
             cmd.error('invalid command!');
         }
     });
+    options.callback && options.callback.call(cmd);
     cmd.prompt();
 
     return cmd;
