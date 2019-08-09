@@ -118,6 +118,8 @@ function appendCode(line) {
     }
     if (_mode) {
         runCode.call(this, isHeader, true);
+    } else {
+        this.prompt();
     }
 }
 function runCode(isHeader, isRunMemory) {
@@ -148,10 +150,16 @@ function runCode(isHeader, isRunMemory) {
         this.prompt();
     });
 }
-function openCode() {
+function openCodeWithAtom() {
     const file = path.join(osHomedir(), 'command/java/Test.java');
     this.verbose(file);
     shell.exec(`atom ${file}`, { silent:true });
+    this.prompt();
+}
+function openCodeWithIdea() {
+    const file = path.join(osHomedir(), 'command/java/Test.java');
+    this.verbose(file);
+    shell.exec(`"/Applications/IntelliJ IDEA.app/Contents/MacOS/idea" ${file}`, { silent:true });
     this.prompt();
 }
 function toggleMode() {
@@ -171,6 +179,7 @@ function showHelp () {
     this.print('    <uh|useHistory> [index = 1]: 按照序号使用历史');
     this.print('    <sync|syncCodeFromFile>: 同步文件的代码到内存');
     this.print('    <a|atom>: 使用atom打开Test.java文件');
+    this.print('    <i|idea>: 使用idea打开Test.java文件');
     this.print('    <r|run>: 运行存在的代码');
     this.print('    _: 切换及时运行和代码运行');
     this.print('');
@@ -187,7 +196,8 @@ const COMMANDS = {
     'd|header': showHeaders,
     'c|clear': clearCodes,
     's|show': showCode,
-    'a|atom': openCode,
+    'a|atom': openCodeWithAtom,
+    'i|idea': openCodeWidhIdea,
     'r|run': function() { runCode.call(this) },
     '_': toggleMode,
     'default': appendCode,

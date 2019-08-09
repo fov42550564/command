@@ -156,8 +156,6 @@ alias mhmv='cp /Volumes/home/方运江/*'
 #vim
 alias vi='vim'
 alias clearvim='rm -fr ~/.data/swap'
-#.DS
-alias clearmac='find -name .DS_* -exec rm {} \;'
 
 #react
 function react() { cp "${HOME}/command/linux/atom/snippets/react${1}.cson" "${HOME}/.atom/packages/react/snippets/JavaScript (JSX).cson"; }
@@ -219,6 +217,10 @@ fi
 
 #only for mac
 if __mac;then
+    alias idea='/Applications/IntelliJ\ IDEA.app/Contents/MacOS/idea'
+    #.DS
+    alias clearmac='find -name .DS_* -exec rm {} \;'
+    #android
     alias ndk='ndk-build'
     export ANDROID_NDK_HOME=~/tools/android-ndk-r10e
     export ANDROID_SDK_HOME=~/Library/Android/sdk
