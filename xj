@@ -197,7 +197,7 @@ const COMMANDS = {
     'c|clear': clearCodes,
     's|show': showCode,
     'a|atom': openCodeWithAtom,
-    'i|idea': openCodeWidhIdea,
+    'i|idea': openCodeWithIdea,
     'r|run': function() { runCode.call(this) },
     '_': toggleMode,
     'default': appendCode,
