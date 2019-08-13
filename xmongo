@@ -303,7 +303,7 @@ async function formatFields(db, table, line) {
     allFields.filter(o=>_.some(list, r=>r.test(o))).forEach(o=>fields[o] = include ? 1 : 0);
     return fields;
 }
-function formatSort(db, table, line) {
+async function formatSort(db, table, line) {
     if (!line) {
         return {};
     }
@@ -321,7 +321,7 @@ function formatSort(db, table, line) {
             sort[item] = order;
         }
     }
-    return order;
+    return sort;
 }
 function formatLine(self, line) {
     let i = -1, max = line.length - 1, newLine = '', amatch = 0, bmatch = 0, cmatch = 0;
@@ -435,6 +435,9 @@ async function nativeMongo(self, line) {
     });
 }
 async function executeLine(line, { db }) {
+    if (!/^db\./.test(line)) {
+        return this.prompt();
+    }
     const ret = await nativeMongo(this, line);
     if (!ret) {
         return this.prompt();
@@ -479,7 +482,7 @@ async function showTableLines (line, { db }) {
         limit = _limit;
     }
 
-    let cond = '';
+    let cond = {};
     let condIndex = _.findIndex(list, o=>/!=|>=|>\w|=|<=|<\w|~|#/.test(o));
     if (condIndex !== -1) {
         cond = formatCond(list[condIndex]);
@@ -494,7 +497,7 @@ async function showTableLines (line, { db }) {
         _sort = list[1];
     }
     const fields = await formatFields(db, table, _fields);
-    const sort = formatSort(db, table, _sort);
+    const sort = await formatSort(db, table, _sort);
 
     if (_verbose) {
         this.verbose(`db.${table}.find(${j2s(cond)}, ${j2s(fields)}).sort(${j2s(sort)}).limit(${limit})`);
@@ -530,14 +533,14 @@ async function modifyTable(line, { db }) {
     }
     list = _.drop(list);
 
-    let cond = '';
+    let cond = {};
     let condIndex = _.findIndex(list, o=>/!=|>=|>\w|=|<=|<\w|~|#/.test(o));
     if (condIndex !== -1) {
         cond = formatCond(list[condIndex]);
         list.splice(condIndex, 1);
     }
 
-    const sort = formatSort(table, list[0]);
+    const sort = await formatSort(table, list[0]);
 
     if (_verbose) {
         this.verbose(j2s(cond));
@@ -589,14 +592,14 @@ async function removeTable(line, { db }) {
         limit = `LIMIT ${_limit}`;
     }
 
-    let cond = '';
+    let cond = {};
     let condIndex = _.findIndex(list, o=>/!=|>=|>\w|=|<=|<\w|~|#/.test(o));
     if (condIndex !== -1) {
         cond = formatCond(list[condIndex]);
         list.splice(condIndex, 1);
     }
 
-    const sort = formatSort(table, list[0]);
+    const sort = await formatSort(table, list[0]);
 
     if (_verbose) {
         this.verbose(`db.${table}.remove(${j2s(cond)}).limit(${limit})`);
@@ -645,7 +648,7 @@ async function copyTableRows(line, { db }) {
         list.splice(sortIndex, 1);
     }
 
-    let _cond = '';
+    let _cond = {};
     let setFields = '';
     if (!list[1]) {
         setFields = '';
