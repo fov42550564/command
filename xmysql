@@ -139,7 +139,7 @@ function formatSort(table, line) {
     if (!sort.length) {
         return '';
     }
-    return `ORDER BY ${sort.join(',')}`
+    return `ORDER BY ${sort.join(',')}`;
 }
 async function initFieldsOfTable(self, table, db) {
     CACHE[table] = (await querySQL(self, db, 'desc ' + table)).map(o=>o.Field);
@@ -339,7 +339,7 @@ async function copyTableRows(line, { db }) {
     }
 
     let _cond = '';
-    let setFields =[];
+    let setFields = [];
     if (!list[1]) {
         setFields = [];
         _cond = list[0];

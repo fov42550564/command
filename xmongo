@@ -234,13 +234,13 @@ function replaceUpdateLine(line) {
 }
 function formatUpdate(doc, line) {
     if (!line) {
-        return null;
+        return { $set: {} };
     }
     line = replaceUpdateLine(line);
 
     let list = line.split(',').filter(o=>o);
     if (!list.length) {
-        return null;
+        return { $set: {} };
     }
     const set = {};
     const unset = {};
@@ -302,6 +302,26 @@ async function formatFields(db, table, line) {
     const fields = {};
     allFields.filter(o=>_.some(list, r=>r.test(o))).forEach(o=>fields[o] = include ? 1 : 0);
     return fields;
+}
+function formatSort(db, table, line) {
+    if (!line) {
+        return {};
+    }
+    const sort = {};
+    const allFields = await getFieldsOfTable(db, table);
+    line = line.split(',');
+    for (const i in line) {
+        let item = line[i];
+        let order = 1;
+        if (item[0] === '-') {
+            item = item.substr(1);
+            order = -1;
+        }
+        if (_.includes(allFields, item)) {
+            sort[item] = order;
+        }
+    }
+    return order;
 }
 function formatLine(self, line) {
     let i = -1, max = line.length - 1, newLine = '', amatch = 0, bmatch = 0, cmatch = 0;
@@ -449,30 +469,37 @@ async function showTableLines (line, { db }) {
         return this.error('invalid oper');
     }
     list = _.drop(list);
-    let limit = _.last(list);
-    if (+limit == limit) {
-        list = _.dropRight(list);
+
+    let limit = 0;
+    let limitIndex = _.findIndex(list, o=>+o==o);
+    if (limitIndex !== -1) {
+        limit = +list[limitIndex];
+        list.splice(limitIndex, 1);
     } else {
         limit = _limit;
     }
-    let _fields, _cond;
+
+    let cond = '';
+    let condIndex = _.findIndex(list, o=>/!=|>=|>\w|=|<=|<\w|~|#/.test(o));
+    if (condIndex !== -1) {
+        cond = formatCond(list[condIndex]);
+        list.splice(condIndex, 1);
+    }
+
+    let _fields, _sort;
     if (list.length == 1) {
-        if (/!=|!==|>=|>\w|==|=|<=|<\w|~|#/.test(list[0])) {
-            _cond = list[0];
-        } else {
-            _fields = list[0];
-        }
+        _fields = list[0];
     } else if (list.length > 1) {
         _fields = list[0];
-        _cond = list[1];
+        _sort = list[1];
     }
     const fields = await formatFields(db, table, _fields);
-    const cond = formatCond(_cond);
+    const sort = formatSort(db, table, _sort);
 
     if (_verbose) {
-        this.verbose(`db.${table}.find(${j2s(cond)}, ${j2s(fields)}).limit(${+limit})`);
+        this.verbose(`db.${table}.find(${j2s(cond)}, ${j2s(fields)}).sort(${j2s(sort)}).limit(${limit})`);
     }
-    db[table].find(cond, fields).limit(+limit).toArray((err, docs)=>{
+    db[table].find(cond, fields).sort(sort).limit(limit).toArray((err, docs)=>{
         if (err) {
             this.print('no record', 'red');
         } else {
@@ -487,24 +514,42 @@ async function modifyTable(line, { db }) {
         return this.error('invalid oper');
     }
     list = _.drop(list);
-    let limit = _.last(list);
-    if (+limit == limit) {
-        list = _.dropRight(list);
+
+    let limit = 0;
+    let limitIndex = _.findIndex(list, o=>+o==o);
+    if (limitIndex !== -1) {
+        limit = +list[limitIndex];
+        list.splice(limitIndex, 1);
     } else {
         limit = _limit;
     }
-    const cond = formatCond(list[1]);
+
+    const setFields = list[0];
+    if (!setFields) {
+        return this.error('invalid oper');
+    }
+    list = _.drop(list);
+
+    let cond = '';
+    let condIndex = _.findIndex(list, o=>/!=|>=|>\w|=|<=|<\w|~|#/.test(o));
+    if (condIndex !== -1) {
+        cond = formatCond(list[condIndex]);
+        list.splice(condIndex, 1);
+    }
+
+    const sort = formatSort(table, list[0]);
+
     if (_verbose) {
         this.verbose(j2s(cond));
     }
-    db[table].find(cond).limit(+limit).toArray((err, docs)=>{
+    db[table].find(cond).sort(sort).limit(limit).toArray((err, docs)=>{
         if (err || !docs.length) {
             this.print('no record', 'red');
             this.prompt();
         } else {
             for (const doc of docs) {
                 this.verbose(list[0]);
-                const update = formatUpdate(doc, list[0]);
+                const update = formatUpdate(doc, setFields);
                 if (!update) {
                     continue;
                 }
@@ -533,17 +578,30 @@ async function removeTable(line, { db }) {
         return this.error('invalid oper');
     }
     list = _.drop(list);
-    let limit = _.last(list);
-    if (+limit == limit) {
-        list = _.dropRight(list);
+
+    let limit = '';
+    let limitIndex = _.findIndex(list, o=>+o==o);
+    if (limitIndex !== -1) {
+        limit = +list[limitIndex];
+        limit = limit ? `LIMIT ${limit}` : '';
+        list.splice(limitIndex, 1);
     } else {
-        limit = _limit;
+        limit = `LIMIT ${_limit}`;
     }
-    const cond = formatCond(list[0]);
+
+    let cond = '';
+    let condIndex = _.findIndex(list, o=>/!=|>=|>\w|=|<=|<\w|~|#/.test(o));
+    if (condIndex !== -1) {
+        cond = formatCond(list[condIndex]);
+        list.splice(condIndex, 1);
+    }
+
+    const sort = formatSort(table, list[0]);
+
     if (_verbose) {
-        this.verbose(`db.${table}.remove(${j2s(cond)}).limit(${+limit})`);
+        this.verbose(`db.${table}.remove(${j2s(cond)}).limit(${limit})`);
     }
-    db[table].find(cond).limit(+limit).toArray((err, docs)=>{
+    db[table].find(cond).sort(sort).limit(limit).toArray((err, docs)=>{
         if (err) {
             this.print(err, 'red');
         } else {
@@ -569,17 +627,38 @@ async function copyTableRows(line, { db }) {
         return this.error('invalid oper');
     }
     list = _.drop(list);
-    let limit = _.last(list);
-    if (+limit == limit) {
-        list = _.dropRight(list);
+
+    let limit = '';
+    let limitIndex = _.findIndex(list, o=>+o==o);
+    if (limitIndex !== -1) {
+        limit = +list[limitIndex];
+        limit = limit ? `LIMIT ${limit}` : '';
+        list.splice(limitIndex, 1);
     } else {
-        limit = _limit;
+        limit = `LIMIT ${_limit}`;
     }
-    const cond = formatCond(list[1]);
+
+    let sort = '';
+    let sortIndex = _.findIndex(list, o=>/^-?\w+$/.test(o));
+    if (sortIndex !== -1) {
+        sort = formatCond(list[sortIndex]);
+        list.splice(sortIndex, 1);
+    }
+
+    let _cond = '';
+    let setFields = '';
+    if (!list[1]) {
+        setFields = '';
+        _cond = list[0];
+    } else {
+        setFields = list[0];
+        _cond = list[1];
+    }
+
     if (_verbose) {
-        this.verbose(`db.${table}.copy(${j2s(cond)}).to(${j2s(update)}).limit(${+limit})`);
+        this.verbose(`db.${table}.copy(${j2s(cond)}).to(${j2s(update)}).sort(${j2s(sort)}).limit(${limit})`);
     }
-    db[table].find(cond).limit(+limit).toArray((err, docs)=>{
+    db[table].find(cond).sort(sort).limit(limit).toArray((err, docs)=>{
         if (err) {
             this.print('no record', 'red');
         } else {
@@ -592,7 +671,7 @@ async function copyTableRows(line, { db }) {
                     if (err) {
                         this.print(err, 'red');
                     } else {
-                        const update = formatUpdate(_doc, list[0]) || {};
+                        const update = formatUpdate(_doc, setFields) || {};
                         db[table].findAndModify({
                             query: { _id: ret._id },
                             update,
@@ -630,10 +709,10 @@ function showHelp () {
     this.print('    <h|help>: show help');
     this.print('    <q|exit>: exit');
     this.print('    ls: showTables|ls -: showDatabases|ls table: showTableFields');
-    this.print('    s(show): showTableLines # s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
-    this.print('    m(modify): modifyTable # m table f1=xx,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
-    this.print('    r(remove): removeTable # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
-    this.print('    c(copy): copyTableRows # c table f1=$f1+1,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit');
+    this.print('    s(show): showTableLines # s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
+    this.print('    m(modify): modifyTable # m table f1=xx,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
+    this.print('    r(remove): removeTable # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
+    this.print('    c(copy): copyTableRows # c table f1=$f1+1,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
     this.print('    _: togglePrettyShell');
     this.print('    v: toggleVerbose');
     this.print('    limit: setDefaultLimit');
