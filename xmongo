@@ -466,6 +466,9 @@ async function showTables(line, { db }) {
     }
 }
 async function showTableLines (line, { db }) {
+    if (!line) {
+        return this.prompt();
+    }
     let list = formatLine(this, line);
     const table = list[0];
     if (!table) {
@@ -511,6 +514,9 @@ async function showTableLines (line, { db }) {
     });
 }
 async function modifyTable(line, { db }) {
+    if (!line) {
+        return this.prompt();
+    }
     let list = formatLine(this, line);
     const table = list[0];
     if (!table) {
@@ -575,6 +581,9 @@ async function modifyTable(line, { db }) {
     });
 }
 async function removeTable(line, { db }) {
+    if (!line) {
+        return this.prompt();
+    }
     let list = formatLine(this, line);
     const table = list[0];
     if (!table) {
@@ -582,14 +591,13 @@ async function removeTable(line, { db }) {
     }
     list = _.drop(list);
 
-    let limit = '';
+    let limit = 0;
     let limitIndex = _.findIndex(list, o=>+o==o);
     if (limitIndex !== -1) {
         limit = +list[limitIndex];
-        limit = limit ? `LIMIT ${limit}` : '';
         list.splice(limitIndex, 1);
     } else {
-        limit = `LIMIT ${_limit}`;
+        limit = _limit;
     }
 
     let cond = {};
@@ -624,6 +632,9 @@ async function removeTable(line, { db }) {
     });
 }
 async function copyTableRows(line, { db }) {
+    if (!line) {
+        return this.prompt();
+    }
     let list = formatLine(this, line);
     const table = list[0];
     if (!table) {
@@ -631,14 +642,13 @@ async function copyTableRows(line, { db }) {
     }
     list = _.drop(list);
 
-    let limit = '';
+    let limit = 0;
     let limitIndex = _.findIndex(list, o=>+o==o);
     if (limitIndex !== -1) {
         limit = +list[limitIndex];
-        limit = limit ? `LIMIT ${limit}` : '';
         list.splice(limitIndex, 1);
     } else {
-        limit = `LIMIT ${_limit}`;
+        limit = _limit;
     }
 
     let sort = '';

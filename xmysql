@@ -214,6 +214,9 @@ async function showTables(line, { db }) {
     }
 }
 async function showTableLines (line, { db }) {
+    if (!line) {
+        return this.prompt();
+    }
     let list = formatLine(line);
     const table = list[0];
     if (!table) {
@@ -250,6 +253,9 @@ async function showTableLines (line, { db }) {
     await executeSQL(this, `SELECT ${fields} FROM ${table} ${cond} ${sort} ${limit}`, db);
 }
 async function modifyTable(line, { db }) {
+    if (!line) {
+        return this.prompt();
+    }
     let list = formatLine(line);
     const table = list[0];
     if (!table) {
@@ -285,6 +291,9 @@ async function modifyTable(line, { db }) {
     await executeSQL(this, `UPDATE ${table} SET ${setFields} ${cond} ${sort} ${limit}`, db);
 }
 async function removeTable(line, { db }) {
+    if (!line) {
+        return this.prompt();
+    }
     let list = formatLine(line);
     const table = list[0];
     if (!table) {
@@ -314,6 +323,9 @@ async function removeTable(line, { db }) {
     await executeSQL(this, `DELETE FROM ${table} ${cond} ${sort} ${limit}`, db);
 }
 async function copyTableRows(line, { db }) {
+    if (!line) {
+        return this.prompt();
+    }
     let list = formatLine(line);
     const table = list[0];
     if (!table) {
