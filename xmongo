@@ -420,16 +420,16 @@ async function nativeMongo(self, line) {
                 if (!list.length) {
                     return resolve();
                 }
+                const _list = [];
                 for (let item of list) {
                     item = item.replace(/ObjectId\(([^)]*)\)/g, '$1');
                     item = item.replace(/NumberLong\(([^)]*)\)/g, '$1');
                     item = item.replace(/ISODate\(([^)]*)\)/g, '$1');
-                    let ret;
                     try {
-                        ret = JSON.parse(item);
+                        _list.push(JSON.parse(item));
                     } catch (e) {}
-                    resolve(ret);
                 }
+                resolve(_list);
             }
         });
     });
@@ -455,8 +455,8 @@ async function showTables(line, { db }) {
         this.prompt();
     } else if (line === '-') { // show databases
         this.print('databases :', 'red');
-        const dbs = await nativeMongo('db.getMongo().getDBs().databases.map(o=>o.name)');
-        this.print(dbs.join('  '), 'green');
+        const dbs = await nativeMongo(this, 'db.getMongo().getDBs().databases.map(o=>o.name)');
+        this.print(dbs[0].join('  '), 'green');
         this.prompt();
     } else { // show table fields
         line = line.replace(/[^\w]*/g, '');
