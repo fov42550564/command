@@ -213,7 +213,7 @@ async function showTables(line, { db }) {
         this.prompt();
     }
 }
-async function showTableLines (line, { db }) {
+async function showTableRows (line, { db }) {
     if (!line) {
         return this.prompt();
     }
@@ -322,6 +322,26 @@ async function removeTable(line, { db }) {
 
     await executeSQL(this, `DELETE FROM ${table} ${cond} ${sort} ${limit}`, db);
 }
+async function countTableRows(line, { db }) {
+    if (!line) {
+        return this.prompt();
+    }
+    let list = formatLine(line);
+    const table = list[0];
+    if (!table) {
+        return this.error('invalid oper');
+    }
+    list = _.drop(list);
+
+    let cond = '';
+    let condIndex = _.findIndex(list, o=>/!=|>=|>\w|=|<=|<\w|~|#/.test(o));
+    if (condIndex !== -1) {
+        cond = formatCond(list[condIndex]);
+        list.splice(condIndex, 1);
+    }
+
+    await executeSQL(this, `SELECT COUNT(*) FROM ${table} ${cond}`, db);
+}
 async function copyTableRows(line, { db }) {
     if (!line) {
         return this.prompt();
@@ -359,6 +379,7 @@ async function copyTableRows(line, { db }) {
         setFields = list[0].split(',').map(o=>o.split('='));
         _cond = list[1];
     }
+    const cond = formatCond(_cond);
 
     const cond = formatCond(_cond);
     const docs = await querySQL(this, db, `SELECT * FROM ${table} ${cond} ${sort} ${limit}`);
@@ -412,7 +433,7 @@ function showHelp () {
     this.print('    <h|help>: show help');
     this.print('    <q|exit>: exit');
     this.print('    ls: showTables|ls -: showDatabases|ls table: showTableFields');
-    this.print('    s(show): showTableLines # s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
+    this.print('    s(show): showTableRows # s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
     this.print('    m(modify): modifyTable # m table f1=xx,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
     this.print('    r(remove): removeTable # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
     this.print('    c(copy): copyTableRows # c table f1=$f1+1,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
@@ -427,9 +448,10 @@ const COMMANDS = {
     'q|exit': function () { this.close() },
     'cls': function() { this.clear() },
     'ls': showTables,
-    's': showTableLines,
+    's': showTableRows,
     'm': modifyTable,
     'r': removeTable,
+    't': countTableRows,
     'c': copyTableRows,
     '-': togglePrettyShell,
     'v': toggleVerbose,
@@ -437,4 +459,4 @@ const COMMANDS = {
     'default': executeLine,
 };
 
-createMysql(COMMANDS, { prompt: 'mysql', history: [ 's', 'm', 'r', 'c' ] });
+createMysql(COMMANDS, { prompt: 'mysql', history: [ 's', 'm', 'r', 't', 'c' ] });
