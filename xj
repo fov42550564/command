@@ -117,22 +117,23 @@ function appendCode(line) {
         codes.push(format(line));
     }
     if (_mode) {
-        runCode.call(this, isHeader, true);
+        runCode.call(this, 0, isHeader);
     } else {
         this.prompt();
     }
 }
-function runCode(isHeader, isRunMemory) {
+function runCode(mode, isHeader) {
     let text;
-    if (isRunMemory) {
+    if (mode == 0 || mode == 1) {
         text = getFullCode();
         fs.writeFileSync(path.join(osHomedir(), 'command/java/Test.java'), text);
     } else {
+        syncCodeFromFile.call(this);
         text = fs.readFileSync(path.join(osHomedir(), 'command/java/Test.java'));
     }
     shell.exec(`${xjava} -s`, { silent:true }, (code, stdout, stderr) => {
         if (stderr) {
-            if (isRunMemory) {
+            if (mode == 0) {
                 if (isHeader) {
                     headers = _.dropRight(headers);
                 } else {
@@ -180,7 +181,7 @@ function showHelp () {
     this.print('    <sync|syncCodeFromFile>: 同步文件的代码到内存');
     this.print('    <a|atom>: 使用atom打开Test.java文件');
     this.print('    <i|idea>: 使用idea打开Test.java文件');
-    this.print('    <r|run>: 运行存在的代码');
+    this.print('    <r|run> [true]: 运行存在的代码，true则运行内存代码');
     this.print('    _: 切换及时运行和代码运行');
     this.print('');
     this.prompt();
@@ -198,7 +199,7 @@ const COMMANDS = {
     's|show': showCode,
     'a|atom': openCodeWithAtom,
     'i|idea': openCodeWithIdea,
-    'r|run': function() { runCode.call(this) },
+    'r|run': function(n) { runCode.call(this, n ? 1 : 2) },
     '_': toggleMode,
     'default': appendCode,
 };
