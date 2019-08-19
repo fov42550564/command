@@ -7,7 +7,7 @@ const mysql = require('mysql2');
 const moment = require('moment');
 const command = require('./js/command');
 const _ = require('lodash');
-const DATA_BASE = 'db_smart_plate';
+const DATA_BASE = 'db_smart_city';
 const CACHE = {};
 
 let _verbose = false;
@@ -18,7 +18,7 @@ async function createMysql (commands, options) {
         host: process.argv[2] || 'localhost',
         user: 'root',
         password: '123456',
-        database: DATA_BASE,
+        database: process.argv[3] || DATA_BASE,
     });
     const tables = await getTables(null, db);
     let allFileds = [];
