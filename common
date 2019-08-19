@@ -995,6 +995,28 @@ function __set_dest_path()
 		dp=$(sed -n '1p' $file)
 	elif [ "$param" = "-h" ];then
 		echo "Usage:dt[--][-n[d:cd|o:open|m:move|c:clean|l:ls]]"
+		echo "      dt --"
+		echo "      dt -d|o|m|c|l"
+		echo "      dt -3d|o|m|c|l"
+		echo "      -----"
+		echo "      dt -t 1: 设置~/.dest_file"
+		echo "      dt -t 1 true: 查看~/.dest_file"
+	elif [ "$param" = "-t" ];then
+		if [ -z "$2" ];then
+			cd ~
+			ls .dest_path*
+		else
+			if [ -f "${file}${2}" ];then
+				if [ -z "$3" ];then
+					cat "${file}${2}"
+				else
+					cp "${file}${2}" "${file}"
+					echo "set dest file to ${file}${2} done"
+				fi
+			else
+				echo "${file}${2} not exists"
+			fi
+		fi
 	elif [ "$param" = "-d" ];then
 		__extend_cd "$(sed -n '1p' $file)"
 	elif [ "$param" = "-o" ];then
