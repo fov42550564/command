@@ -480,7 +480,7 @@ try {
 
 host = program.host || options.host || _host;
 database = program.database || options.database || _database;
-if (program.host !== host || program.database !== database) {
+if (options.host !== host || options.database !== database) {
     fs.writeJSONSync(configFile, { host, database });
 }
 _host = host;
