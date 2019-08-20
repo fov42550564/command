@@ -3,22 +3,28 @@
 // mysql> alter user 'root'@'localhost' identified with mysql_native_password by '123456';
 // mysql> flush privileges;
 
+const osHomedir = require('os-homedir');
 const mysql = require('mysql2');
+const fs = require('fs-extra');
+const path = require('path');
 const moment = require('moment');
 const command = require('./js/command');
+const program = require('commander');
 const _ = require('lodash');
-const DATA_BASE = 'db_smart_city';
+const configFile = path.join(osHomedir(), '.mysql_config');
 const CACHE = {};
+let _database = 'db_smart_plate';
+let _host = 'localhost';
 
 let _verbose = false;
 let _prettyShell = true;
 let _limit = 10;
 async function createMysql (commands, options) {
     const db = mysql.createConnection({
-        host: process.argv[2] || 'localhost',
+        host: _host,
         user: 'root',
         password: '123456',
-        database: process.argv[3] || DATA_BASE,
+        database: _database,
     });
     const tables = await getTables(null, db);
     let allFileds = [];
@@ -436,6 +442,7 @@ function showHelp () {
     this.print('    s(show): showTableRows # s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
     this.print('    m(modify): modifyTable # m table f1=xx,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
     this.print('    r(remove): removeTable # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
+    this.print('    t(count): countTableRows # t table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3');
     this.print('    c(copy): copyTableRows # c table f1=$f1+1,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
     this.print('    _: togglePrettyShell');
     this.print('    v: toggleVerbose');
@@ -458,5 +465,25 @@ const COMMANDS = {
     'limit': setDefaultLimit,
     'default': executeLine,
 };
+
+
+program
+.version('1.0.0')
+.option('-o, --host [host]', 'set host', '')
+.option('-d, --database [database]', 'set database', '')
+.parse(process.argv);
+
+let options = {};
+try {
+    options = fs.readJSONSync(configFile);
+} catch (e) {}
+
+host = program.host || options.host || _host;
+database = program.database || options.database || _database;
+if (program.host !== host || program.database !== database) {
+    fs.writeJSONSync(configFile, { host, database });
+}
+_host = host;
+_database = database;
 
 createMysql(COMMANDS, { prompt: 'mysql', history: [ 's', 'm', 'r', 't', 'c' ] });
