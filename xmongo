@@ -42,11 +42,11 @@ async function createMongo (commands, options) {
         }
 
         const preWord = _.toLower(_.nth(words, -2));
-        if (_.includes(['ls', 's', 'm', 'r', 'c'], preWord)) {
+        if (_.includes(['ls', 's', 'm', 'r', 't', 'c'], preWord)) {
             list = tables.filter((o) => o.startsWith(linePartial));
         }  else {
             const prePreWord = _.toLower(_.nth(words, -3));
-            if (_.includes(['s', 'm', 'r', 'c'], prePreWord)) {
+            if (_.includes(['s', 'm', 'r', 't', 'c'], prePreWord)) {
                 const table = preWord;
                 const fields = CACHE[table];
                 list = fields.filter((o) => o.startsWith(linePartial));

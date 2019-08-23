@@ -1,17 +1,14 @@
 #!/usr/bin/env node
 
-// mysql> alter user 'root'@'localhost' identified with mysql_native_password by '123456';
-// mysql> flush privileges;
-
 const osHomedir = require('os-homedir');
-const mysql = require('mysql2');
+const oracle = require('oracledb');
 const fs = require('fs-extra');
 const path = require('path');
 const moment = require('moment');
 const command = require('./js/command');
 const program = require('commander');
 const _ = require('lodash');
-const configFile = path.join(osHomedir(), '.mysql_config');
+const configFile = path.join(osHomedir(), '.oracle_config');
 const CACHE = {};
 let _database = 'db_smart_plate';
 let _host = 'localhost';
@@ -19,8 +16,8 @@ let _host = 'localhost';
 let _verbose = false;
 let _prettyShell = true;
 let _limit = 10;
-async function createMysql (commands, options) {
-    const db = mysql.createConnection({
+async function createOracle (commands, options) {
+    const db = oracle.createConnection({
         host: _host,
         user: 'root',
         password: '123456',
@@ -42,11 +39,11 @@ async function createMysql (commands, options) {
             list = ['select', 'update', 'delete'].filter((o) => o.startsWith(linePartial));
         } else {
             const preWord = _.toLower(_.nth(words, -2));
-            if (_.includes(['from', 'update', 'into', 'ls', 's', 'm', 'r', 't', 'c'], preWord)) {
+            if (_.includes(['from', 'update', 'into', 'ls', 's', 'm', 'r', 'c'], preWord)) {
                 list = tables.filter((o) => o.startsWith(linePartial));
             }  else {
                 const prePreWord = _.toLower(_.nth(words, -3));
-                if (_.includes(['s', 'm', 'r', 't', 'c'], prePreWord)) {
+                if (_.includes(['s', 'm', 'r', 'c'], prePreWord)) {
                     const table = preWord;
                     const fields = CACHE[table];
                     list = fields.filter((o) => o.startsWith(linePartial));
@@ -168,7 +165,7 @@ function querySQL(self, db, query) {
         self.verbose(query);
     }
     return new Promise(resolve=>{
-        db.query(query, (err, results) => {
+        db.execute(query, (err, results) => {
             if (err) {
                 if (self) {
                     self.error(err);
@@ -386,7 +383,8 @@ async function copyTableRows(line, { db }) {
         _cond = list[1];
     }
     const cond = formatCond(_cond);
-    
+
+    const cond = formatCond(_cond);
     const docs = await querySQL(this, db, `SELECT * FROM ${table} ${cond} ${sort} ${limit}`);
     const fields = getFieldsOfTable(table).filter(o=>o!=='id');
     for (const doc of docs) {
@@ -485,4 +483,4 @@ if (options.host !== host || options.database !== database) {
 _host = host;
 _database = database;
 
-createMysql(COMMANDS, { prompt: 'mysql', history: [ 's', 'm', 'r', 't', 'c' ] });
+createOracle(COMMANDS, { prompt: 'oracle', history: [ 's', 'm', 'r', 't', 'c' ] });
