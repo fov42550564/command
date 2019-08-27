@@ -144,15 +144,6 @@ alias di='__diff'
 alias tgit=`which git`
 alias git='xgit'
 
-#copy
-alias mhon='xsmb -m'
-alias mhoff='xsmb -u'
-alias mhls='ls /Volumes/home/方运江'
-alias mhrm='rm /Volumes/home/方运江/*'
-alias mhcd='cd /Volumes/home/方运江'
-alias mhopen='open /Volumes/home/方运江'
-alias mhmv='cp /Volumes/home/方运江/*'
-
 #vim
 alias vi='vim'
 alias clearvim='rm -fr ~/.data/swap'
@@ -162,28 +153,6 @@ function react() { cp "${HOME}/command/linux/atom/snippets/react${1}.cson" "${HO
 
 #go
 alias xgo='go run'
-
-#node-webkit
-alias nw='/usr/local/lib/nwjs/nwjs.app/Contents/MacOS/nwjs'
-alias nw-build='nw-gyp build'
-alias nw-rebuild='nw-gyp rebuild --target=0.7.5'
-alias nw-read='~/node/git/nw-read/nw-read'
-alias node-build='node-gyp build'
-alias node-rebuild='node-gyp rebuild'
-alias ffpcm='ffplay -f s16le -ar 41000 -ac 2 -loop 0'
-alias ffrgba='ffplay -f rawvideo -pixel_format rgba -video_size 128x128'
-alias ffyuv='ffplay -f rawvideo -loop 0 -video_size 568x320'
-
-alias gyp='~/node/gyp/gyp-read-only/gyp --depth=.'
-
-alias youku='nw ~/node/youku'
-alias qiubai='nw ~/node/git/node-qiubai/node_modules/node-qiubai/qiubai'
-alias net='__skip_sudo;sudo ifconfig en0 ether c8:2a:14:5a:f9:bb'
-
-function xphone(){ xcrun instruments -w "iPhone 6 (12.1)"; }
-
-alias tsvn='telnet tj.myrsky.com.cn 3690'
-alias st='svn st|grep -v node_modules'
 
 #pod
 alias pinstall='pod install --no-repo-update'
@@ -217,6 +186,9 @@ fi
 
 #only for mac
 if __mac;then
+    # iphone6
+    function xphone(){ xcrun instruments -w "iPhone 6 (12.2)"; }
+    #idea
     alias idea='/Applications/IntelliJ\ IDEA.app/Contents/MacOS/idea'
     #.DS
     alias clearmac='find -name .DS_* -exec rm {} \;'
