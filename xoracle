@@ -10,69 +10,77 @@ const program = require('commander');
 const _ = require('lodash');
 const configFile = path.join(osHomedir(), '.oracle_config');
 const CACHE = {};
-let _database = 'db_smart_plate';
+let _database = 'xe';
 let _host = 'localhost';
 
 let _verbose = false;
 let _prettyShell = true;
 let _limit = 10;
-async function createOracle (commands, options) {
-    const db = oracle.createConnection({
-        host: _host,
-        user: 'root',
-        password: '123456',
-        database: _database,
-    });
-    const tables = await getTables(null, db);
-    let allFileds = [];
-    for (const table of tables) {
-        const fields = await initFieldsOfTable(null, table, db);
-        allFileds = [...allFileds, ...fields];
-    }
-    allFileds = _.uniq(allFileds);
-    // 添加表，字段的自动完成
-    function completer(line) {
-        const words = line.replace(/\s,\s/g, ',').trimLeft().split(/\s/);
-        const linePartial = _.last(_.last(words).split(','));
-        let list = [];
-        if (words.length <= 1) {
-            list = ['select', 'update', 'delete'].filter((o) => o.startsWith(linePartial));
-        } else {
-            const preWord = _.toLower(_.nth(words, -2));
-            if (_.includes(['from', 'update', 'into', 'ls', 's', 'm', 'r', 'c'], preWord)) {
-                list = tables.filter((o) => o.startsWith(linePartial));
-            }  else {
-                const prePreWord = _.toLower(_.nth(words, -3));
-                if (_.includes(['s', 'm', 'r', 'c'], prePreWord)) {
-                    const table = preWord;
-                    const fields = CACHE[table];
-                    list = fields.filter((o) => o.startsWith(linePartial));
-                } else {
-                    const prePrePreWord = _.toLower(_.nth(words, -4));
-                    if (_.includes(['s', 'm', 'c'], prePrePreWord)) {
-                        const table = prePreWord;
+function createOracle (commands, options) {
+    oracle.getConnection({
+        user: 'autotest',
+        password: 'owncloud',
+        connectString : `${_host}:49161/xe`,
+    }, async function(err, db) {
+        if (err) {
+            console.error(err.message);
+            return process.exit(0);
+        }
+        const tables = await getTables(null, db);
+        let allFileds = [];
+        for (const table of tables) {
+            const fields = await initFieldsOfTable(null, table, db);
+            allFileds = [...allFileds, ...fields];
+        }
+        allFileds = _.uniq(allFileds);
+        // 添加表，字段的自动完成
+        function completer(line) {
+            const words = line.replace(/\s,\s/g, ',').trimLeft().split(/\s/);
+            const linePartial = _.last(_.last(words).split(','));
+            let list = [];
+            if (words.length <= 1) {
+                list = ['select', 'update', 'delete'].filter((o) => o.startsWith(linePartial));
+            } else {
+                const preWord = _.toLower(_.nth(words, -2));
+                if (_.includes(['from', 'update', 'into', 'ls', 's', 'm', 'r', 'c'], preWord)) {
+                    list = tables.filter((o) => o.startsWith(linePartial));
+                }  else {
+                    const prePreWord = _.toLower(_.nth(words, -3));
+                    if (_.includes(['s', 'm', 'r', 'c'], prePreWord)) {
+                        const table = preWord;
                         const fields = CACHE[table];
                         list = fields.filter((o) => o.startsWith(linePartial));
                     } else {
-                        list = allFileds.filter((o) => o.startsWith(linePartial));
+                        const prePrePreWord = _.toLower(_.nth(words, -4));
+                        if (_.includes(['s', 'm', 'c'], prePrePreWord)) {
+                            const table = prePreWord;
+                            const fields = CACHE[table];
+                            list = fields.filter((o) => o.startsWith(linePartial));
+                        } else {
+                            list = allFileds.filter((o) => o.startsWith(linePartial));
+                        }
                     }
                 }
             }
+            const found = list.filter((o) => o.startsWith(linePartial));
+            return [found.length ? found : list, linePartial];
         }
-        const found = list.filter((o) => o.startsWith(linePartial));
-        return [found.length ? found : list, linePartial];
-    }
 
-    command(commands, { ...options, db, completer });
-    _verbose = true;
+        command(commands, { ...options, db, completer });
+        _verbose = true;
+    });
 }
-function formatResult(obj) {
-    for (const key in obj) {
-        const item = obj[key];
-        if (item instanceof Buffer) {
-            obj[key] = !!item.readInt8(0);
-        } else if (item instanceof Date) {
-            obj[key] = moment(item).format('YYYY-MM-DD HH:mm:ss');
+function formatResult(values, fields) {
+    const obj = {};
+    for (const i in values) {
+        const value = values[i];
+        const key = fields[i];
+        if (value instanceof Buffer) {
+            obj[key] = !!value.readInt8(0);
+        } else if (value instanceof Date) {
+            obj[key] = moment(value).format('YYYY-MM-DD HH:mm:ss');
+        } else {
+            obj[key] = value;
         }
     }
     return obj;
@@ -108,18 +116,22 @@ function formatFields(table, line) {
 
     return method(allFields, o=>_.some(list, r=>r.test(o))).join(',');
 }
-function formatCond(line) {
-    if (!line) {
+function formatCond(line, limit) {
+    if (!line && !limit) {
         return '';
     }
-    return 'WHERE ' + line
-    .replace(/~[^&)|]+/g, o=>{let m = o[1]==='<'?o.slice(2):`%${o.substr(1)}`;return _.last(m)==='>'?` LIKE "${m.slice(0, -1)}"`:` LIKE "${m}%"`})
-    .replace(/!=null|!=NULL/g, ' is not null ')
-    .replace(/=null|=NULL/g, ' is null ')
-    .replace(/(>=|<=|!=|=)([^&)|]+)/g, (o, m, n)=>`${m}${(m==='='||m==='!=')&&((n[0]!==`"`&& _.last(n)!==`"`)&&(n[0]!==`'`&& _.last(n)!==`'`))?`"${n}"`: n}`)
-    .replace(/&/g, ' AND ')
-    .replace(/\|/g, ' OR ')
-    .replace(/#([\w,]*)/g, ' IN ($1)');
+    if (line) {
+        const cond = 'WHERE ' + line
+        .replace(/~[^&)|]+/g, o=>{let m = o[1]==='<'?o.slice(2):`%${o.substr(1)}`;return _.last(m)==='>'?` LIKE "${m.slice(0, -1)}"`:` LIKE "${m}%"`})
+        .replace(/!=null|!=NULL/g, ' is not null ')
+        .replace(/=null|=NULL/g, ' is null ')
+        .replace(/(>=|<=|!=|=)([^&)|]+)/g, (o, m, n)=>`${m}${(m==='='||m==='!=')&&((n[0]!==`"`&& _.last(n)!==`"`)&&(n[0]!==`'`&& _.last(n)!==`'`))?`"${n}"`: n}`)
+        .replace(/&/g, ' AND ')
+        .replace(/\|/g, ' OR ')
+        .replace(/#([\w,]*)/g, ' IN ($1)');
+        return !limit ? cond : cond + ' AND ' + limit;
+    }
+    return 'WHERE ' + limit;
 }
 function formatSort(table, line) {
     if (!line) {
@@ -144,13 +156,21 @@ function formatSort(table, line) {
     }
     return `ORDER BY ${sort.join(',')}`;
 }
+function getList(ret, name) {
+    const { metaData, rows } = ret;
+    const index = _.findIndex(metaData, o=>o.name === name);
+    if (index === -1) {
+        return [];
+    }
+    return rows.map(o=>o[index]);
+}
 async function initFieldsOfTable(self, table, db) {
-    CACHE[table] = (await querySQL(self, db, 'desc ' + table)).map(o=>o.Field);
+    CACHE[table] = getList(await querySQL(self, db, `select * from user_tab_columns where table_name='${table}'`), 'COLUMN_NAME');
     return CACHE[table];
 }
 async function getTables(self, db) {
     if (!CACHE._tables) {
-        CACHE._tables = (await querySQL(self, db, 'show tables')).map(o=>o[_.keys(o)[0]]);
+        CACHE._tables = getList(await querySQL(self, db, 'select table_name from user_tables'), 'TABLE_NAME');
     }
     return CACHE._tables;
 }
@@ -179,14 +199,12 @@ function querySQL(self, db, query) {
     })
 }
 async function executeSQL(self, line, db) {
-    const results = await querySQL(self, db, line);
-    if (results.forEach) {
-        results.forEach(o=>{
-            self.showJson(formatResult(o), _prettyShell);
-        });
-    } else {
-        self.showJson(results, _prettyShell);
-    }
+    const result = await querySQL(self, db, line);
+    const fields = result.metaData.map(o=>o.name);
+
+    result.rows.forEach(o=>{
+        self.showJson(formatResult(o, fields), _prettyShell);
+    });
     self.prompt();
 }
 async function executeLine(line, { db }) {
@@ -197,18 +215,12 @@ async function executeLine(line, { db }) {
 }
 async function showTables(line, { db }) {
     if (!line) { // show tables
-        let results = await querySQL(this, db, 'select database() as db');
-        this.print('tables in '+ results[0].db +' :', 'red');
-        results = await querySQL(this, db, 'show tables');
+        this.print('tables:', 'red');
+        results = await getTables(this, db);
         if (results) {
-            this.print(_.map(results, o=>o[_.keys(o)[0]]).join('  '), 'green');
+            this.print(results.join('  '), 'green');
             this.prompt();
         }
-    } else if (line === '-') { // show databases
-        this.print('databases :', 'red');
-        const results = await querySQL(this, db, 'show databases');
-        this.print(results.map(o=>o.Database).join('  '), 'green');
-        this.prompt();
     } else { // show table fields
         line = line.replace(/[^\w]*/g, '');
         const fields = getFieldsOfTable(line);
@@ -231,18 +243,19 @@ async function showTableRows (line, { db }) {
     let limitIndex = _.findIndex(list, o=>+o==o);
     if (limitIndex !== -1) {
         limit = +list[limitIndex];
-        limit = limit ? `LIMIT ${limit}` : '';
+        limit = limit ? `rownum<=${limit}` : '';
         list.splice(limitIndex, 1);
     } else {
-        limit = `LIMIT ${_limit}`;
+        limit = `rownum<=${_limit}`;
     }
 
     let cond = '';
     let condIndex = _.findIndex(list, o=>/!=|>=|>\w|=|<=|<\w|~|#/.test(o));
     if (condIndex !== -1) {
-        cond = formatCond(list[condIndex]);
+        cond = list[condIndex];
         list.splice(condIndex, 1);
     }
+    cond = formatCond(cond, limit);
 
     let _fields, _sort;
     if (list.length == 1) {
@@ -253,7 +266,7 @@ async function showTableRows (line, { db }) {
     }
     const fields = formatFields(table, _fields);
     const sort = formatSort(table, _sort);
-    await executeSQL(this, `SELECT ${fields} FROM ${table} ${cond} ${sort} ${limit}`, db);
+    await executeSQL(this, `SELECT ${fields} FROM ${table} ${cond} ${sort}`, db);
 }
 async function modifyTable(line, { db }) {
     if (!line) {
@@ -270,10 +283,10 @@ async function modifyTable(line, { db }) {
     let limitIndex = _.findIndex(list, o=>+o==o);
     if (limitIndex !== -1) {
         limit = +list[limitIndex];
-        limit = limit ? `LIMIT ${limit}` : '';
+        limit = limit ? `rownum<=${limit}` : '';
         list.splice(limitIndex, 1);
     } else {
-        limit = `LIMIT ${_limit}`;
+        limit = `rownum<=${_limit}`;
     }
 
     const setFields = list[0];
@@ -285,13 +298,14 @@ async function modifyTable(line, { db }) {
     let cond = '';
     let condIndex = _.findIndex(list, o=>/!=|>=|>\w|=|<=|<\w|~|#/.test(o));
     if (condIndex !== -1) {
-        cond = formatCond(list[condIndex]);
+        cond = list[condIndex];
         list.splice(condIndex, 1);
     }
+    cond = formatCond(cond, limit);
 
     const sort = formatSort(table, list[0]);
 
-    await executeSQL(this, `UPDATE ${table} SET ${setFields} ${cond} ${sort} ${limit}`, db);
+    await executeSQL(this, `UPDATE ${table} SET ${setFields} ${cond} ${sort}`, db);
 }
 async function removeTable(line, { db }) {
     if (!line) {
@@ -308,22 +322,23 @@ async function removeTable(line, { db }) {
     let limitIndex = _.findIndex(list, o=>+o==o);
     if (limitIndex !== -1) {
         limit = +list[limitIndex];
-        limit = limit ? `LIMIT ${limit}` : '';
+        limit = limit ? `rownum<=${limit}` : '';
         list.splice(limitIndex, 1);
     } else {
-        limit = `LIMIT ${_limit}`;
+        limit = `rownum<=${_limit}`;
     }
 
     let cond = '';
     let condIndex = _.findIndex(list, o=>/!=|>=|>\w|=|<=|<\w|~|#/.test(o));
     if (condIndex !== -1) {
-        cond = formatCond(list[condIndex]);
+        cond = list[condIndex];
         list.splice(condIndex, 1);
     }
+    cond = formatCond(cond, limit);
 
     const sort = formatSort(table, list[0]);
 
-    await executeSQL(this, `DELETE FROM ${table} ${cond} ${sort} ${limit}`, db);
+    await executeSQL(this, `DELETE FROM ${table} ${cond} ${sort}`, db);
 }
 async function countTableRows(line, { db }) {
     if (!line) {
@@ -360,16 +375,16 @@ async function copyTableRows(line, { db }) {
     let limitIndex = _.findIndex(list, o=>+o==o);
     if (limitIndex !== -1) {
         limit = +list[limitIndex];
-        limit = limit ? `LIMIT ${limit}` : '';
+        limit = limit ? `rownum<=${limit}` : '';
         list.splice(limitIndex, 1);
     } else {
-        limit = `LIMIT ${_limit}`;
+        limit = `rownum<=${_limit}`;
     }
 
     let sort = '';
     let sortIndex = _.findIndex(list, o=>/^-?\w+$/.test(o));
     if (sortIndex !== -1) {
-        sort = formatCond(list[sortIndex]);
+        sort = formatSort(list[sortIndex]);
         list.splice(sortIndex, 1);
     }
 
@@ -382,10 +397,10 @@ async function copyTableRows(line, { db }) {
         setFields = list[0].split(',').map(o=>o.split('='));
         _cond = list[1];
     }
-    const cond = formatCond(_cond);
+    const cond = formatCond(_cond, limit);
 
     const cond = formatCond(_cond);
-    const docs = await querySQL(this, db, `SELECT * FROM ${table} ${cond} ${sort} ${limit}`);
+    const docs = await querySQL(this, db, `SELECT * FROM ${table} ${cond} ${sort}`);
     const fields = getFieldsOfTable(table).filter(o=>o!=='id');
     for (const doc of docs) {
         const values = fields.map(o=>{
