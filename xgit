@@ -233,17 +233,8 @@ function git_revert_to_version() {
 	rm -f .__file_back
 }
 
-function git_update_and_commit() {
-	local hasupdate
-	hasupdate=$(git pl|sed -n '/Already up[ -]to[ -]date/p')
-	if [ -z "$hasupdate" ];then
-		echo "fix conflit then commit"
-		exit
-	fi
-	git ci -m "$1"
-}
-
 function git_command() {
+	local amend hasupdate hasremote cmd
 	amend=`echo "$@"| grep "\--amend"`
 	if [ "$amend" != "" -o "$1" = "cihd" -o "$1" = "cihead" -o "$1" = "uphead" ];then
 		info=`git st|grep "is ahead of"`
@@ -253,8 +244,11 @@ function git_command() {
 		fi
 	fi
 	if [ "$amend" = "" -a "$1" = "commit" -o "$1" = "ci" -o "$1" = "cm" -o "$1" = "cip" -o "$1" = "cmp" ];then
-		hasupdate=$(git pl|sed -n '/Already up[ -]to[ -]date/p')
-		if [ -z "$hasupdate" ];then
+		hasremote=$(git remote -v)
+		if [ -n "${hasremote}" ];then
+			hasupdate=$(git pl|sed -n '/Already up[ -]to[ -]date/p')
+		fi
+		if [ -z "$hasupdate" -a -n "${hasremote}" ];then
 			echo "fix conflit then commit"
 			exit
 		fi
@@ -263,7 +257,9 @@ function git_command() {
 		cmd="$1"
 		shift
 		git ${cmd:0:2} "$@"
-		git pu
+		if [ -n "${hasremote}" ];then
+			git pu
+		fi
 	else
 		git "$@"
 	fi
@@ -278,7 +274,6 @@ function show_help()
 	list=("${list[@]}" "  -i [dest_dir]: diff merger with dest_dir")
 	list=("${list[@]}" "  -l: show git log, use -f set file")
 	list=("${list[@]}" "  -s: must use with -l, exec git show version")
-	list=("${list[@]}" "  -c [info]: commit code")
 	list=("${list[@]}" "  -t [filter]: set filter")
 	list=("${list[@]}" "  -f [file]: set one log file")
 	list=("${list[@]}" "  -n [version]: show at this version's log")
@@ -332,7 +327,7 @@ function main()
 		exit
 	fi
 
-	while getopts :p:d:arvlst:c:i:n:f:m:e:u:h opt;do
+	while getopts :p:d:arvlst:i:n:f:m:e:u:h opt;do
 		oper_right=1
 		case $opt in
 			p)_oper=0;_dest_dir="$OPTARG";;
@@ -348,7 +343,6 @@ function main()
 			m)_oper=7;files="$OPTARG";;
 			i)_oper=8;_dest_dir="$OPTARG";;
 			e)_oper=9;ver="$OPTARG";;
-			c)_oper=10;info="$OPTARG";;
 			u)xgithub -u "$OPTARG";exit;;
 			*)show_help;exit;;
 		esac
@@ -364,9 +358,6 @@ function main()
 		exit
 	elif ((_oper==9));then
 		git_revert_to_version $ver
-		exit
-	elif ((_oper==10));then
-		git_update_and_commit "$info"
 		exit
 	fi
 
