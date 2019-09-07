@@ -984,12 +984,14 @@ function __set_dest_path()
 #Usage: __set_dest_path -h
 #	  dp is the system viriable
 ########################################
-	local param ret len tline line line2 line3 file tmp_file _dp
+	local param ret len tline line line2 line3 file config_file tmp_file _dp oldproj
 	param="$1"
 	file=~/.dest_path
-	tmp_file=~/.dest_tmp_path
+	config_file=~/.dest_path_config
+	tmp_file=~/.dest_path_tmp
 
 	[ -a "$file" ] || echo -n > $file
+	[ -a "$config_file" ] || echo default > $config_file
 	tline=$(wc -l $file|awk '{print $1}')
 	if [ "$param" = "" ];then
 		dp=$(sed -n '1p' $file)
@@ -999,23 +1001,20 @@ function __set_dest_path()
 		echo "      dt -d|o|m|c|l"
 		echo "      dt -3d|o|m|c|l"
 		echo "      -----"
-		echo "      dt -t 1: 设置~/.dest_file"
-		echo "      dt -t 1 true: 查看~/.dest_file"
+		echo "      dt -t [project]"
 	elif [ "$param" = "-t" ];then
 		if [ -z "$2" ];then
-			cd ~
-			ls .dest_path*
+			cat ${config_file}
 		else
-			if [ -f "${file}${2}" ];then
-				if [ -z "$3" ];then
-					cat "${file}${2}"
-				else
-					cp "${file}${2}" "${file}"
-					echo "set dest file to ${file}${2} done"
-				fi
-			else
-				echo "${file}${2} not exists"
-			fi
+			oldproj=`cat ${config_file}|sed -n '1p'`
+			mv "${file}" "${file}_${oldproj}"
+			mv "${file}_${2}" "${file}" 2>/dev/null
+			[ -a "$file" ] || echo -n > $file
+			echo "$2" >> ${config_file}
+			sort -n ${config_file}|uniq > ${tmp_file}
+			mv ${tmp_file} ${config_file}
+			sed -i '/^'${2}'$/d' ${config_file}
+			sed -i '1i\'${2}'' ${config_file}
 		fi
 	elif [ "$param" = "-d" ];then
 		__extend_cd "$(sed -n '1p' $file)"
