@@ -1,0 +1,80 @@
+#!/bin/bash
+source ~/command/common
+
+_oper=0
+
+function genrate_param_from_model() {
+    if __mac ;then
+        pbpaste|sed 's#:.*//#, //#'|pbcopy
+    else
+         cat /dev/clipboard|sed 's#:.*//#, //#' > /dev/clipboard
+    fi
+}
+
+function genrate_param_without_comment() {
+    if __mac ;then
+        pbpaste|sed 's#\s*//.*$##'|sed 's/.* //'|pbcopy
+    else
+         cat /dev/clipboard|sed 's#\s*//.*$##'|sed 's/.* //' > /dev/clipboard
+    fi
+}
+
+function genrate_param_for_one() {
+    if __mac ;then
+        pbpaste|sed 's#,#: 1,#'|pbcopy
+    else
+         cat /dev/clipboard|sed 's#\s*//.*$##'|sed 's/.* //' > /dev/clipboard
+    fi
+}
+
+function genrate_param_for_js() {
+    if __mac ;then
+        pbpaste|sed "s#.* \(\w\+\)[,]*\s*\(//.*\)#\1: '', \2#"|pbcopy
+    else
+         cat /dev/clipboard|sed "s#.* \(\w\+\)[,]*\s*\(//.*\)#\1: '', \2#" > /dev/clipboard
+    fi
+}
+
+function show_help()
+{
+	local -a list
+	list="help"
+	list=("${list[@]}" "Usage :xt [OPTIONS]")
+	list=("${list[@]}" "  -m: genrate param from model in clipboard")
+	list=("${list[@]}" "  -p: genrate param without comment in clipboard")
+	list=("${list[@]}" "  -o: genrate param add 1")
+	list=("${list[@]}" "  -j: genrate param for js")
+	list=("${list[@]}" "  -h: show help")
+	__msgbox "${list[@]}"
+}
+
+function main()
+{
+	local oper_right param
+	oper_right=0
+
+	if [ "$1" = "--help" ];then
+		show_help full
+		exit
+	fi
+
+	while getopts :mpojh opt;do
+		oper_right=1
+		case $opt in
+			m)_oper=1;;
+			p)_oper=2;;
+			o)_oper=3;;
+			j)_oper=4;;
+			*)show_help;exit;;
+		esac
+	done
+
+	case $_oper in
+        1)genrate_param_from_model;;
+		2)genrate_param_without_comment;;
+        3)genrate_param_for_one;;
+        4)genrate_param_for_js;;
+	esac
+}
+
+main "$@"

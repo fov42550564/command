@@ -396,14 +396,14 @@ function getFields(db, table) {
         });
     });
 }
-async function getTables(db) {
-    if (!CACHE._tables) {
+async function getTables(db, force) {
+    if (!CACHE._tables || force) {
         CACHE._tables = await getCollectionNames(db);
     }
     return CACHE._tables;
 }
-async function getFieldsOfTable(db, table) {
-    if (!CACHE[table]) {
+async function getFieldsOfTable(db, table, force) {
+    if (!CACHE[table] || force) {
         CACHE[table] = await getFields(db, table);
     }
     return CACHE[table];
@@ -456,7 +456,7 @@ function showJson(self, docs) {
 async function showTables(line, { db }) {
     if (!line) { // show tables
         this.print('tables in '+ _database +' :', 'red');
-        const tables = await getTables(db);
+        const tables = await getTables(db, true);
         this.print(tables.join('  '), 'green');
         this.prompt();
     } else if (line === '-') { // show databases
@@ -466,7 +466,7 @@ async function showTables(line, { db }) {
         this.prompt();
     } else { // show table fields
         line = line.replace(/[^\w]*/g, '');
-        const fields = await getFieldsOfTable(db, line);
+        const fields = await getFieldsOfTable(db, line, true);
         this.print(fields.join('  '), 'green');
         this.prompt();
     }
@@ -789,13 +789,17 @@ const COMMANDS = {
 program
 .version('1.0.0')
 .option('-o, --host [host]', 'set host', '')
-.option('-d, --database [database]', 'set database', '')
+.option('-d, --database [database]', 'set database|-d show:show current database', '')
 .parse(process.argv);
 
 let options = {};
 try {
     options = fs.readJSONSync(configFile);
 } catch (e) {}
+if (program.database === 'show') {
+    console.log(options.database );
+    process.exit(0);
+}
 
 host = program.host || options.host || _host;
 database = program.database || options.database || _database;

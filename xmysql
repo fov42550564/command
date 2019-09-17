@@ -386,7 +386,7 @@ async function copyTableRows(line, { db }) {
         _cond = list[1];
     }
     const cond = formatCond(_cond);
-    
+
     const docs = await querySQL(this, db, `SELECT * FROM ${table} ${cond} ${sort} ${limit}`);
     const fields = getFieldsOfTable(table).filter(o=>o!=='id');
     for (const doc of docs) {
@@ -469,13 +469,17 @@ const COMMANDS = {
 program
 .version('1.0.0')
 .option('-o, --host [host]', 'set host', '')
-.option('-d, --database [database]', 'set database', '')
+.option('-d, --database [database]', 'set database|-d show:show current database', '')
 .parse(process.argv);
 
 let options = {};
 try {
     options = fs.readJSONSync(configFile);
 } catch (e) {}
+if (program.database === 'show') {
+    console.log(options.database );
+    process.exit(0);
+}
 
 host = program.host || options.host || _host;
 database = program.database || options.database || _database;
