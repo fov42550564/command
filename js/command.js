@@ -24,6 +24,15 @@ function checkCommand(cmds, line) {
 function checkHistory(cmds, options, line) {
     return checkCommand(_.omit(cmds, options.history || []), line);
 }
+function stringify(obj) {
+    const str = JSON.stringify(obj, (key, value)=>{
+        if (value instanceof Array && _.every(value, o=>+o==o)) {
+            return JSON.stringify(value);
+        }
+        return value;
+    }, 2);
+    return str.replace('"[', '[').replace(']"', ']');
+}
 module.exports = (cmds, options = {}) => {
     let lastLine;
     const historyPath = path.join(osHomedir(), `.xn_${options.prompt || 'common'}_history`);
@@ -112,7 +121,7 @@ module.exports = (cmds, options = {}) => {
             console.log(msg);
         },
         showJson (obj, pretty) {
-            const msg = pretty ? JSON.stringify(obj, null, 2) : JSON.stringify(obj);
+            const msg = pretty ? stringify(obj) : JSON.stringify(obj);
             this.code(msg, 'json');
             rl.prompt(true);
         },
