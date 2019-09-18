@@ -26,6 +26,9 @@ function checkHistory(cmds, options, line) {
 }
 function stringify(obj) {
     const str = JSON.stringify(obj, (key, value)=>{
+        if (_.includes(['hash', 'salt', '__v'], key)) {
+            return undefined;
+        }
         if (value instanceof Array && _.every(value, o=>+o==o)) {
             return JSON.stringify(value);
         }
