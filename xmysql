@@ -468,19 +468,22 @@ const COMMANDS = {
 
 program
 .version('1.0.0')
-.option('-o, --host [host]', 'set host', '')
-.option('-d, --database [database]', 'set database|-d show:show current database', '')
+.option('-t, --host [host]', 'set host', '')
+.option('-d, --database [database]', 'set database|-d: show current database', '')
 .parse(process.argv);
 
 let options = {};
 try {
     options = fs.readJSONSync(configFile);
 } catch (e) {}
-if (program.database === 'show') {
-    console.log(options.database );
+if (!program.database && _.includes(process.argv.slice(2), '-d')) {
+    console.log(options.database||__database);
     process.exit(0);
 }
-
+if (!program.host && _.includes(process.argv.slice(2), '-t')) {
+    console.log(options.host||_host);
+    process.exit(0);
+}
 host = program.host || options.host || _host;
 database = program.database || options.database || _database;
 if (options.host !== host || options.database !== database) {
