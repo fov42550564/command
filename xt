@@ -29,9 +29,9 @@ function genrate_param_for_one() {
 
 function genrate_param_for_js() {
     if __mac ;then
-        pbpaste|sed "s#.* \(\w\+\)[,]*\s*\(//.*\)#\1: '', \2#"|pbcopy
+        pbpaste|sed "s#\(\w\+\)[,]*\s*\(//.*\)#\1: '', \2#"|pbcopy
     else
-         cat /dev/clipboard|sed "s#.* \(\w\+\)[,]*\s*\(//.*\)#\1: '', \2#" > /dev/clipboard
+         cat /dev/clipboard|sed "s#\(\w\+\)[,]*\s*\(//.*\)#\1: '', \2#" > /dev/clipboard
     fi
 }
 
