@@ -24,7 +24,7 @@ function checkCommand(cmds, line) {
 function checkHistory(cmds, options, line) {
     return checkCommand(_.omit(cmds, options.history || []), line);
 }
-function stringify(obj) {
+function stringify(obj, pretty) {
     const str = JSON.stringify(obj, (key, value)=>{
         if (_.includes(['hash', 'salt', '__v'], key)) {
             return undefined;
@@ -33,8 +33,8 @@ function stringify(obj) {
             return JSON.stringify(value);
         }
         return value;
-    }, 2);
-    return str.replace('"[', '[').replace(']"', ']');
+    }, pretty ? 2 : 0);
+    return str.replace(/"\[/g, '[').replace(/\]"/g, ']');
 }
 module.exports = (cmds, options = {}) => {
     let lastLine;
@@ -124,8 +124,7 @@ module.exports = (cmds, options = {}) => {
             console.log(msg);
         },
         showJson (obj, pretty) {
-            const msg = pretty ? stringify(obj) : JSON.stringify(obj);
-            this.code(msg, 'json');
+            this.code(stringify(obj, pretty), 'json');
             rl.prompt(true);
         },
         code (text, lang, hsBg) {

@@ -780,7 +780,7 @@ const COMMANDS = {
     'r': removeTable,
     't': countTableRows,
     'c': copyTableRows,
-    '-': togglePrettyShell,
+    '_': togglePrettyShell,
     'v': toggleVerbose,
     'limit': setDefaultLimit,
     'default': executeLine,
