@@ -10,5 +10,3 @@ try {
 } catch (e) {
     console.log('长度:'+params.length);
 }
-
-
