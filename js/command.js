@@ -32,9 +32,12 @@ function stringify(obj, pretty) {
         if (value instanceof Array && _.every(value, o=>+o==o)) {
             return JSON.stringify(value);
         }
+        if (typeof value === 'string' && /^\[.*]$/.test(value)) {
+            return `__$__${value}__$__`;
+        }
         return value;
     }, pretty ? 2 : 0);
-    return str.replace(/"\[/g, '[').replace(/\]"/g, ']');
+    return str.replace(/"\[/g, '[').replace(/\]"/g, ']').replace(/__\$__/g, '');
 }
 module.exports = (cmds, options = {}) => {
     let lastLine;

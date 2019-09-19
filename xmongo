@@ -20,13 +20,9 @@ let _limit = 10;
 async function createMongo (commands, options) {
     const db = mongojs(_database);
     const tables = await getTables(db);
-
-    let allFileds = [];
     for (const table of tables) {
-        const fields = await getFieldsOfTable(db, table);
-        allFileds = [...allFileds, ...fields];
+        await getFieldsOfTable(db, table);
     }
-    allFileds = _.uniq(allFileds);
 
     // 添加表，字段的自动完成
     function completer(line) {
@@ -35,7 +31,7 @@ async function createMongo (commands, options) {
         let list = [];
         if (words.length <= 1) {
             const _linePartial = line.trim();
-            const _tables = tables.map(o=>`db.${o}`)
+            const _tables = CACHE._tables.map(o=>`db.${o}`)
             list = _tables.filter((o) => o.startsWith(_linePartial));
             const found = list.filter((o) => o.startsWith(_linePartial));
             return [found.length ? found : list, linePartial];
@@ -43,7 +39,7 @@ async function createMongo (commands, options) {
 
         const preWord = _.toLower(_.nth(words, -2));
         if (_.includes(['ls', 's', 'm', 'r', 't', 'c'], preWord)) {
-            list = tables.filter((o) => o.startsWith(linePartial));
+            list = CACHE._tables.filter((o) => o.startsWith(linePartial));
         }  else {
             const prePreWord = _.toLower(_.nth(words, -3));
             if (_.includes(['s', 'm', 'r', 't', 'c'], prePreWord)) {
@@ -57,6 +53,12 @@ async function createMongo (commands, options) {
                     const fields = CACHE[table];
                     list = fields.filter((o) => o.startsWith(linePartial));
                 } else {
+                    let allFileds = [];
+                    for (const table of CACHE._tables) {
+                        const fields = CACHE[table];
+                        allFileds = [...allFileds, ...fields];
+                    }
+                    allFileds = _.uniq(allFileds);
                     list = allFileds.filter((o) => o.startsWith(linePartial));
                 }
             }
@@ -270,6 +272,16 @@ function formatUpdate(doc, line) {
             unset[key] = 1;
             continue;
         }
+        // 解析数组
+        if (/^\[.*]$/.test(value)) {
+            set[key] = JSON.parse(value);
+            continue;
+        }
+        // 解析obj
+        if (/^{.*}$/.test(value)) {
+            set[key] = JSON.parse(value);
+            continue;
+        }
         const matches = _.uniq(value.match(/\$\w+/g));
         for (const match of matches) {
             const refValue =  doc[match.replace('$', '')];
@@ -347,12 +359,19 @@ function formatLine(self, line) {
         } else if (ch === ')') {
             cmatch--;
         }
+        if (amatch < 0 || bmatch < 0 || cmatch < 0) {
+            self.error('括号不匹配');
+            return [];
+        }
+        if (!(ch === ' ' && (amatch || bmatch || cmatch))) {
+            newLine += ch;
+        }
     }
     if (amatch || bmatch || cmatch) {
         self.error('括号不匹配');
         return [];
     }
-    return line
+    return newLine
     .replace(/"[^"]+"/g, o=>o.replace(' ', '&nbsp;'))
     .replace(/'[^']+'/g, o=>o.replace(' ', '&nbsp;'))
     .replace(/\s,\s/g, ',')
