@@ -38,7 +38,7 @@ async function createMongo (commands, options) {
         }
 
         const preWord = _.toLower(_.nth(words, -2));
-        if (_.includes(['ls', 's', 'm', 'r', 't', 'c'], preWord)) {
+        if (_.includes(['ls', 'cd', 's', 'm', 'r', 't', 'c'], preWord)) {
             list = CACHE._tables.filter((o) => o.startsWith(linePartial));
         }  else {
             const prePreWord = _.toLower(_.nth(words, -3));
@@ -475,12 +475,12 @@ function showJson(self, docs) {
     self.showJson(formatResult(docs), _prettyShell);
 }
 async function showTables(line, { db }) {
-    if (!line) { // show tables
+    if (!line || line === '.') { // show tables
         this.print('tables in '+ _database +' :', 'red');
         const tables = await getTables(db, true);
         this.print(tables.join('  '), 'green');
         this.prompt();
-    } else if (line === '-') { // show databases
+    } else if (line === '..') { // show databases
         this.print('databases :', 'red');
         const dbs = await nativeMongo(this, 'db.getMongo().getDBs().databases.map(o=>o.name).join(\' \')');
         this.print(dbs[0], 'green');
@@ -783,11 +783,15 @@ async function changeToDatabase(line, { db }) {
     db.close();
     _database = line;
     db = mongojs(_database);
-    CACHE._options.db = db;
-    const tables = await getTables(db);
-    for (const table of tables) {
-        await getFieldsOfTable(db, table);
+    for (const table of CACHE._tables) {
+        delete CACHE[table];
     }
+    CACHE._options.db = db;
+    const tables = await getTables(db, true);
+    for (const table of tables) {
+        await getFieldsOfTable(db, table, true);
+    }
+    this.prompt();
 }
 function showHelp () {
     this.print('commands:', 'blue');

@@ -9,8 +9,8 @@ const fs = require('fs-extra');
 const path = require('path');
 const moment = require('moment');
 const command = require('./js/command');
-const program = require('commander');
 const _ = require('lodash');
+const program = require('commander');
 const configFile = path.join(osHomedir(), '.mysql_config');
 const CACHE = {};
 let _database = 'db_smart_plate';
@@ -27,12 +27,10 @@ async function createMysql (commands, options) {
         database: _database,
     });
     const tables = await getTables(null, db);
-    let allFileds = [];
     for (const table of tables) {
-        const fields = await initFieldsOfTable(null, table, db);
-        allFileds = [...allFileds, ...fields];
+        await getFieldsOfTable(null, db, table);
     }
-    allFileds = _.uniq(allFileds);
+
     // 添加表，字段的自动完成
     function completer(line) {
         const words = line.replace(/\s,\s/g, ',').trimLeft().split(/\s/);
@@ -42,8 +40,8 @@ async function createMysql (commands, options) {
             list = ['select', 'update', 'delete'].filter((o) => o.startsWith(linePartial));
         } else {
             const preWord = _.toLower(_.nth(words, -2));
-            if (_.includes(['from', 'update', 'into', 'ls', 's', 'm', 'r', 't', 'c'], preWord)) {
-                list = tables.filter((o) => o.startsWith(linePartial));
+            if (_.includes(['from', 'update', 'into', 'ls', 'cd', 's', 'm', 'r', 't', 'c'], preWord)) {
+                list = CACHE._tables.filter((o) => o.startsWith(linePartial));
             }  else {
                 const prePreWord = _.toLower(_.nth(words, -3));
                 if (_.includes(['s', 'm', 'r', 't', 'c'], prePreWord)) {
@@ -57,6 +55,12 @@ async function createMysql (commands, options) {
                         const fields = CACHE[table];
                         list = fields.filter((o) => o.startsWith(linePartial));
                     } else {
+                        let allFileds = [];
+                        for (const table of CACHE._tables) {
+                            const fields = CACHE[table];
+                            allFileds = [...allFileds, ...fields];
+                        }
+                        allFileds = _.uniq(allFileds);
                         list = allFileds.filter((o) => o.startsWith(linePartial));
                     }
                 }
@@ -66,7 +70,8 @@ async function createMysql (commands, options) {
         return [found.length ? found : list, linePartial];
     }
 
-    command(commands, { ...options, db, completer });
+    CACHE._options = { ...options, db, completer };
+    command(commands, CACHE._options);
     _verbose = true;
 }
 function formatResult(obj) {
@@ -93,7 +98,7 @@ function formatLine(line) {
     .replace(/\s#\s/g, '#')
     .trim().split(/\s/).filter(o=>o).map(o=>o.replace('&nbsp;', ' '));
 }
-function formatFields(table, line) {
+async function formatFields(self, db, table, line) {
     if (!line || line === '*') {
         return '*';
     }
@@ -106,7 +111,7 @@ function formatFields(table, line) {
         line = line.substr(1);
     }
     let list = line.split(',');
-    const allFields = getFieldsOfTable(table);
+    const allFields = await getFieldsOfTable(self, db, table);
     list = list.map(o => new RegExp(o.replace('<', '^').replace('>', '$'), 'i'));
 
     return method(allFields, o=>_.some(list, r=>r.test(o))).join(',');
@@ -124,12 +129,12 @@ function formatCond(line) {
     .replace(/\|/g, ' OR ')
     .replace(/#([\w,]*)/g, ' IN ($1)');
 }
-function formatSort(table, line) {
+async function formatSort(self, db, table, line) {
     if (!line) {
         return '';
     }
     const sort = [];
-    const allFields = getFieldsOfTable(table);
+    const allFields = await getFieldsOfTable(self, db, table);
     line = line.split(',');
     for (const i in line) {
         let item = line[i];
@@ -147,19 +152,15 @@ function formatSort(table, line) {
     }
     return `ORDER BY ${sort.join(',')}`;
 }
-async function initFieldsOfTable(self, table, db) {
-    CACHE[table] = (await querySQL(self, db, 'desc ' + table)).map(o=>o.Field);
-    return CACHE[table];
-}
-async function getTables(self, db) {
-    if (!CACHE._tables) {
+async function getTables(self, db, force) {
+    if (!CACHE._tables || force) {
         CACHE._tables = (await querySQL(self, db, 'show tables')).map(o=>o[_.keys(o)[0]]);
     }
     return CACHE._tables;
 }
-function getFieldsOfTable(table) {
-    if (!CACHE[table]) {
-        return [];
+async function getFieldsOfTable(self, db, table, force) {
+    if (!CACHE[table] || force) {
+        CACHE[table] = (await querySQL(self, db, 'desc ' + table)).map(o=>o.Field);
     }
     return CACHE[table];
 }
@@ -199,22 +200,19 @@ async function executeLine(line, { db }) {
     await executeSQL(this, line, db);
 }
 async function showTables(line, { db }) {
-    if (!line) { // show tables
-        let results = await querySQL(this, db, 'select database() as db');
-        this.print('tables in '+ results[0].db +' :', 'red');
-        results = await querySQL(this, db, 'show tables');
-        if (results) {
-            this.print(_.map(results, o=>o[_.keys(o)[0]]).join('  '), 'green');
-            this.prompt();
-        }
-    } else if (line === '-') { // show databases
+    if (!line || line === '.') { // show tables
+        this.print('tables in '+ _database +' :', 'red');
+        const tables = await getTables(this, db, true);
+        this.print(tables.join('  '), 'green');
+        this.prompt();
+    } else if (line === '..') { // show databases
         this.print('databases :', 'red');
         const results = await querySQL(this, db, 'show databases');
         this.print(results.map(o=>o.Database).join('  '), 'green');
         this.prompt();
     } else { // show table fields
         line = line.replace(/[^\w]*/g, '');
-        const fields = getFieldsOfTable(line);
+        const fields = await getFieldsOfTable(this, db, line, true);
         this.print(fields.join('  '), 'green');
         this.prompt();
     }
@@ -254,8 +252,8 @@ async function showTableRows (line, { db }) {
         _fields = list[0];
         _sort = list[1];
     }
-    const fields = formatFields(table, _fields);
-    const sort = formatSort(table, _sort);
+    const fields = await formatFields(this, db, table, _fields);
+    const sort = await formatSort(this, db, table, _sort);
     await executeSQL(this, `SELECT ${fields} FROM ${table} ${cond} ${sort} ${limit}`, db);
 }
 async function modifyTable(line, { db }) {
@@ -292,7 +290,7 @@ async function modifyTable(line, { db }) {
         list.splice(condIndex, 1);
     }
 
-    const sort = formatSort(table, list[0]);
+    const sort = await formatSort(this, db, table, list[0]);
 
     await executeSQL(this, `UPDATE ${table} SET ${setFields} ${cond} ${sort} ${limit}`, db);
 }
@@ -324,7 +322,7 @@ async function removeTable(line, { db }) {
         list.splice(condIndex, 1);
     }
 
-    const sort = formatSort(table, list[0]);
+    const sort = await formatSort(this, db, table, list[0]);
 
     await executeSQL(this, `DELETE FROM ${table} ${cond} ${sort} ${limit}`, db);
 }
@@ -388,7 +386,7 @@ async function copyTableRows(line, { db }) {
     const cond = formatCond(_cond);
 
     const docs = await querySQL(this, db, `SELECT * FROM ${table} ${cond} ${sort} ${limit}`);
-    const fields = getFieldsOfTable(table).filter(o=>o!=='id');
+    const fields = await getFieldsOfTable(this, db, table).filter(o=>o!=='id');
     for (const doc of docs) {
         const values = fields.map(o=>{
             const setField = _.find(setFields, m=>m[0]===o);
@@ -433,11 +431,35 @@ function setDefaultLimit(line) {
     this.print('set limit to ' + _limit);
     this.prompt();
 }
+async function changeToDatabase(line, { db }) {
+    if (!line) {
+        this.prompt();
+        return;
+    }
+    db.close();
+    _database = line;
+    db = mysql.createConnection({
+        host: _host,
+        user: 'root',
+        password: '123456',
+        database: _database,
+    });
+    for (const table of CACHE._tables) {
+        delete CACHE[table];
+    }
+    CACHE._options.db = db;
+    const tables = await getTables(this, db, true);
+    for (const table of tables) {
+        await getFieldsOfTable(this, db, table, true);
+    }
+    this.prompt();
+}
 function showHelp () {
     this.print('commands:', 'blue');
     this.print('    <h|help>: show help');
     this.print('    <q|exit>: exit');
-    this.print('    ls: showTables|ls -: showDatabases|ls table: showTableFields');
+    this.print('    cd: change to database');
+    this.print('    ls: showTables|ls ..: showDatabases|ls table: showTableFields');
     this.print('    s(show): showTableRows # s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
     this.print('    m(modify): modifyTable # m table f1=xx,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
     this.print('    r(remove): removeTable # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
@@ -453,6 +475,7 @@ const COMMANDS = {
     'h|help': showHelp,
     'q|exit': function () { this.close() },
     'cls': function() { this.clear() },
+    'cd': changeToDatabase,
     'ls': showTables,
     's': showTableRows,
     'm': modifyTable,
