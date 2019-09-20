@@ -7,6 +7,7 @@ const fs = require('fs-extra');
 const _ = require('lodash');
 const shell = require('shelljs');
 const xjava = process.platform !== 'win32' ? 'xjava' : `"${shell.env.SHELL}" "${ path.join(osHomedir(), 'command/xjava').replace(/\\/g, '/')}"`;
+const javaFile = path.join(osHomedir(), 'command/java/Test.java');
 let headers = getDefaultHeaders();
 let codes = [];
 let _mode = false;
@@ -40,16 +41,18 @@ function getFullCode(hasLineNumber) {
     return `${_headers.join('\n')}\npublic class Test {\n  public static void main(String[] args) {\n    ${_codes.join('\n    ')}\n  }\n}`;
 }
 function syncCodeFromFile() {
-    const text = fs.readFileSync(path.join(osHomedir(), 'command/java/Test.java'), 'utf8');
-    const lines = _.dropRight(text.split('\n').filter(o=>o.trim()), 2);
-    let code = false;
-    headers = [];
-    codes = [];
-    for (const line of lines) {
-        if (/public class Test|public static void main/.test(line)) {
-            code = true;
-        } else {
-            code && codes.push(line.trim()) || headers.push(line.trim());
+    if (fs.existsSync(javaFile)) {
+        const text = fs.readFileSync(javaFile, 'utf8');
+        const lines = _.dropRight(text.split('\n').filter(o=>o.trim()), 2);
+        let code = false;
+        headers = [];
+        codes = [];
+        for (const line of lines) {
+            if (/public class Test|public static void main/.test(line)) {
+                code = true;
+            } else {
+                code && codes.push(line.trim()) || headers.push(line.trim());
+            }
         }
     }
     this.prompt();
@@ -99,6 +102,9 @@ function format(line) {
     if (/log\(.*\)/.test(line)) {
         line = line.replace('log(', 'System.out.println(');
     }
+    if (/(?<!Arrays\.)asList\(.*\)/.test(line)) {
+        line = line.replace('asList(', 'Arrays.asList(');
+    }
     return line;
 }
 function appendCode(line) {
@@ -126,10 +132,10 @@ function runCode(mode, isHeader) {
     let text;
     if (mode == 0 || mode == 1) {
         text = getFullCode();
-        fs.writeFileSync(path.join(osHomedir(), 'command/java/Test.java'), text);
+        fs.writeFileSync(javaFile, text);
     } else {
         syncCodeFromFile.call(this);
-        text = fs.readFileSync(path.join(osHomedir(), 'command/java/Test.java'));
+        text = fs.readFileSync(javaFile);
     }
     shell.exec(`${xjava} -s`, { silent:true }, (code, stdout, stderr) => {
         if (stderr) {
@@ -152,15 +158,13 @@ function runCode(mode, isHeader) {
     });
 }
 function openCodeWithAtom() {
-    const file = path.join(osHomedir(), 'command/java/Test.java');
-    this.verbose(file);
-    shell.exec(`atom ${file}`, { silent:true });
+    this.verbose(javaFile);
+    shell.exec(`atom ${javaFile}`, { silent:true });
     this.prompt();
 }
 function openCodeWithIdea() {
-    const file = path.join(osHomedir(), 'command/java/Test.java');
-    this.verbose(file);
-    shell.exec(`"/Applications/IntelliJ IDEA.app/Contents/MacOS/idea" ${file}`, { silent:true });
+    this.verbose(javaFile);
+    shell.exec(`"/Applications/IntelliJ IDEA.app/Contents/MacOS/idea" ${javaFile}`, { silent:true });
     this.prompt();
 }
 function toggleMode() {
