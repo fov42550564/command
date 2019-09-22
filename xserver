@@ -85,6 +85,72 @@ function startUploadServer(port) {
     })
 }
 
+function startImageServer(port, file, mode) {
+    var server = app.listen(port);
+    app.get('/*', function(req, res, next){
+        var html = `
+        <style>
+            body,html { margin: 0; padding: 0; background: black; }
+            .hlineContainer { position: absolute; left: 0px; display: flex; flex-direction: row; align-items: center; background:rgba(0,0,0,0);}
+            .hlineText { color: white; font-size: 8px; width: 20px; margin-left: 10px; }
+            .hline { height: 1px; background:red; margin-left: 10px; flex: 1; }
+            .vlineContainer { position: absolute; top: 0px; display: flex; flex-direction: column; justify-content: center; background:rgba(0,0,0,0);}
+            .vlineText { color: white; font-size: 8px; height: 20px; margin-top: 15px; display: flex; justify-content: center; padding-right: 10px; }
+            .vline { width: 1px; background:red; margin-top: 10px; flex: 1; }
+        </style>
+        <body>
+            <img id="img" style="background: white; margin-left: 40px; margin-top: 45px; z-index: 100;"/>
+            <script>
+                var hmode = ${!mode||mode==='h'};
+                var vmode = ${!mode||mode==='v'};
+                var y = 0;
+                var x = 0;
+                var step = 10;
+                var offset = 40;
+                var ty = Math.floor((document.body.clientHeight-100) / step);
+                var tx = Math.floor((document.body.clientWidth-100) / step);
+                function createHL(index, step, offset) {
+                    var div = document.createElement("div");
+                    div.className = "hlineContainer";
+                    div.style.top = offset + index * step;
+                    div.style.height = step;
+                    div.style.width = (tx+3) * step;
+                    div.innerHTML = "<div class='hlineText'>"+(!(index%5) ? index * step : "" )+"</div><div class='hline' style='"+(!(index%5) ? "margin-left: 1px;" : "" )+"'></div>";
+                    document.body.appendChild(div);
+                }
+                function createVL(index, step, offset) {
+                    var div = document.createElement("div");
+                    div.className = "vlineContainer";
+                    div.style.left = offset + index * step;
+                    div.style.width = step;
+                    div.style.height = (ty+3) * step+5;
+                    div.innerHTML = "<div class='vlineText'>"+(!(index%5) ? index * step : "" )+"</div><div class='vline' style='"+(!(index%5) ? "margin-top: 1px;" : "" )+"'></div>";
+                    document.body.appendChild(div);
+                }
+                while (hmode && y < ty) {
+                    createHL(y, step, offset);
+                    y++;
+                }
+                while (vmode && x < tx) {
+                    createVL(x, step, offset);
+                    x++;
+                }
+                document.getElementById('img').src = "${file}";
+            </script>
+        <body>
+        `;
+        res.send(html);
+    });
+
+    server.on('listening', function () {
+        const url = `http://${ip}:${port}`;
+        console.log(url);
+    });
+    server.on('error', function (err) {
+        startImageServer(port+1, file, mode);
+    })
+}
+
 function getHtmlInDir(dir) {
     var html = `<html><head>
     <title>${dir}的文件列表</title>
@@ -189,6 +255,7 @@ app.use(express.static(__dirname+'/static'));
 
 var param = process.argv[2];
 var param1 = process.argv[3];
+var param2 = process.argv[4];
 if (param === '-h' || param === '--help') {
     console.log('');
     console.log('xserver opts');
@@ -197,6 +264,7 @@ if (param === '-h' || param === '--help') {
     console.log('   -c|--create [port]: create a app.js file for nodejs server');
     console.log('   -u|--upload: upload files with multer');
     console.log('   -i|--image [name]: show iphone6 size for image');
+    console.log('   -g|--grid [name] [v|h]: show grid for image');
     console.log('   -d|--dir [name]: show dir file list');
     console.log('   file: show download qrcode for file');
     console.log('');
@@ -209,6 +277,9 @@ if (param === '-h' || param === '--help') {
     openChrome('http:'+ip+':'+port+'/'+param1, true);
 } else if (param === '-d' || param === '--dir') {
     startDirServer(port, param1);
+} else if (param === '-g' || param === '--grid') {
+    startImageServer(port, param1, param2);
+    openChrome('http:'+ip+':'+port);
 } else {
     startServer(port, param);
 }
