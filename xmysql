@@ -205,7 +205,7 @@ async function showTables(line, { db }) {
         const tables = await getTables(this, db, true);
         this.print(tables.join('  '), 'green');
         this.prompt();
-    } else if (line === '..') { // show databases
+    } else if (line === '..' || line === '-') { // show databases
         this.print('databases :', 'red');
         const results = await querySQL(this, db, 'show databases');
         this.print(results.map(o=>o.Database).join('  '), 'green');

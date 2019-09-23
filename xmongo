@@ -480,7 +480,7 @@ async function showTables(line, { db }) {
         const tables = await getTables(db, true);
         this.print(tables.join('  '), 'green');
         this.prompt();
-    } else if (line === '..') { // show databases
+    } else if (line === '..' || line === '-') { // show databases
         this.print('databases :', 'red');
         const dbs = await nativeMongo(this, 'db.getMongo().getDBs().databases.map(o=>o.name).join(\' \')');
         this.print(dbs[0], 'green');
@@ -798,7 +798,7 @@ function showHelp () {
     this.print('    <h|help>: show help');
     this.print('    <q|exit>: exit');
     this.print('    cd: change to database');
-    this.print('    ls: showTables|ls -: showDatabases|ls table: showTableFields');
+    this.print('    ls: showTables|ls ..: showDatabases|ls table: showTableFields');
     this.print('    s(show): showTableRows # s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
     this.print('    m(modify): modifyTable # m table f1=xx,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
     this.print('    r(remove): removeTable # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
