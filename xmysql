@@ -11,6 +11,7 @@ const moment = require('moment');
 const command = require('./js/command');
 const _ = require('lodash');
 const program = require('commander');
+const shell = require('shelljs');
 const configFile = path.join(osHomedir(), '.mysql_config');
 const CACHE = {};
 let _database = 'db_smart_plate';
@@ -35,9 +36,12 @@ async function createMysql (commands, options) {
     function completer(line) {
         const words = line.replace(/\s,\s/g, ',').trimLeft().split(/\s/);
         const linePartial = _.last(_.last(words).split(','));
+        const firstWord = _.toLower(words[0]);
         let list = [];
         if (words.length <= 1) {
             list = ['select', 'update', 'delete'].filter((o) => o.startsWith(linePartial));
+        } else if (firstWord === 'd') {
+            list = CACHE._tables.filter((o) => o.startsWith(linePartial));
         } else {
             const preWord = _.toLower(_.nth(words, -2));
             if (_.includes(['from', 'update', 'into', 'ls', 'cd', 's', 'm', 'r', 't', 'c'], preWord)) {
@@ -454,17 +458,37 @@ async function changeToDatabase(line, { db }) {
     }
     this.prompt();
 }
+function dumpTables(line) {
+    let list = line.split(/\s+/).filter(o=>o);
+    let file = _.find(list, o=>/\.sql$/.test(o));
+    if (file) {
+        _.remove(list, o=>o===file);
+    } else {
+        file = `${_database}.sql`;
+    }
+    const cmd =`mysqldump -uroot -p123456 ${_database} ${list.join(' ')} > ${file}`;
+    shell.exec(cmd, { silent:true }, (code, stdout, stderr) => {
+        if (stderr && /error/.test(stderr)) {
+            this.error(stderr);
+            this.error(`目标文件：${process.cwd()}/${file}`);
+            return this.prompt();
+        }
+        this.success(`目标文件：${process.cwd()}/${file}`);
+        this.prompt();
+    });
+}
 function showHelp () {
     this.print('commands:', 'blue');
     this.print('    <h|help>: show help');
     this.print('    <q|exit>: exit');
     this.print('    cd: change to database');
     this.print('    ls: showTables|ls ..: showDatabases|ls table: showTableFields');
-    this.print('    s(show): showTableRows # s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
-    this.print('    m(modify): modifyTable # m table f1=xx,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
-    this.print('    r(remove): removeTable # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
-    this.print('    t(count): countTableRows # t table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3');
-    this.print('    c(copy): copyTableRows # c table f1=$f1+1,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
+    this.print('    s(showTableRows): s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
+    this.print('    m(modifyTable): m table f1=xx,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
+    this.print('    r(removeTable): # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
+    this.print('    t(countTableRows): t table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3');
+    this.print('    c(copyTableRows): c table f1=$f1+1,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
+    this.print('    d(dumpTables): d [table1 table2 xx.sql]');
     this.print('    _: togglePrettyShell');
     this.print('    v: toggleVerbose');
     this.print('    limit: setDefaultLimit');
@@ -482,6 +506,7 @@ const COMMANDS = {
     'r': removeTable,
     't': countTableRows,
     'c': copyTableRows,
+    'd': dumpTables,
     '_': togglePrettyShell,
     'v': toggleVerbose,
     'limit': setDefaultLimit,
@@ -515,4 +540,4 @@ if (options.host !== host || options.database !== database) {
 _host = host;
 _database = database;
 
-createMysql(COMMANDS, { prompt: 'mysql', history: [ 's', 'm', 'r', 't', 'c' ] });
+createMysql(COMMANDS, { prompt: 'mysql', history: [ 's', 'm', 'r', 't', 'c', 'd' ] });

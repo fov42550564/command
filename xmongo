@@ -37,8 +37,11 @@ async function createMongo (commands, options) {
             return [found.length ? found : list, linePartial];
         }
 
+        const firstWord = _.toLower(words[0]);
         const preWord = _.toLower(_.nth(words, -2));
-        if (_.includes(['ls', 'cd', 's', 'm', 'r', 't', 'c'], preWord)) {
+        if (firstWord === 'd') {
+            list = CACHE._tables.filter((o) => o.startsWith(linePartial));
+        } else if (_.includes(['ls', 'cd', 's', 'm', 'r', 't', 'c'], preWord)) {
             list = CACHE._tables.filter((o) => o.startsWith(linePartial));
         }  else {
             const prePreWord = _.toLower(_.nth(words, -3));
@@ -793,17 +796,43 @@ async function changeToDatabase(line, { db }) {
     }
     this.prompt();
 }
+function dumpTables(line) {
+    let list = line.split(/\s+/).filter(o=>o);
+    let dir = _.find(list, o=>/\.mongo$/.test(o));
+    if (dir) {
+        _.remove(list, o=>o===dir);
+    } else {
+        dir = `${_database}.mongo`;
+    }
+    let cmd =`mongodump -h ${_host} -d ${_database} -o ${dir}`;
+    if (list.length === 1) {
+        cmd = `mongoexport -h ${_host} -d ${_database} -c ${o} -o ${dir}`;
+    } else if (list.length > 1) {
+        cmd = list.map(o=>`mongoexport -h ${_host} -d ${_database} -c ${o} -o ${dir.replace(/\.mongo$/, `_${o}.mongo`)}`).join(';');
+    }
+    console.log("cmd: ", cmd);
+    shell.exec(cmd, { silent:true }, (code, stdout, stderr) => {
+        if (stderr && /error/.test(stderr)) {
+            this.error(stderr);
+            this.error(`目标文件：${process.cwd()}/${dir}`);
+            return this.prompt();
+        }
+        this.success(`目标文件：${process.cwd()}/${dir}`);
+        this.prompt();
+    });
+}
 function showHelp () {
     this.print('commands:', 'blue');
     this.print('    <h|help>: show help');
     this.print('    <q|exit>: exit');
     this.print('    cd: change to database');
     this.print('    ls: showTables|ls ..: showDatabases|ls table: showTableFields');
-    this.print('    s(show): showTableRows # s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
-    this.print('    m(modify): modifyTable # m table f1=xx,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
-    this.print('    r(remove): removeTable # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
-    this.print('    t(count): countTableRows # t table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3');
-    this.print('    c(copy): copyTableRows # c table f1=$f1+1,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
+    this.print('    s(showTableRows): s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
+    this.print('    m(modifyTable): m table f1=xx,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
+    this.print('    r(removeTable): # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
+    this.print('    t(countTableRows): t table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3');
+    this.print('    c(copyTableRows): c table f1=$f1+1,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
+    this.print('    d(dumpTables): d [table1 table2 xx.mongo]');
     this.print('    _: togglePrettyShell');
     this.print('    v: toggleVerbose');
     this.print('    limit: setDefaultLimit');
@@ -821,11 +850,13 @@ const COMMANDS = {
     'r': removeTable,
     't': countTableRows,
     'c': copyTableRows,
+    'd': dumpTables,
     '_': togglePrettyShell,
     'v': toggleVerbose,
     'limit': setDefaultLimit,
     'default': executeLine,
 };
+
 
 program
 .version('1.0.0')
@@ -853,4 +884,4 @@ if (options.host !== host || options.database !== database) {
 _host = host;
 _database = database;
 
-createMongo(COMMANDS, { prompt: 'mongo', history: [ 's', 'm', 'r', 't', 'c' ] });
+createMongo(COMMANDS, { prompt: 'mongo', history: [ 's', 'm', 'r', 't', 'c', 'd' ] });
