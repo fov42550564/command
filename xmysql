@@ -84,7 +84,7 @@ function formatResult(obj) {
         if (item instanceof Buffer) {
             obj[key] = !!item.readInt8(0);
         } else if (item instanceof Date) {
-            obj[key] = moment(item).format('YYYY-MM-DD HH:mm:ss');
+            obj[key] = moment(item).format('YYYY-MM-DD HH:mm:ss.SSS');
         }
     }
     return obj;

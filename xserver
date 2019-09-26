@@ -207,7 +207,7 @@ function startDirServer(port, dir) {
     })
 }
 
-function createServerFile(filename, port) {
+function createServerFile(filename, port = 4000) {
     code = 'var express = require("express");';
     code += '\nvar bodyParser = require("body-parser");';
     code += '\nvar fs = require("fs");';

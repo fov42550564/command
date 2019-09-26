@@ -215,7 +215,7 @@ function formatResult(obj) {
     for (const key in obj) {
         const item = obj[key];
         if (item instanceof Date) {
-            obj[key] = moment(item).format('YYYY-MM-DD HH:mm:ss');
+            obj[key] = moment(item).format('YYYY-MM-DD HH:mm:ss.SSS');
         }
     }
     return obj;

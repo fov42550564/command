@@ -4,6 +4,7 @@
   "dependencies": {
     "body-parser": "1.17.2",
     "chalk": "2.4.2",
+    "colors": "1.4.0",
     "commander": "2.9.0",
     "css2json": "0.0.4",
     "express": "4.15.3",
@@ -18,7 +19,7 @@
     "mongojs": "2.6.0",
     "multer": "1.3.0",
     "mysql2": "1.6.5",
-    "oracledb": "^3.1.2",
+    "oracledb": "3.1.2",
     "os-homedir": "1.0.2",
     "printf": "0.2.5",
     "shelljs": "0.7.8",
