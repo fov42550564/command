@@ -16,7 +16,7 @@ if [ "$1" = "-h" -o "$1"  = "--help" ];then
     echo "xd Usage:"
     echo ""
     echo "  xd"
-    echo "  xd git: set from clipboard from git lg"
+    echo "  xd git [-]: set from clipboard from git lg, - for log 1"
     echo "  xd lines: set from clipboard from lines"
     echo "  xd clear"
     echo "  xd history: show history"
@@ -32,9 +32,14 @@ if [ "$1" = "" ];then
 fi
 
 if [ "$1" = "git" ];then
-    pbpaste|sed 's#.*]:##'|sed '/^\s*$/d' >> ${file}
-    echo >> ${file}
-    exit
+    if [ "$2" = "-" -o "$2" = "1" ];then
+        git lg -1 |sed 's#.*]:##'|sed '/^\s*$/d' >> ${file}
+        exit
+    else
+        pbpaste|sed 's#.*]:##'|sed '/^\s*$/d' >> ${file}
+        echo >> ${file}
+        exit
+    fi
 fi
 
 if [ "$1" = "line" ];then
