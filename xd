@@ -34,6 +34,7 @@ fi
 if [ "$1" = "git" ];then
     if [ "$2" = "-" -o "$2" = "1" ];then
         git lg -1 |sed 's#.*]:##'|sed '/^\s*$/d' >> ${file}
+        echo >> ${file}
         exit
     else
         pbpaste|sed 's#.*]:##'|sed '/^\s*$/d' >> ${file}
