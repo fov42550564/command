@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const AipOcr = require('baidu-aip-sdk').ocr;
+const exec = require('child_process').exec;
 const args = process.argv.slice(2);
 
 if (!args[0] || args[0] === '-h' || args[0] === '--help') {
@@ -18,7 +19,10 @@ const client = new AipOcr(APP_ID, API_KEY, SECRET_KEY);
 
 const image = fs.readFileSync(args[0], 'base64');
 client.generalBasic(image).then((result)=>{
-    console.log(result.words_result.map(o=>o.words).join(args[1]||'  '));
+    const str = result.words_result.map(o=>o.words).join(args[1]||'  ');
+    exec(`echo -n ${str}|pbcopy`, ()=>{
+        console.log(str);
+    });
 }).catch(e=>{
     console.log(e);
 });

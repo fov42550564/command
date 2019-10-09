@@ -41,11 +41,11 @@ async function createMongo (commands, options) {
         const preWord = _.toLower(_.nth(words, -2));
         if (firstWord === 'd') {
             list = CACHE._tables.filter((o) => o.startsWith(linePartial));
-        } else if (_.includes(['ls', 'cd', 's', 'm', 'r', 't', 'c'], preWord)) {
+        } else if (_.includes(['ls', 'cd', 's', 'm', 'r', 'c'], preWord)) {
             list = CACHE._tables.filter((o) => o.startsWith(linePartial));
         }  else {
             const prePreWord = _.toLower(_.nth(words, -3));
-            if (_.includes(['s', 'm', 'r', 't', 'c'], prePreWord)) {
+            if (_.includes(['s', 'm', 'r', 'c'], prePreWord)) {
                 const table = preWord;
                 const fields = CACHE[table];
                 list = fields.filter((o) => o.startsWith(linePartial));
@@ -499,6 +499,7 @@ async function showTableRows (line, { db }) {
     if (!line) {
         return this.prompt();
     }
+    let showCount = false;
     let list = formatLine(this, line);
     const table = list[0];
     if (!table) {
@@ -511,6 +512,9 @@ async function showTableRows (line, { db }) {
     if (limitIndex !== -1) {
         limit = +list[limitIndex];
         list.splice(limitIndex, 1);
+        if (limit < 0) {
+            showCount = true;
+        }
     } else {
         limit = _limit;
     }
@@ -531,6 +535,18 @@ async function showTableRows (line, { db }) {
     }
     const fields = await formatFields(db, table, _fields);
     const sort = await formatSort(db, table, _sort);
+    if (showCount) {
+        if (_verbose) {
+            this.verbose(`db.${table}.count(${j2s(cond)})`);
+        }
+        return db[table].count(cond, (err, docs)=>{
+            if (err) {
+                this.print(err, 'red');
+            } else {
+                showJson(this, docs);
+            }
+        });
+    }
 
     if (_verbose) {
         this.verbose(`db.${table}.find(${j2s(cond)}, ${j2s(fields)}).sort(${j2s(sort)}).limit(${limit})`);
@@ -658,36 +674,6 @@ async function removeTable(line, { db }) {
                     }
                 });
             }
-        }
-    });
-}
-async function countTableRows(line, { db }) {
-    if (!line) {
-        return this.prompt();
-    }
-    let list = formatLine(this, line);
-    const table = list[0];
-    if (!table) {
-        return this.error('invalid oper');
-    }
-    list = _.drop(list);
-
-
-    let cond = {};
-    let condIndex = _.findIndex(list, o=>/!=|>=|>\w|=|<=|<\w|~|#/.test(o));
-    if (condIndex !== -1) {
-        cond = formatCond(list[condIndex]);
-        list.splice(condIndex, 1);
-    }
-
-    if (_verbose) {
-        this.verbose(`db.${table}.count(${j2s(cond)})`);
-    }
-    db[table].count(cond, (err, docs)=>{
-        if (err) {
-            this.print(err, 'red');
-        } else {
-            showJson(this, docs);
         }
     });
 }
@@ -827,11 +813,10 @@ function showHelp () {
     this.print('    <q|exit>: exit');
     this.print('    cd: change to database');
     this.print('    ls: showTables|ls ..: showDatabases|ls table: showTableFields');
-    this.print('    s(showTableRows): s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
-    this.print('    m(modifyTable): m table f1=xx,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
-    this.print('    r(removeTable): # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
-    this.print('    t(countTableRows): t table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3');
-    this.print('    c(copyTableRows): c table f1=$f1+1,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
+    this.print('    s(showTableRows): s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit(-1:count) [-]sortField');
+    this.print('    m(modifyTable): m table f1=xx,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]sortField');
+    this.print('    r(removeTable): # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]sortField');
+    this.print('    c(copyTableRows): c table f1=$f1+1,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]sortField');
     this.print('    d(dumpTables): d [table1 table2 xx.mongo]');
     this.print('    _: togglePrettyShell');
     this.print('    v: toggleVerbose');
@@ -848,7 +833,6 @@ const COMMANDS = {
     's': showTableRows,
     'm': modifyTable,
     'r': removeTable,
-    't': countTableRows,
     'c': copyTableRows,
     'd': dumpTables,
     '_': togglePrettyShell,
@@ -884,4 +868,4 @@ if (options.host !== host || options.database !== database) {
 _host = host;
 _database = database;
 
-createMongo(COMMANDS, { prompt: 'mongo', history: [ 's', 'm', 'r', 't', 'c', 'd' ] });
+createMongo(COMMANDS, { prompt: 'mongo', history: [ 's', 'm', 'r', 'c', 'd' ] });

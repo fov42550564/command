@@ -44,11 +44,11 @@ async function createMysql (commands, options) {
             list = CACHE._tables.filter((o) => o.startsWith(linePartial));
         } else {
             const preWord = _.toLower(_.nth(words, -2));
-            if (_.includes(['from', 'update', 'into', 'ls', 'cd', 's', 'm', 'r', 't', 'c'], preWord)) {
+            if (_.includes(['from', 'update', 'into', 'ls', 'cd', 's', 'm', 'r', 'c'], preWord)) {
                 list = CACHE._tables.filter((o) => o.startsWith(linePartial));
             }  else {
                 const prePreWord = _.toLower(_.nth(words, -3));
-                if (_.includes(['s', 'm', 'r', 't', 'c'], prePreWord)) {
+                if (_.includes(['s', 'm', 'r', 'c'], prePreWord)) {
                     const table = preWord;
                     const fields = CACHE[table];
                     list = fields.filter((o) => o.startsWith(linePartial));
@@ -225,6 +225,7 @@ async function showTableRows (line, { db }) {
     if (!line) {
         return this.prompt();
     }
+    let showCount = false;
     let list = formatLine(line);
     const table = list[0];
     if (!table) {
@@ -238,6 +239,9 @@ async function showTableRows (line, { db }) {
         limit = +list[limitIndex];
         limit = limit ? `LIMIT ${limit}` : '';
         list.splice(limitIndex, 1);
+        if (limit < 0) {
+            showCount = true;
+        }
     } else {
         limit = `LIMIT ${_limit}`;
     }
@@ -247,6 +251,10 @@ async function showTableRows (line, { db }) {
     if (condIndex !== -1) {
         cond = formatCond(list[condIndex]);
         list.splice(condIndex, 1);
+    }
+
+    if (showCount) {
+        return await executeSQL(this, `SELECT COUNT(*) FROM ${table} ${cond}`, db);
     }
 
     let _fields, _sort;
@@ -329,26 +337,6 @@ async function removeTable(line, { db }) {
     const sort = await formatSort(this, db, table, list[0]);
 
     await executeSQL(this, `DELETE FROM ${table} ${cond} ${sort} ${limit}`, db);
-}
-async function countTableRows(line, { db }) {
-    if (!line) {
-        return this.prompt();
-    }
-    let list = formatLine(line);
-    const table = list[0];
-    if (!table) {
-        return this.error('invalid oper');
-    }
-    list = _.drop(list);
-
-    let cond = '';
-    let condIndex = _.findIndex(list, o=>/!=|>=|>\w|=|<=|<\w|~|#/.test(o));
-    if (condIndex !== -1) {
-        cond = formatCond(list[condIndex]);
-        list.splice(condIndex, 1);
-    }
-
-    await executeSQL(this, `SELECT COUNT(*) FROM ${table} ${cond}`, db);
 }
 async function copyTableRows(line, { db }) {
     if (!line) {
@@ -483,11 +471,10 @@ function showHelp () {
     this.print('    <q|exit>: exit');
     this.print('    cd: change to database');
     this.print('    ls: showTables|ls ..: showDatabases|ls table: showTableFields');
-    this.print('    s(showTableRows): s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
-    this.print('    m(modifyTable): m table f1=xx,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
-    this.print('    r(removeTable): # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
-    this.print('    t(countTableRows): t table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3');
-    this.print('    c(copyTableRows): c table f1=$f1+1,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]xx');
+    this.print('    s(showTableRows): s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]sortField');
+    this.print('    m(modifyTable): m table f1=xx,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]sortField');
+    this.print('    r(removeTable): # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]sortField');
+    this.print('    c(copyTableRows): c table f1=$f1+1,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]sortField');
     this.print('    d(dumpTables): d [table1 table2 xx.sql]');
     this.print('    _: togglePrettyShell');
     this.print('    v: toggleVerbose');
@@ -504,7 +491,6 @@ const COMMANDS = {
     's': showTableRows,
     'm': modifyTable,
     'r': removeTable,
-    't': countTableRows,
     'c': copyTableRows,
     'd': dumpTables,
     '_': togglePrettyShell,
@@ -540,4 +526,4 @@ if (options.host !== host || options.database !== database) {
 _host = host;
 _database = database;
 
-createMysql(COMMANDS, { prompt: 'mysql', history: [ 's', 'm', 'r', 't', 'c', 'd' ] });
+createMysql(COMMANDS, { prompt: 'mysql', history: [ 's', 'm', 'r', 'c', 'd' ] });
