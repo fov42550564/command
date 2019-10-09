@@ -3,12 +3,9 @@
 const fs = require('fs');
 const AipOcr = require('baidu-aip-sdk').ocr;
 const exec = require('child_process').exec;
+const os = require('os');
 const args = process.argv.slice(2);
 
-if (!args[0] || args[0] === '-h' || args[0] === '--help') {
-    console.log('xw xx.png|xx.jpg  seperator');
-    process.exit(0);
-}
 
 //设置APPID/AK/SK（前往百度云控制台创建应用后获取相关数据）
 const APP_ID = '15359898';
@@ -17,10 +14,23 @@ const SECRET_KEY = 'MbcedCabbQOyeTbQYi6M6T3GG2f7msMR';
 
 const client = new AipOcr(APP_ID, API_KEY, SECRET_KEY);
 
+if (!args[0] || args[0] === '-h' || args[0] === '--help') {
+    console.log('xw xx.png|xx.jpg  seperator');
+    process.exit(0);
+}
+
+function shellescape(s) {
+    if (/[^A-Za-z0-9_\/:=-]/.test(s)) {
+        s = "'"+s.replace(/'/g,"'\\''")+"'";
+        s = s.replace(/^(?:'')+/g, '').replace(/\\'''/g, "\\'" );
+    }
+    return s;
+}
+
 const image = fs.readFileSync(args[0], 'base64');
 client.generalBasic(image).then((result)=>{
     const str = result.words_result.map(o=>o.words).join(args[1]||'  ');
-    exec(`echo -n ${str}|pbcopy`, ()=>{
+    exec(`printf ${shellescape(str)}${os.platform() === 'darwin' ? ' | pbcopy' : ' > /dev/clipboard'}`, ()=>{
         console.log(str);
     });
 }).catch(e=>{
