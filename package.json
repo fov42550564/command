@@ -2,6 +2,7 @@
   "name": "command",
   "version": "1.0.0",
   "dependencies": {
+    "baidu-aip-sdk": "^2.4.4",
     "body-parser": "1.17.2",
     "chalk": "2.4.2",
     "colors": "1.4.0",
@@ -21,6 +22,7 @@
     "mysql2": "1.6.5",
     "oracledb": "3.1.2",
     "os-homedir": "1.0.2",
+    "pinyin": "^2.9.0",
     "printf": "0.2.5",
     "shelljs": "0.7.8",
     "superagent": "3.5.2",
