@@ -302,6 +302,19 @@ function formatUpdate(doc, line) {
         } else if (/^['"].*['"]$/.test(value)) {
             value = value.replace(/^['"](.*)['"]$/, '$1');
         }
+        // 解析时间
+        if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+            set[key] = moment(value, 'YYYY-MM-DD').toDate();
+            continue;
+        }
+        if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value)) {
+            set[key] = moment(value, 'YYYY-MM-DD HH:mm:ss').toDate();
+            continue;
+        }
+        if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/.test(value)) {
+            set[key] = moment(value, 'YYYY-MM-DD HH:mm:ss.SSS').toDate();
+            continue;
+        }
         set[key] = value;
     }
     return { ...(_.size(set) ? { $set: set } : {}), ...(_.size(unset) ? { $unset: unset } : {}) };
