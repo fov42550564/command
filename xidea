@@ -210,15 +210,15 @@ function genrate_param() {
     if __mac ;then
         pbpaste|sed 's#\s*//.*$##'|sed 's/.* //'|pbcopy
     else
-         cat /dev/clipboard|sed 's#\s*//.*$##'|sed 's/.* //' > /dev/clipboard
+        cat /dev/clipboard|sed 's#\s*//.*$##'|sed 's/.* //' > /dev/clipboard
     fi
 }
 
 function genrate_param_from_entity() {
     if __mac ;then
-        pbpaste|sed '/@Column/d'|sed 's/private //'|sed -n 'h;$!{n;G};p'|sed -n '{N;s/\n/\t/p}'|sed 's/\s\+/ /g;s/;/,/;$s/,//'|pbcopy
+        pbpaste|sed '/@Column/d'|sed 's/private //'|sed -n 'h;$!{n;G};p'|sed -n '{N;s/\n/\t/p}'|sed 's/\s\+/ /g;s/;/,/;s/\s*=\s*[^,]*,/,/;$s/,//'|pbcopy
     else
-         cat /dev/clipboard|sed '/@Column/d'|sed 's/private //'|sed -n 'h;$!{n;G};p'|sed -n '{N;s/\n/\t/p}'|sed 's/\s\+/ /g;s/;/,/;$s/,//' > /dev/clipboard
+        cat /dev/clipboard|sed '/@Column/d'|sed 's/private //'|sed -n 'h;$!{n;G};p'|sed -n '{N;s/\n/\t/p}'|sed 's/\s\+/ /g;s/;/,/;s/\s*=\s*[^,]*,/,/;$s/,//' > /dev/clipboard
     fi
 }
 
@@ -226,7 +226,7 @@ function clear_ifnull() {
     if __mac ;then
         pbpaste|sed 's/@IfNull[^)]*)\s*//'|pbcopy
     else
-         cat /dev/clipboard|sed 's/@IfNull[^)]*)\s*//' > /dev/clipboard
+        cat /dev/clipboard|sed 's/@IfNull[^)]*)\s*//' > /dev/clipboard
     fi
 }
 
@@ -234,59 +234,59 @@ function genrate_param_for_js() {
     if __mac ;then
         pbpaste|sed "s#.* \(\w\+\)[,]*\s*\(//.*\)#\1: '', \2#"|pbcopy
     else
-         cat /dev/clipboard|sed "s#.* \(\w\+\)[,]*\s*\(//.*\)#\1: '', \2#" > /dev/clipboard
+        cat /dev/clipboard|sed "s#.* \(\w\+\)[,]*\s*\(//.*\)#\1: '', \2#" > /dev/clipboard
     fi
 }
 
 function show_help()
 {
-	local -a list
-	list="help"
-	list=("${list[@]}" "Usage :xidea [OPTIONS]")
-	list=("${list[@]}" "  -s [class:function]: generate service code")
-	list=("${list[@]}" "  -f [file:oldName:newName]: copy file")
-	list=("${list[@]}" "  -c [oldClass:newClass]: copy Controller Service and ServerImpl")
-	list=("${list[@]}" "  -e: genrate param from entity in clipboard")
-	list=("${list[@]}" "  -p: genrate param without comment in clipboard")
-	list=("${list[@]}" "  -j: genrate param for js")
-	list=("${list[@]}" "  -i: delete @IfNull in clipboard")
-	list=("${list[@]}" "  -h: show help")
-	__msgbox "${list[@]}"
+    local -a list
+    list="help"
+    list=("${list[@]}" "Usage :xidea [OPTIONS]")
+    list=("${list[@]}" "  -s [class:function]: generate service code")
+    list=("${list[@]}" "  -f [file:oldName:newName]: copy file")
+    list=("${list[@]}" "  -c [oldClass:newClass]: copy Controller Service and ServerImpl")
+    list=("${list[@]}" "  -e: genrate param from entity in clipboard")
+    list=("${list[@]}" "  -p: genrate param without comment in clipboard")
+    list=("${list[@]}" "  -j: genrate param for js")
+    list=("${list[@]}" "  -i: delete @IfNull in clipboard")
+    list=("${list[@]}" "  -h: show help")
+    __msgbox "${list[@]}"
 }
 
 function main()
 {
-	local oper_right param
-	oper_right=0
+    local oper_right param
+    oper_right=0
 
-	if [ "$1" = "--help" ];then
-		show_help full
-		exit
-	fi
+    if [ "$1" = "--help" ];then
+        show_help full
+        exit
+    fi
 
-	while getopts :s:f:c:peijh opt;do
-		oper_right=1
-		case $opt in
-			s)_oper=0;param="$OPTARG";;
-			f)_oper=1;param="$OPTARG";;
-			c)_oper=2;param="$OPTARG";;
-			p)_oper=3;;
-			i)_oper=4;;
-			j)_oper=5;;
-			e)_oper=6;;
-			*)show_help;exit;;
-		esac
-	done
+    while getopts :s:f:c:peijh opt;do
+        oper_right=1
+        case $opt in
+            s)_oper=0;param="$OPTARG";;
+            f)_oper=1;param="$OPTARG";;
+            c)_oper=2;param="$OPTARG";;
+            p)_oper=3;;
+            i)_oper=4;;
+            j)_oper=5;;
+            e)_oper=6;;
+            *)show_help;exit;;
+        esac
+    done
 
-	case $_oper in
-		0)gen_service_code $param;;
-		1)copy_file $param;;
-		2)copy_class $param;;
-		3)genrate_param;;
-		4)clear_ifnull;;
+    case $_oper in
+        0)gen_service_code $param;;
+        1)copy_file $param;;
+        2)copy_class $param;;
+        3)genrate_param;;
+        4)clear_ifnull;;
         5)genrate_param_for_js;;
         6)genrate_param_from_entity;;
-	esac
+    esac
 }
 
 main "$@"
