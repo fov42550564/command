@@ -106,7 +106,6 @@ alias egrep='egrep --color=auto'
 alias fgrep='fgrep --color=auto'
 
 alias dt='__set_dest_path'
-alias pcs='xpcs'
 alias cls='__clear'
 function pb(){ __show_progressbar 0.1 "$@" 2>/dev/null; }
 
@@ -192,6 +191,8 @@ if __mac;then
     alias idea='/Applications/IntelliJ\ IDEA.app/Contents/MacOS/idea'
     #.DS
     alias clearmac='find -name .DS_* -exec rm {} \;'
+    # pm2
+    alias clearpm2='/bin/rm -f ~/.pm2/logs/*'
     #android
     alias ndk='ndk-build'
     export ANDROID_NDK_HOME=~/tools/android-ndk-r10e
