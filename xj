@@ -59,6 +59,8 @@ function syncCodeFromFile() {
 }
 function clearCodes(line) {
     if (!line) {
+        codes = [];
+    } else if (line === 'all') {
         text = getFullCode();
         const file = path.join(osHomedir(), '.xn_java_code_history');
         fs.appendFileSync(file, '\n\n==========================\n\n');
@@ -178,7 +180,7 @@ function showHelp () {
     this.print('    <q|exit>: exit');
     this.print('    <j|jar>: 显示和查看classpath的jar包');
     this.print('    <d|header>: 显示和查看固定的header');
-    this.print('    <c|clear>: 清除缓存的内容，如果后面有数字，则清除对应的内容, c 1-6 7 8-9');
+    this.print('    <c|clear>: 清除缓存的内容，如果后面有数字，则清除对应的内容, c 1-6 7 8-9|all');
     this.print('    <s|show>: 显示缓存的内容');
     this.print('    <sh|showHistory> [n = 10]: 显示n个历史');
     this.print('    <uh|useHistory> [index = 1]: 按照序号使用历史');

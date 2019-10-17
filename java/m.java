@@ -71,6 +71,11 @@ public class m {
         return context;
     }
 
+    // 生成一个JSON字符串
+    public static String jstring(Object... args) {
+        return JSON.toJSONString(json(args));
+    }
+
     // 将类转化为Map
     public static Map object(Object obj) {
         Map context = new HashMap();
