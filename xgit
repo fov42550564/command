@@ -283,7 +283,8 @@ function show_help()
 	list=("${list[@]}" "  -e [version:file]: revert git file to a version")
 	list=("${list[@]}" "  -v: edit file with vim")
 	list=("${list[@]}" "  -m [file;file]: delete history file force")
-	list=("${list[@]}" "  -u [url]: download file or directory from github")
+	list=("${list[@]}" "  -u [url]: reset remote url")
+	list=("${list[@]}" "  -g [url]: download file or directory from github")
 	list=("${list[@]}" "  -h: show help")
 	if [ "$1" = "full" ];then
 		list=("${list[@]}" "bref command:")
@@ -327,7 +328,7 @@ function main()
 		exit
 	fi
 
-	while getopts :p:d:arvlst:i:n:f:m:e:u:h opt;do
+	while getopts :p:d:arvlst:i:n:f:m:e:u:g:h opt;do
 		oper_right=1
 		case $opt in
 			p)_oper=0;_dest_dir="$OPTARG";;
@@ -343,7 +344,8 @@ function main()
 			m)_oper=7;files="$OPTARG";;
 			i)_oper=8;_dest_dir="$OPTARG";;
 			e)_oper=9;ver="$OPTARG";;
-			u)xgithub -u "$OPTARG";exit;;
+			u)git remote remove origin;git remote add origin "$OPTARG";exit;;
+			g)xgithub -u "$OPTARG";exit;;
 			*)show_help;exit;;
 		esac
 	done
