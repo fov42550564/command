@@ -1,0 +1,104 @@
+#!/bin/bash
+
+projects=(
+PDClient
+pdshop
+PDSalesman
+PDSalesman_APP
+PDDriver
+pdshopserver
+pdshop_client_pc
+pdshop_shop_pc
+PDAchieve_APP
+PDClient_WX
+PDWebPage
+PDPrint
+PDNCService
+Documents
+TestDocuments
+)
+
+function clone_item_mirror() {
+    expect -c "
+    set timeout 30000;
+    spawn git clone --mirror https://gitee.com/simiantong/${1}.git;
+    expect {
+        \"Username for*:\" {send \"${username}\r\"; exp_continue}
+        \"Password for*:\" {send \"${password}\r\"}
+    }
+    interact
+    "
+}
+
+function update_item_mirror() {
+    pushd ${1}.git
+    expect -c "
+    set timeout 30000;
+    spawn git push --mirror https://gitee.com/simiantong/${1}.git;
+    expect {
+        \"Username for*:\" {send \"${username}\r\"; exp_continue}
+        \"Password for*:\" {send \"${password}\r\"}
+    }
+    interact
+    "
+    popd
+}
+
+function clone_mirror() {
+    for project in ${projects[@]};do
+        if ! [ -a "${project}.git" ];then
+            clone_item_mirror ${project}
+        fi
+    done
+}
+
+function update_mirror() {
+    for project in ${projects[@]};do
+        if [ -a "${project}.git" ];then
+            update_item_mirror ${project}
+        fi
+    done
+}
+
+function show_help() {
+    echo "Usage: ./xmirror -u|-c -p project[:project] -a [username:]password"
+    exit
+}
+
+function main()
+{
+    local oper oper_right project auth
+    oper_right=0
+
+    while getopts :p:a:cuh opt;do
+        oper_right=1
+        case $opt in
+            p)project="$OPTARG";;
+            a)auth="$OPTARG";;
+            c)oper=1;;
+            u)oper=2;;
+            *)show_help;;
+        esac
+    done
+
+    username="${auth%:*}"
+    password="${auth#*:}"
+    if [ "$password" = "$auth" ];then
+        username=42550564@qq.com
+    fi
+    if [ "$password" = "" ];then
+        show_help
+    fi
+
+    if [ "$project" != "" ];then
+        projects=(${project//:/ })
+    fi
+
+    case $oper in
+        1)clone_mirror;;
+        2)update_mirror;;
+        *)show_help;;
+    esac
+}
+
+main "$@"
