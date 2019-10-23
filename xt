@@ -2,6 +2,8 @@
 source ~/command/common
 
 _oper=0
+_reg=""
+_func=""
 
 function genrate_param_from_model() {
     if __mac ;then
@@ -35,6 +37,36 @@ function genrate_param_for_js() {
     fi
 }
 
+function getSubmitComments() {
+    str=""
+    while read line;do
+        str="${str}\`${line}\`,"
+    done
+	node -e " \
+    var list = [${str}]; \
+    var ret = list.filter(o=>o).map(o=>{ \
+        var m = o.match(/(.*)(${_reg})(.*)/); \
+        var f = ${_func}; \
+        return !m ? o : m[1] + (typeof(f) === 'function' ? f(m[2]) : +m[2] + f) + m[3]; \
+    }); \
+	console.log(ret.join('\n')); \
+	"
+}
+
+function add_for_number() {
+    _reg="${1%:*}"
+    _func="${1#*:}"
+    if [ "$_reg:$_func" != "$1" ];then
+        echo "格式：xt -a reg:num|str|func"
+        exit
+    fi
+    if __mac ;then
+        pbpaste|getSubmitComments|pbcopy
+    else
+         cat /dev/clipboard|getSubmitComments > /dev/clipboard
+    fi
+}
+
 function show_help()
 {
 	local -a list
@@ -44,8 +76,10 @@ function show_help()
 	list=("${list[@]}" "  -p: genrate param without comment in clipboard")
 	list=("${list[@]}" "  -o: genrate param add 1")
 	list=("${list[@]}" "  -j: genrate param for js")
+	list=("${list[@]}" "  -a: add num for regex match (reg:num|str|func, 注意\和=>需要反正成\\和=\>)")
 	list=("${list[@]}" "  -h: show help")
 	__msgbox "${list[@]}"
+    exit
 }
 
 function main()
@@ -54,18 +88,18 @@ function main()
 	oper_right=0
 
 	if [ "$1" = "--help" ];then
-		show_help full
-		exit
+		show_help
 	fi
 
-	while getopts :mpojh opt;do
+	while getopts :mpoja:h opt;do
 		oper_right=1
 		case $opt in
 			m)_oper=1;;
 			p)_oper=2;;
 			o)_oper=3;;
 			j)_oper=4;;
-			*)show_help;exit;;
+			a)_oper=5;param="$OPTARG";;
+			*)show_help;;
 		esac
 	done
 
@@ -74,6 +108,8 @@ function main()
 		2)genrate_param_without_comment;;
         3)genrate_param_for_one;;
         4)genrate_param_for_js;;
+        5)add_for_number "${param}";;
+        *)show_help;;
 	esac
 }
 
