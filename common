@@ -1001,7 +1001,7 @@ function __set_dest_path()
 		echo "      dt -d|o|m|c|l"
 		echo "      dt -3d|o|m|c|l"
 		echo "      -----"
-		echo "      dt -t [project|index]"
+		echo "      dt -t [project|index] [delete]"
 	elif [ "$param" = "-t" ];then
 		if [ -z "$2" ];then
 			cat ${config_file}|sed =|sed 'N;s/\n/: /'
@@ -1016,15 +1016,30 @@ function __set_dest_path()
 				fi
 			fi
 			oldproj=`cat ${config_file}|sed -n '1p'`
-			mv "${file}" "${file}_${oldproj}"
-			mv "${file}_${target}" "${file}" 2>/dev/null
-			[ -a "$file" ] || echo -n > $file
-			echo "${target}" >> ${config_file}
-			sort -n ${config_file}|uniq > ${tmp_file}
-			mv ${tmp_file} ${config_file}
-			sed -i '/^'${target}'$/d' ${config_file}
-			sed -i '1i\'${target}'' ${config_file}
-			echo "set to ${target}"
+			if [ "$3" = "delete" -a "`sed -n '/^'${target}'$/p' ${config_file}`" = "" ];then
+				return
+			fi
+			if [ "${oldproj}" != "${target}" ];then
+				mv "${file}" "${file}_${oldproj}"
+				mv "${file}_${target}" "${file}" 2>/dev/null
+				[ -a "$file" ] || echo -n > $file
+				echo "${target}" >> ${config_file}
+				sort -n ${config_file}|uniq > ${tmp_file}
+				mv ${tmp_file} ${config_file}
+				sed -i '/^'${target}'$/d' ${config_file}
+				sed -i '1i\'${target}'' ${config_file}
+			fi
+			if [ "$3" = "delete" ];then
+				sed -i '/^'${target}'$/d' ${config_file}
+				oldproj=`cat ${config_file}|sed -n '1p'`
+				rm "${file}" 2>/dev/null
+				if [ -n "${oldproj}" ];then
+					mv "${file}_${oldproj}" "${file}" 2>/dev/null
+				fi
+				echo "delete ${target}"
+			else
+				echo "set to ${target}"
+			fi
 		fi
 	elif [ "$param" = "-d" ];then
 		__extend_cd "$(sed -n '1p' $file)"
