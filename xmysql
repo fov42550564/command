@@ -444,6 +444,7 @@ async function changeToDatabase(line, { db }) {
     for (const table of tables) {
         await getFieldsOfTable(this, db, table, true);
     }
+    fs.writeJSONSync(configFile, { host: _host, database: _database });
     this.prompt();
 }
 function dumpTables(line) {
@@ -518,8 +519,8 @@ if (!program.host && _.includes(process.argv.slice(2), '-t')) {
     console.log(options.host||_host);
     process.exit(0);
 }
-host = program.host || options.host || _host;
-database = program.database || options.database || _database;
+const host = program.host || options.host || _host;
+const database = program.database || options.database || _database;
 if (options.host !== host || options.database !== database) {
     fs.writeJSONSync(configFile, { host, database });
 }
