@@ -57,15 +57,47 @@ function startUploadServer(port) {
     });
     app.get('/*', function(req, res, next){
         var form = `
+        <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=0">
         <body style="display: flex; align-items: center; justify-content: center;">
-            <form action="/upload" method="post" enctype="multipart/form-data" style="transform:scale(3,3);">
-                <h2>文件上传</h2>
-                <input type="file" name="file" >
+            <div>
+                <input type="file" id="file" />
+                <button onclick="uploadFile()">上传</button>
                 <br>
                 <br>
-                <br>
-                <input type="submit" value="上  传">
-            </form>
+                <div style="text-align: left;display: inline-block;width: 300px; height: 20px; border: 1px solid #44A1F8; border-radius: 2px;position: relative">
+                    <div id="progress_bar" style="display: inline-block; width: 0px; height: 20px;background-color: #64B587"></div>
+                    <div style="text-align: center;width: 300px;position: absolute; top: 0; font-size:16px; color: #413F43">
+                        <div id="loading">
+                            请选择文件上传
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <script>
+                function uploadFile(){
+                    var el = document.getElementById("file");
+                    var file_obj = el.files[0];
+                    var progress_bar = document.getElementById("progress_bar");
+                    var loading_dom = document.getElementById("loading");
+                    if(file_obj){
+                        var form = new FormData();
+                        form.append("file", file_obj);
+                        var xhr = new XMLHttpRequest();
+                        xhr.onload = function() { el.outerHTML = el.outerHTML; loading_dom.innerHTML = "上传成功"; };
+                        xhr.onerror = function() { loading_dom.innerHTML = "上传失败"; };
+                        xhr.upload.onprogress = function(e) {
+                            var loading = Math.round(e.loaded / e.total * 100);
+                            loading_dom.innerHTML = "上传进度"+loading+"%"
+                            progress_bar.style.width = String(loading * 3) + "px";
+                        };
+                        xhr.open("POST", "/upload", true);
+                        xhr.send(form);
+                    } else{
+                        loading_dom.innerHTML = "请选择文件上传";
+                    }
+                }
+            </script>
         </body>
         `;
         res.send(form);
@@ -193,7 +225,7 @@ function getHtmlInDir(dir) {
 function startDirServer(port, dir) {
     var html = getHtmlInDir(dir);
     var server = app.listen(port);
-    app.get('/showDirFiles', function(req, res, next){
+    app.get('/list', function(req, res, next){
         res.send(html);
     });
 

@@ -67,6 +67,14 @@ function add_for_number() {
     fi
 }
 
+function get_text_from_xml() {
+    if __mac ;then
+        pbpaste|sed "s#<[^>]*>##g"|pbcopy
+    else
+         cat /dev/clipboard|sed "s#<[^>]*>##g" > /dev/clipboard
+    fi
+}
+
 function show_help()
 {
 	local -a list
@@ -77,6 +85,7 @@ function show_help()
 	list=("${list[@]}" "  -o: genrate param add 1")
 	list=("${list[@]}" "  -j: genrate param for js")
 	list=("${list[@]}" "  -a: add num for regex match (reg:num|str|func, 注意\和=>需要反正成\\和=\>)")
+	list=("${list[@]}" "  -t: get text of xml")
 	list=("${list[@]}" "  -h: show help")
 	__msgbox "${list[@]}"
     exit
@@ -91,7 +100,7 @@ function main()
 		show_help
 	fi
 
-	while getopts :mpoja:h opt;do
+	while getopts :mpojta:h opt;do
 		oper_right=1
 		case $opt in
 			m)_oper=1;;
@@ -99,6 +108,7 @@ function main()
 			o)_oper=3;;
 			j)_oper=4;;
 			a)_oper=5;param="$OPTARG";;
+			t)_oper=6;;
 			*)show_help;;
 		esac
 	done
@@ -109,6 +119,7 @@ function main()
         3)genrate_param_for_one;;
         4)genrate_param_for_js;;
         5)add_for_number "${param}";;
+        6)get_text_from_xml;;
         *)show_help;;
 	esac
 }
