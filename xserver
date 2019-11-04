@@ -230,7 +230,7 @@ function startDirServer(port, dir) {
     });
 
     server.on('listening', function () {
-        const url = `http://${ip}:${port}/showDirFiles`;
+        const url = `http://${ip}:${port}/list`;
         console.log(url);
         openChrome(url);
     });
