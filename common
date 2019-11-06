@@ -1001,7 +1001,7 @@ function __set_dest_path()
 		echo "      dt -d|o|m|c|l"
 		echo "      dt -3d|o|m|c|l"
 		echo "      -----"
-		echo "      dt -t [project|index] [delete]"
+		echo "      dt -t [project|index] [delete|atom|vim]"
 	elif [ "$param" = "-t" ];then
 		if [ -z "$2" ];then
 			cat ${config_file}|sed =|sed 'N;s/\n/: /'
@@ -1016,8 +1016,10 @@ function __set_dest_path()
 				fi
 			fi
 			oldproj=`cat ${config_file}|sed -n '1p'`
-			if [ "$3" = "delete" -a "`sed -n '/^'${target}'$/p' ${config_file}`" = "" ];then
-				return
+			if [ "$3" = "delete" -o "$3" = "atom"  -o "$3" = "vim" ];then
+				if [ "`sed -n '/^'${target}'$/p' ${config_file}`" = "" ];then
+					return
+				fi
 			fi
 			if [ "${oldproj}" != "${target}" ];then
 				mv "${file}" "${file}_${oldproj}"
@@ -1037,6 +1039,10 @@ function __set_dest_path()
 					mv "${file}_${oldproj}" "${file}" 2>/dev/null
 				fi
 				echo "delete ${target}"
+			elif [ "$3" = "atom" ];then
+				atom ${file}
+			elif [ "$3" = "vim" ];then
+				vim ${file}
 			else
 				echo "set to ${target}"
 			fi
