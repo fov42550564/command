@@ -1,0 +1,29 @@
+#!/usr/bin/env node
+
+const request = require('superagent');
+const program = require('commander');
+const _ = require('lodash');
+const fs = require('fs');
+const path = require('path');
+const _url = require('url');
+
+program
+.version('0.0.1')
+.option('-u, --url [http://127.0.0.1:3000/test]', 'url of api')
+.option('-d, --data <json>', 'data must be json format', (v)=>eval('v='+v), {})
+.option('-f, --file <string>', 'file name')
+.parse(process.argv);
+
+const { url, data, file } = program;
+let newName;
+const oldName = file || path.basename(_url.parse(url).pathname);
+request.get(encodeURI(url))
+.query(data)
+.responseType('arraybuffer')
+.on('response', res => {
+    newName = res.headers['content-disposition'] && decodeURI(res.headers['content-disposition'].replace(/.*filename=([^;]*).*/, '$1'));
+})
+.on('end', ()=>{
+    !file && newName && fs.renameSync(oldName, newName);
+})
+.pipe(fs.createWriteStream(oldName));
