@@ -2,7 +2,6 @@
 
 const request = require('superagent');
 const program = require('commander');
-const _ = require('lodash');
 const fs = require('fs');
 const path = require('path');
 const _url = require('url');

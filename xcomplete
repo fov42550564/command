@@ -1,20 +1,46 @@
 #!/usr/bin/env node
-
+const pinyin = require('pinyin');
 const word = process.argv[2];
 const list = process.argv.slice(3);
+
+function match(child, parent) {
+    if (parent[0] !== child[0]) {
+        return false;
+    }
+    let lastIndex = -1;
+    let count = 0;
+    for (const ch of child) {
+        const index = parent.indexOf(ch);
+        if (index > lastIndex) {
+            count++;
+        }
+        lastIndex = index;
+    }
+    return count === child.length;
+}
+
 if (!word) {
     console.log(list.join(' '));
 } else {
-    console.log(list.filter(o=>{
-        let lastIndex = -1;
-        let count = 0;
-        for (const ch of word) {
-            const index = o.indexOf(ch);
-            if (index > lastIndex) {
-                count++;
+    let result;
+    const chineseList = list.filter(o=>/[\u4e00-\u9fa5]/.test(o));
+    if (chineseList.length) {
+        result = list.filter(o=>{
+            if (/[\u4e00-\u9fa5]/.test(o)) {
+                o = pinyin(o, { style: pinyin.STYLE_FIRST_LETTER }).map(o=>o.join('')).join('');
             }
-            lastIndex = index;
+            return match(word, o);
+        });
+        if (!result.length) {
+            result = list.filter(o=>{
+                if (/[\u4e00-\u9fa5]/.test(o)) {
+                    o = pinyin(o, { style: pinyin.STYLE_NORMAL }).map(o=>o.join('')).join('');
+                }
+                return match(word, o);
+            });
         }
-        return count === word.length;
-    }).join(' '));
+    } else {
+        result = list.filter(o=>match(word, o));
+    }
+    console.log(result.join(' '));
 }
