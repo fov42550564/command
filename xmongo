@@ -206,6 +206,12 @@ function formatCond(line) {
     if (!line) {
         return {};
     }
+    if (/^[0-9a-z]{24}$/.test(line)) {
+        return { _id: mongojs.ObjectId(line) };
+    }
+    if (/^1[0-9]{10}$/.test(line)) {
+        return { phone: line };
+    }
     return parseOr(dropBrack(line));
 }
 function formatResult(obj) {
@@ -508,6 +514,12 @@ async function showTables(line, { db }) {
         this.prompt();
     }
 }
+function getLimitIndex(list) {
+    return _.findIndex(list, o=>+o==o && o<1000);
+}
+function getCondIndex(list) {
+    return _.findIndex(list, o=>/!=|>=|>\w|=|<=|<\w|~|#/.test(o) || /^[0-9a-z]{24}$/.test(o) || /^1[0-9]{10}$/.test(o));
+}
 async function showTableRows (line, { db }) {
     if (!line) {
         return this.prompt();
@@ -521,7 +533,7 @@ async function showTableRows (line, { db }) {
     list = _.drop(list);
 
     let limit = 0;
-    let limitIndex = _.findIndex(list, o=>+o==o);
+    let limitIndex = getLimitIndex(list);
     if (limitIndex !== -1) {
         limit = +list[limitIndex];
         list.splice(limitIndex, 1);
@@ -533,7 +545,7 @@ async function showTableRows (line, { db }) {
     }
 
     let cond = {};
-    let condIndex = _.findIndex(list, o=>/!=|>=|>\w|=|<=|<\w|~|#/.test(o));
+    let condIndex = getCondIndex(line);
     if (condIndex !== -1) {
         cond = formatCond(list[condIndex]);
         list.splice(condIndex, 1);
@@ -584,7 +596,7 @@ async function modifyTable(line, { db }) {
     list = _.drop(list);
 
     let limit = 0;
-    let limitIndex = _.findIndex(list, o=>+o==o);
+    let limitIndex = getLimitIndex(list);;
     if (limitIndex !== -1) {
         limit = +list[limitIndex];
         list.splice(limitIndex, 1);
@@ -599,7 +611,7 @@ async function modifyTable(line, { db }) {
     list = _.drop(list);
 
     let cond = {};
-    let condIndex = _.findIndex(list, o=>/!=|>=|>\w|=|<=|<\w|~|#/.test(o));
+    let condIndex = getCondIndex(list);;
     if (condIndex !== -1) {
         cond = formatCond(list[condIndex]);
         list.splice(condIndex, 1);
@@ -651,7 +663,7 @@ async function removeTable(line, { db }) {
     list = _.drop(list);
 
     let limit = 0;
-    let limitIndex = _.findIndex(list, o=>+o==o);
+    let limitIndex = getLimitIndex(list);;
     if (limitIndex !== -1) {
         limit = +list[limitIndex];
         list.splice(limitIndex, 1);
@@ -660,7 +672,7 @@ async function removeTable(line, { db }) {
     }
 
     let cond = {};
-    let condIndex = _.findIndex(list, o=>/!=|>=|>\w|=|<=|<\w|~|#/.test(o));
+    let condIndex = getCondIndex(list);;
     if (condIndex !== -1) {
         cond = formatCond(list[condIndex]);
         list.splice(condIndex, 1);
@@ -702,7 +714,7 @@ async function copyTableRows(line, { db }) {
     list = _.drop(list);
 
     let limit = 0;
-    let limitIndex = _.findIndex(list, o=>+o==o);
+    let limitIndex = getLimitIndex(list);;
     if (limitIndex !== -1) {
         limit = +list[limitIndex];
         list.splice(limitIndex, 1);
