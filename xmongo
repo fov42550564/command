@@ -545,7 +545,7 @@ async function showTableRows (line, { db }) {
     }
 
     let cond = {};
-    let condIndex = getCondIndex(line);
+    let condIndex = getCondIndex(list);
     if (condIndex !== -1) {
         cond = formatCond(list[condIndex]);
         list.splice(condIndex, 1);
