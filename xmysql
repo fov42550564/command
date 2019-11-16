@@ -396,7 +396,7 @@ async function copyTableRows(line, { db }) {
     const cond = formatCond(_cond);
 
     const docs = await querySQL(this, db, `SELECT * FROM ${table}${cond}${sort}${limit}`);
-    const fields = await getFieldsOfTable(this, db, table).filter(o=>o!=='id');
+    const fields = (await getFieldsOfTable(this, db, table)).filter(o=>o!=='id');
     for (const doc of docs) {
         const values = fields.map(o=>{
             const setField = _.find(setFields, m=>m[0]===o);
@@ -416,7 +416,7 @@ async function copyTableRows(line, { db }) {
             }
             const item = doc[o];
             if (item instanceof Date) {
-                return 'NULL';
+                return `"${moment(item).format('YYYY-MM-DD HH:mm:ss.SSS')}"`;
             }
             if (doc[o] !== undefined) {
                 return JSON.stringify(doc[o]);
