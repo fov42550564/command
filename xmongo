@@ -250,13 +250,13 @@ function replaceUpdateLine(line) {
 }
 function formatUpdate(doc, line) {
     if (!line) {
-        return { $set: {} };
+        return null;
     }
     line = replaceUpdateLine(line);
 
     let list = line.split(',').filter(o=>o);
     if (!list.length) {
-        return { $set: {} };
+        return null;
     }
     const set = {};
     const unset = {};
@@ -351,11 +351,8 @@ async function formatSort(db, table, line) {
     line = line.split(',');
     for (const i in line) {
         let item = line[i];
-        let order = 1;
-        if (item[0] === '-') {
-            item = item.substr(1);
-            order = -1;
-        }
+        let order = item[0] === '+' ? 1 : -1;
+        item = item.substr(1);
         if (_.includes(allFields, item)) {
             sort[item] = order;
         }
@@ -520,6 +517,9 @@ function getLimitIndex(list) {
 function getCondIndex(list) {
     return _.findIndex(list, o=>/!=|>=|>\w|=|<=|<\w|~|#/.test(o) || /^[0-9a-z]{24}$/.test(o) || /^1[0-9]{10}$/.test(o));
 }
+function getSortIndex(list) {
+    return _.findIndex(list, o=>/^(\+|-)[a-zA-Z][a-zA-Z0-9_]*/.test(o));
+}
 async function showTableRows (line, { db }) {
     if (!line) {
         return this.prompt();
@@ -551,15 +551,6 @@ async function showTableRows (line, { db }) {
         list.splice(condIndex, 1);
     }
 
-    let _fields, _sort;
-    if (list.length == 1) {
-        _fields = list[0];
-    } else if (list.length > 1) {
-        _fields = list[0];
-        _sort = list[1];
-    }
-    const fields = await formatFields(db, table, _fields);
-    const sort = await formatSort(db, table, _sort);
     if (showCount) {
         if (_verbose) {
             this.verbose(`db.${table}.count(${j2s(cond)})`);
@@ -572,6 +563,15 @@ async function showTableRows (line, { db }) {
             }
         });
     }
+
+    let sort = '';
+    let sortIndex = getSortIndex(list);
+    if (sortIndex !== -1) {
+        sort = await formatSort(db, table, list[sortIndex]);
+        list.splice(sortIndex, 1);
+    }
+
+    const fields = await formatFields(db, table, list[0]);
 
     if (_verbose) {
         this.verbose(`db.${table}.find(${j2s(cond)}, ${j2s(fields)}).sort(${j2s(sort)}).limit(${limit})`);
@@ -604,8 +604,15 @@ async function modifyTable(line, { db }) {
         limit = _limit;
     }
 
+    let sort = '';
+    let sortIndex = getSortIndex(list);
+    if (sortIndex !== -1) {
+        sort = await formatSort(db, table, list[sortIndex]);
+        list.splice(sortIndex, 1);
+    }
+
     const setFields = list[0];
-    if (!setFields) {
+    if (!setFields || !_.every(setFields.split(','), o=>/[a-zA-Z][a-zA-Z0-9_]*=/.test(o))) {
         return this.error('invalid oper');
     }
     list = _.drop(list);
@@ -616,8 +623,6 @@ async function modifyTable(line, { db }) {
         cond = formatCond(list[condIndex]);
         list.splice(condIndex, 1);
     }
-
-    const sort = await formatSort(table, list[0]);
 
     if (_verbose) {
         this.verbose(j2s(cond));
@@ -678,7 +683,12 @@ async function removeTable(line, { db }) {
         list.splice(condIndex, 1);
     }
 
-    const sort = await formatSort(table, list[0]);
+    let sort = '';
+    let sortIndex = getSortIndex(list);
+    if (sortIndex !== -1) {
+        sort = await formatSort(db, table, list[sortIndex]);
+        list.splice(sortIndex, 1);
+    }
 
     if (_verbose) {
         this.verbose(`db.${table}.remove(${j2s(cond)}).limit(${limit})`);
@@ -723,9 +733,9 @@ async function copyTableRows(line, { db }) {
     }
 
     let sort = '';
-    let sortIndex = _.findIndex(list, o=>/^-?\w+$/.test(o));
+    let sortIndex = getSortIndex(list);
     if (sortIndex !== -1) {
-        sort = formatSort(list[sortIndex]);
+        sort = await formatSort(db, table, list[sortIndex]);
         list.splice(sortIndex, 1);
     }
 
@@ -741,7 +751,7 @@ async function copyTableRows(line, { db }) {
     const cond = formatCond(_cond);
 
     if (_verbose) {
-        this.verbose(`db.${table}.copy(${j2s(cond)}).to(${j2s(update)}).sort(${j2s(sort)}).limit(${limit})`);
+        this.verbose(`db.${table}.copy(${j2s(cond)}).to(${j2s(setFields)}).sort(${j2s(sort)}).limit(${limit})`);
     }
     db[table].find(cond).sort(sort).limit(limit).toArray((err, docs)=>{
         if (err) {
@@ -756,8 +766,8 @@ async function copyTableRows(line, { db }) {
                     if (err) {
                         this.print(err, 'red');
                     } else {
-                        const update = formatUpdate(_doc, setFields) || {};
-                        db[table].findAndModify({
+                        const update = formatUpdate(_doc, setFields);
+                        update && db[table].findAndModify({
                             query: { _id: ret._id },
                             update,
                             new: true
@@ -839,10 +849,10 @@ function showHelp () {
     this.print('    <q|exit>: exit');
     this.print('    cd: change to database');
     this.print('    ls: showTables|ls ..: showDatabases|ls table: showTableFields');
-    this.print('    s(showTableRows): s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit(-1:count) [-]sortField');
-    this.print('    m(modifyTable): m table f1=xx,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]sortField');
-    this.print('    r(removeTable): # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]sortField');
-    this.print('    c(copyTableRows): c table f1=$f1+1,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [-]sortField');
+    this.print('    s(showTableRows): s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit(-1:count) [+-]sortField');
+    this.print('    m(modifyTable): m table f1=xx,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
+    this.print('    r(removeTable): # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
+    this.print('    c(copyTableRows): c table f1=$f1+1,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
     this.print('    d(dumpTables): d [table1 table2 xx.mongo]');
     this.print('    _: togglePrettyShell');
     this.print('    v: toggleVerbose');
