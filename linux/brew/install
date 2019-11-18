@@ -21,6 +21,9 @@ function xbrewSetInstallApps()
 
 	_apps[i]="findutils"
 	((i++))
+
+	_apps[i]="bash_completion"
+	((i++))
 }
 
 function xbrewCheckAppInstalled()
