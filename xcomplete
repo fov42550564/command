@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 const pinyin = require('pinyin');
 const word = process.argv[2];
-const list = process.argv.slice(3);
+const list = (process.argv[3]||'').split(/\r\n|\n|\r/);
 
 function match(child, parent) {
     if (parent[0] !== child[0]) {
@@ -42,5 +42,5 @@ if (!word) {
     } else {
         result = list.filter(o=>match(word, o));
     }
-    console.log(result.join(' '));
+    console.log(result.map(o=>`${o}/`).join(' '));
 }

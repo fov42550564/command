@@ -4,10 +4,12 @@ var os = require('os');
 var fs = require('fs');
 var path = require('path');
 var express = require('express');
+var bodyParser = require('body-parser');
 var multer  = require('multer')
 var qrcode = require('./js/qrcode.js');
 var upload = multer({ dest: '.' });
 var shell = require('shelljs');
+var utils = require('./js/utils');
 
 function getIPAdress() {
     var interfaces = os.networkInterfaces();
@@ -43,20 +45,38 @@ function startServer(port, file) {
     })
 }
 
-function startUploadServer(port) {
+function startUploadServer(port, isText) {
     var server = app.listen(port);
-    app.post('/upload', upload.single('file'), function(req, res, next){
-        var file = req.file;
-        var dest = '没有上传任何文件';
-        if (file) {
-            dest = path.join(shell.pwd()+'', file.destination, file.originalname);
-            shell.mv(file.path, dest);
-            console.log(dest);
-        }
-        res.send(dest);
-    });
+    if (isText) {
+        app.use(bodyParser.urlencoded());
+        app.post('/sendText', function(req, res, next){
+            var text = req.body.text;
+            console.log(text);
+            console.log('内容已经保存到剪切板');
+            utils.copy(text);
+        });
+    } else {
+        app.post('/upload', upload.single('file'), function(req, res, next){
+            var file = req.file;
+            var dest = '没有上传任何文件';
+            if (file) {
+                dest = path.join(shell.pwd()+'', file.destination, file.originalname);
+                shell.mv(file.path, dest);
+                console.log(dest);
+            }
+            res.send(dest);
+        });
+    }
+
     app.get('/*', function(req, res, next){
-        var form = `
+        var html = isText ? `
+        <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=0">
+        <form action="/sendText" method="post">
+            <label>内容输入：</label>
+            <textarea name="text" cols="30" rows="4"></textarea>
+            <input type="submit" value="提交" />
+        </form>
+        ` : `
         <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=0">
         <body style="display: flex; align-items: center; justify-content: center;">
             <div>
@@ -100,7 +120,7 @@ function startUploadServer(port) {
             </script>
         </body>
         `;
-        res.send(form);
+        res.send(html);
     });
 
     server.on('listening', function () {
@@ -113,7 +133,7 @@ function startUploadServer(port) {
         })
     });
     server.on('error', function (err) {
-        startUploadServer(port+1);
+        startUploadServer(port+1, isText);
     })
 }
 
@@ -295,13 +315,14 @@ if (param === '-h' || param === '--help') {
     console.log('   -h|--help: show help');
     console.log('   -c|--create [port]: create a app.js file for nodejs server');
     console.log('   -u|--upload: upload files with multer');
+    console.log('   -t|--text: send text');
     console.log('   -i|--image [name]: show iphone6 size for image');
     console.log('   -g|--grid [name] [v|h]: show grid for image');
     console.log('   -d|--dir [name]: show dir file list');
     console.log('   file: show download qrcode for file');
     console.log('');
-} else if (param === '-u' || param === '--upload') {
-    startUploadServer(port);
+} else if (param === '-u' || param === '--upload' || param === '-t' || param === '--text') {
+    startUploadServer(port, param === '-t' || param === '--text');
 } else if (param === '-c' || param === '--create') {
     createServerFile('app.js', param1);
 } else if (param === '-i' || param === '--image') {
