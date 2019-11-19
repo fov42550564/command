@@ -3,6 +3,7 @@
 .DS_Store
 *Thumbs.db
 *.log
+pinyinmatch
 node_modules
 yarn.lock
 package-lock.json

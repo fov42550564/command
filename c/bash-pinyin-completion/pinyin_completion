@@ -1,0 +1,97 @@
+#!/bin/bash
+#参考:https://github.com/emptyhua/bash-pinyin-completion
+#参考:http://linuxtoy.org/archives/chsdir.html
+#参考:/etc/bash_completion
+
+#用于保存覆盖之前的函数
+#from http://mivok.net/2009/09/20/bashfunctionoverride.html
+_py_save_function() {
+    local ORIG_FUNC=$(declare -f $1)
+    local NEWNAME_FUNC="$2${ORIG_FUNC#$1}"
+    eval "$NEWNAME_FUNC"
+}
+
+#兼容旧版本的bash-completion
+if test -z "$(typeset -f _compopt_o_filenames)"; then
+
+# This function turns on "-o filenames" behavior dynamically. It is present
+# for bash < 4 reasons. See http://bugs.debian.org/272660#64 for info about
+# the bash < 4 compgen hack.
+_compopt_o_filenames() {
+    # We test for compopt availability first because directly invoking it on
+    # bash < 4 at this point may cause terminal echo to be turned off for some
+    # reason, see https://bugzilla.redhat.com/653669 for more info.
+    type compopt &>/dev/null && compopt -o filenames 2>/dev/null || \
+        compgen -f /non-existing-dir/ >/dev/null
+}
+
+fi
+
+#中文补齐函数
+
+_py_completion() {
+    local IFS=$'\t\n'
+    local cur
+
+#兼容旧版本的bash-completion
+    test -z "$(typeset -f _get_comp_words_by_ref)" && cur="$(_get_cword)" || _get_comp_words_by_ref cur
+
+    _expand || return 0
+
+    local dname_real bname_real dname bname tmp tmp2 sep
+    local -a rt
+#目录名部分
+    dname="$(dirname "$cur")";
+#文件名部分
+    bname="$(basename "$cur")";
+
+#cd "./
+    if [[ "${dname:0:1}" == "\"" ]]; then
+        dname="${dname:1}"
+    fi
+
+    if [[ "${bname:0:1}" == "\"" ]]; then
+        bname="${bname:1}"
+    fi
+
+    #eval 用于消除转义符 例如 \[ 将变成 [
+    eval dname_real="$dname"
+    eval bname_real="$bname"
+
+    test -z "$bname_real" && return 0;
+
+    if [[ "$dname" == "/" ]];then
+        sep=""
+    else
+        sep="/"
+    fi
+
+    test ! -d "$dname_real" && return 0;
+    cd $dname_real
+
+    if [[ "$1" == "-d" ]];then
+        rt=(${rt[@]-} $(compgen -d|pinyinmatch "$bname_real"))
+    else
+        rt=(${rt[@]-} $(compgen -f|pinyinmatch "$bname_real"))
+    fi
+
+    cd $OLDPWD
+
+    COMPREPLY=( "${COMPREPLY[@]}" "${rt[@]}" )
+}
+
+_py_save_function _filedir _py_bak_filedir
+
+_filedir() {
+    _py_bak_filedir $@
+    _py_completion $@
+}
+
+_py_save_function _filedir_xspec _py_bak_filedir_xspec
+
+_filedir_xspec () {
+    _py_bak_filedir_xspec $@
+    _py_completion $@
+}
+
+unset -f _py_save_function
