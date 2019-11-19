@@ -70,9 +70,18 @@ _py_completion() {
     cd $dname_real
 
     if [[ "$1" == "-d" ]];then
-        rt=(${rt[@]-} $(compgen -d|pinyinmatch "$bname_real"))
+        rt=(${rt[@]-} $(
+        compgen -d|pinyinmatch "$bname_real"|while read -r tmp;do
+        printf '%s%s%s\n' "$dname_real" "$sep" "$tmp"
+        done
+        ))
     else
-        rt=(${rt[@]-} $(compgen -f|pinyinmatch "$bname_real"))
+        rt=(${rt[@]-} $(
+        compgen -f|pinyinmatch "$bname_real"|while read -r tmp;do
+        printf '%s%s%s\n' "$dname_real" "$sep" "$tmp"
+        done
+        ))
+        [ ${#rt[@]} -ne 0 ] && _compopt_o_filenames
     fi
 
     cd $OLDPWD
@@ -83,14 +92,12 @@ _py_completion() {
 _py_save_function _filedir _py_bak_filedir
 
 _filedir() {
-    _py_bak_filedir $@
     _py_completion $@
 }
 
 _py_save_function _filedir_xspec _py_bak_filedir_xspec
 
 _filedir_xspec () {
-    _py_bak_filedir_xspec $@
     _py_completion $@
 }
 

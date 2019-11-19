@@ -117,12 +117,27 @@ int main(int argc, char **argv) {
         }
     }
 
+    utf8vector word_vector = utf8vector_create(word, -1);
+    int word_size = utf8vector_uni_count(word_vector);
+    char *_word = (char *)calloc(word_size * 6 + 1, sizeof(char));
+    wchar_t word_char;
+    while((word_char = utf8vector_next_unichar(word_vector)) != '\0') {
+        if (pinyin_ishanzi(word_char)) {
+            const char **pinyins;
+            pinyin_get_pinyins_by_unicode(word_char, &pinyins);
+            strcat(_word, pinyins[0]);
+            free(pinyins);
+        } else {
+            _word[strlen(_word)] = word_char;
+        }
+    }
+
     int count;
     int show_index = 0;
     linereader reader = linereader_create(STDIN_FILENO);
     while ((count = linereader_readline(reader)) != -1) {
         const char *line = reader->line_buffer;
-        if (word_len == 0 || match_line(line, count, word)) {
+        if (word_len == 0 || match_line(line, count, _word)) {
             if (select == 0) {
                 printf("%s\n", line);
             } else {
@@ -135,5 +150,6 @@ int main(int argc, char **argv) {
         }
     }
     linereader_free(reader);
+    free(_word);
     return false;
 }
