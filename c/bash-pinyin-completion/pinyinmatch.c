@@ -100,7 +100,7 @@ bool match_line(const char *line, int line_length, const char *word) {
             level++;
             free(pinyins);
         } else {
-            set_parents_char(parents, parent_count, line_char);
+            set_parents_char(parents, parent_count, pinyin_lowercase(line_char));
         }
     }
     bool result = match(parents, parent_count, word);
@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
             strcat(_word, pinyins[0]);
             free(pinyins);
         } else {
-            _word[strlen(_word)] = word_char;
+            _word[strlen(_word)] = pinyin_lowercase(word_char);
         }
     }
 
