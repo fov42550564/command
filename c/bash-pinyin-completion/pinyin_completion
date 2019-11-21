@@ -5,8 +5,8 @@
 
 #用于保存覆盖之前的函数
 #from http://mivok.net/2009/09/20/bashfunctionoverride.html
-__logfile=/Users/whxx/test/x/1
-# __logfile=/dev/null
+# __logfile=/Users/whxx/test/x/1
+__logfile=/dev/null
 __MYLOG() {
     echo "$@" >> ${__logfile}
 }
@@ -75,9 +75,9 @@ _py_completion() {
     cd $dname_real
 
     if [[ "$1" == "-d" ]];then
-        list=($(compgen -d|pinyinmatch "$bname_real"))
+        list=($(compgen -d|sort|pinyinmatch "$bname_real"))
     else
-        list=($(compgen -f|pinyinmatch "$bname_real"))
+        list=($(compgen -f|sort|pinyinmatch "$bname_real"))
         [ ${#list[@]} -ne 0 ] && _compopt_o_filenames
     fi
     cd $OLDPWD
