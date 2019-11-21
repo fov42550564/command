@@ -5,6 +5,11 @@
 
 #用于保存覆盖之前的函数
 #from http://mivok.net/2009/09/20/bashfunctionoverride.html
+__logfile=/Users/whxx/test/x/1
+# __logfile=/dev/null
+__MYLOG() {
+    echo "$@" >> ${__logfile}
+}
 _py_save_function() {
     local ORIG_FUNC=$(declare -f $1)
     local NEWNAME_FUNC="$2${ORIG_FUNC#$1}"
@@ -39,7 +44,7 @@ _py_completion() {
     _expand || return 0
 
     local dname_real bname_real dname bname tmp tmp2 sep
-    local -a rt
+    local -a list sys_list
 #目录名部分
     dname="$(dirname "$cur")";
 #文件名部分
@@ -70,34 +75,44 @@ _py_completion() {
     cd $dname_real
 
     if [[ "$1" == "-d" ]];then
-        rt=(${rt[@]-} $(
-        compgen -d|pinyinmatch "$bname_real"|while read -r tmp;do
-        printf '%s%s%s\n' "$dname_real" "$sep" "$tmp"
-        done
-        ))
+        list=($(compgen -d|pinyinmatch "$bname_real"))
     else
-        rt=(${rt[@]-} $(
-        compgen -f|pinyinmatch "$bname_real"|while read -r tmp;do
-        printf '%s%s%s\n' "$dname_real" "$sep" "$tmp"
-        done
-        ))
-        [ ${#rt[@]} -ne 0 ] && _compopt_o_filenames
+        list=($(compgen -f|pinyinmatch "$bname_real"))
+        [ ${#list[@]} -ne 0 ] && _compopt_o_filenames
+    fi
+    cd $OLDPWD
+    sys_list=("${COMPREPLY[@]}")
+
+    __MYLOG keyword="$bname_real"
+    __MYLOG list="${list[@]}"
+    __MYLOG  sys_list="${sys_list[@]}"
+
+    if [ ${#list[@]} -eq 1 ];then
+        if [ "${list[0]}" = "$bname_real" ];then # 如果关键字和查询出来的是相同，则采取系统的集合
+            COMPREPLY=("${sys_list[@]}")
+        elif [ "$dname_real" != "." ];then
+            COMPREPLY=("${dname_real}${sep}${list[0]}")
+        else
+            COMPREPLY=("${list[0]}")
+        fi
+    else
+        COMPREPLY=("${list[@]}")
     fi
 
-    cd $OLDPWD
-
-    COMPREPLY=( "${COMPREPLY[@]}" "${rt[@]}" )
+    __MYLOG COMPREPLY="${COMPREPLY[@]}"
 }
 
 _py_save_function _filedir _py_bak_filedir
 
 _filedir() {
+    _py_bak_filedir $@
     _py_completion $@
 }
 
 _py_save_function _filedir_xspec _py_bak_filedir_xspec
 
 _filedir_xspec () {
+    _py_bak_filedir_xspec $@
     _py_completion $@
 }
 

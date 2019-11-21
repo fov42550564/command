@@ -12,6 +12,13 @@
 #define false 0
 typedef int bool;
 
+#define DEBUG
+#ifdef DEBUG
+#define __MYLOG(x, ARGS...) fprintf (stderr, "\n%s:"x"\n", __FUNCTION__, ##ARGS)
+#else
+#define __MYLOG(x, ARGS...)
+#endif //DEBUG
+
 int index_of(const char* str, int offset, char ch) {
     int index = 0;
     while(str[index] != '\0'){
@@ -108,13 +115,13 @@ bool match_line(const char *line, int line_length, const char *word) {
 }
 int main(int argc, char **argv) {
     char *word = argv[1];
+    if (NULL == word) {
+        word = "";
+    }
     int word_len = strlen(word);
     int select = 0;
-    if (word_len > 2 && word[word_len-2] == '@') { // fyj@1的格式为查看第几个
-        if (word[word_len-1] > 48 && word[word_len-1] < 58) {
-            select = word[word_len-1] - 48;
-            word[word_len-2] = '\0';
-        }
+    if (word_len > 1 && word[word_len-1] > 48 && word[word_len-1] < 58) { // 使用数字1-9查看第几个，如果这个数字本身存在，则直接找到该选项
+        select = word[word_len-1] - 48;
     }
 
     utf8vector word_vector = utf8vector_create(word, -1);
@@ -133,14 +140,27 @@ int main(int argc, char **argv) {
     }
 
     int count;
-    int show_index = 0;
+    int index = 0;
     linereader reader = linereader_create(STDIN_FILENO);
+    bool found = false;
+    char ** lines = (char **)calloc(256, sizeof(char *));
     while ((count = linereader_readline(reader)) != -1) {
         const char *line = reader->line_buffer;
+        if (index < 256) {
+            lines[index++] = strdup(line);
+        }
         if (word_len == 0 || match_line(line, count, _word)) {
-            if (select == 0) {
-                printf("%s\n", line);
-            } else {
+            found = true;
+            printf("%s\n", line);
+        }
+    }
+    if (!found && select > 0) {
+        word_len--;
+        _word[strlen(_word)-1] = '\0';
+        int show_index = 0;
+        for (int i=0; i<index; i++) {
+            const char *line = lines[i];
+            if (word_len == 0 || match_line(line, count, _word)) {
                 show_index++;
                 if (show_index == select) {
                     printf("%s\n", line);
