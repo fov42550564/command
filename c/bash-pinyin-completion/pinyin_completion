@@ -5,10 +5,13 @@
 
 #用于保存覆盖之前的函数
 #from http://mivok.net/2009/09/20/bashfunctionoverride.html
-__logfile=/Users/fang/test/y/1
+__logfile=~/command/pinyin.log
+__HAS_LOG=0
 # __logfile=/dev/null
 __MYLOG() {
-    echo "$@" >> ${__logfile}
+    if [ "$__HAS_LOG" = "1" ];then
+        echo "$@" >> ${__logfile}
+    fi
 }
 _py_save_function() {
     local ORIG_FUNC=$(declare -f $1)
@@ -75,9 +78,10 @@ _py_completion() {
     cd $dname_real
 
     if [[ "$1" == "-d" ]];then
-        list=($(compgen -d|sort|pinyinmatch "$bname_real" 2>${__logfile}))
+        __MYLOG "has -d"
+        list=($(compgen -d|sort|pinyinmatch "$bname_real" $PY_FULL 2>$__logfile))
     else
-        list=($(compgen -f|sort|pinyinmatch "$bname_real" 2>${__logfile}))
+        list=($(compgen -f|sort|pinyinmatch "$bname_real" $PY_FULL 2>$__logfile))
         [ ${#list[@]} -ne 0 ] && _compopt_o_filenames
     fi
     cd $OLDPWD
@@ -92,8 +96,6 @@ _py_completion() {
     if [ ${#list[@]} -eq 1 ];then
         if [ "${list[0]}" = "$bname_real" ];then # 如果关键字和查询出来的是相同，则采取系统的集合
             COMPREPLY=("${sys_list[@]}")
-        elif [ "$dname_real" != "." ];then
-            COMPREPLY=("${dname_real}${sep}${list[0]}")
         else
             COMPREPLY=("${list[0]}")
         fi
@@ -104,6 +106,31 @@ _py_completion() {
         done
     else
         COMPREPLY=("${list[@]}")
+    fi
+
+    # 出去重复的COMPREPLY
+    local -a list
+    local var var1 found len
+    for var in "${COMPREPLY[@]}";do
+        found=0
+        for var1 in "${list[@]}";do
+            if [ "$var" = "$var1" ];then
+                found=1
+            fi
+        done
+        if [ "$found" = "0" ];then
+            list=( "${list[@]}" "${var}" );
+        fi
+    done
+    __MYLOG list="${list[@]}"
+
+    len=${#list[@]}
+    if [ ${len} -eq 1 ];then
+        if [ "$dname_real" != "." ];then
+            COMPREPLY=( "${dname_real}${sep}${list[0]}" )
+        fi
+    elif [ ${len} -ne 0 ];then
+        COMPREPLY=( "+[1-${len}]选择:" "${list[@]}" )
     fi
 
     __MYLOG COMPREPLY="${COMPREPLY[@]}"
