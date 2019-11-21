@@ -12,17 +12,27 @@
 #define false 0
 typedef int bool;
 
+static bool strict_mode = true;
+
 #define DEBUG
 #ifdef DEBUG
-#define __MYLOG(x, ARGS...) fprintf (stderr, "\n%s:"x"\n", __FUNCTION__, ##ARGS)
+#define __MYLOG(x, ARGS...) fprintf (stderr, "%s:"x"\n", __FUNCTION__, ##ARGS)
 #else
 #define __MYLOG(x, ARGS...)
 #endif //DEBUG
 
+char * strcat_ex(char *str, const char* str1) {
+    char *_str = (char *)str1;
+    while (*_str) {
+        str[strlen(str)] = pinyin_uppercase(*_str);
+        _str++;
+    }
+    return str;
+}
 int index_of(const char* str, int offset, char ch) {
     int index = 0;
     while(str[index] != '\0'){
-        if(index > offset && str[index] == ch){
+        if(index > offset && (str[index] == ch || pinyin_lowercase(str[index]) == ch)){
             return index;
         }
         index++;
@@ -30,24 +40,32 @@ int index_of(const char* str, int offset, char ch) {
     return -1;
 }
 bool match_item(char* parent, const char *child) {
-    if (parent[0] != child[0]) {
+    if (parent[0] != child[0] && pinyin_lowercase(parent[0]) != child[0]) {
         return false;
     }
     int last_index = -1;
-    int count = 0;
     int child_len = strlen(child);
+    if (strlen(parent) < child_len) {
+        return false;
+    }
     for (int i = 0; i < child_len; i++) {
         char ch = child[i];
-        int index = index_of(parent, last_index, ch);
-        if (index > last_index) {
-            count++;
+        if (strict_mode) {
+            if (parent[i] != ch  && pinyin_lowercase(parent[i]) != ch) {
+                return false;
+            }
+        } else {
+            last_index = index_of(parent, last_index, ch);
+            if (last_index == -1) {
+                return false;
+            }
         }
-        last_index = index;
     }
-    return count == child_len;
+    return true;
 }
 bool match(char** parents, int parent_count, const char *child) {
     for (int i = 0; i < parent_count; i++) {
+        __MYLOG("parents[%d]=%s", i, parents[i]);
         if (match_item(parents[i], child)) {
             return true;
         }
@@ -61,7 +79,11 @@ void set_parents_pinyins(char **parents, int parent_count, const char **pinyins,
     }
     int current_count = count_list[level];
     for (int i = 0; i < parent_count; i++) {
-        strcat(parents[i], pinyins[(i/pre_count)%current_count]);
+        if (strict_mode) {
+            parents[i][strlen(parents[i])] = pinyin_uppercase(pinyins[(i/pre_count)%current_count][0]);
+        } else {
+            strcat_ex(parents[i], pinyins[(i/pre_count)%current_count]);
+        }
     }
 }
 void set_parents_char(char **parents, int parent_count, char ch) {
@@ -88,7 +110,7 @@ bool match_line(const char *line, int line_length, const char *word) {
     utf8vector_reset(line_vector);
     char **parents = (char **)calloc(parent_count, sizeof(char *));
     for (int i = 0; i < parent_count; i++) {
-        parents[i] = (char *)calloc(size * 6 + 1, sizeof(char));
+        parents[i] = (char *)calloc(size * (strict_mode ? 1 : 6 ) + 1, sizeof(char));
     }
 
     level = 0;
@@ -115,6 +137,9 @@ bool match_line(const char *line, int line_length, const char *word) {
 }
 int main(int argc, char **argv) {
     char *word = argv[1];
+    if (NULL != argv[2]) {
+        strict_mode = false;
+    }
     if (NULL == word) {
         word = "";
     }
@@ -123,22 +148,27 @@ int main(int argc, char **argv) {
     if (word_len > 1 && word[word_len-1] > 48 && word[word_len-1] < 58) { // 使用数字1-9查看第几个，如果这个数字本身存在，则直接找到该选项
         select = word[word_len-1] - 48;
     }
-
+    __MYLOG("strict_mode=%d", strict_mode);
     utf8vector word_vector = utf8vector_create(word, -1);
     int word_size = utf8vector_uni_count(word_vector);
-    char *_word = (char *)calloc(word_size * 6 + 1, sizeof(char));
+    char *_word = (char *)calloc(word_size * (strict_mode ? 1 : 6 ) + 1, sizeof(char));
     wchar_t word_char;
     while((word_char = utf8vector_next_unichar(word_vector)) != '\0') {
         if (pinyin_ishanzi(word_char)) {
             const char **pinyins;
             pinyin_get_pinyins_by_unicode(word_char, &pinyins);
-            strcat(_word, pinyins[0]);
+            if (strict_mode) {
+                _word[strlen(_word)] = pinyin_uppercase(pinyins[0][0]);
+            } else {
+                strcat_ex(_word, pinyins[0]);
+            }
             free(pinyins);
         } else {
             _word[strlen(_word)] = pinyin_lowercase(word_char);
         }
     }
 
+    __MYLOG("_word=%s", _word);
     int count;
     int index = 0;
     linereader reader = linereader_create(STDIN_FILENO);
