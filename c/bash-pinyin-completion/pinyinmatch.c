@@ -14,7 +14,7 @@ typedef int bool;
 
 static bool strict_mode = true;
 
-#define DEBUG
+// #define DEBUG
 #ifdef DEBUG
 #define __MYLOG(x, ARGS...) fprintf (stderr, "%s:"x"\n", __FUNCTION__, ##ARGS)
 #else
