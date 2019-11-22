@@ -70,8 +70,8 @@ _py_completion() {
     __MYLOG bname_real="$bname_real"
     __MYLOG sep="$sep"
 
-    test -z "$bname_real" && return 0;
-    test ! -d "$dname_real" && return 0;
+    # test -z "$bname_real" && return 0;
+    # test ! -d "$dname_real" && return 0;
     cd $dname_real
 
     if [[ "$1" == "-d" ]];then
