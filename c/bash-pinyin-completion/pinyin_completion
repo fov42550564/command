@@ -55,9 +55,9 @@ _py_completion() {
         bname="${bname:1}"
     fi
 
-    #eval 用于消除转义符 例如 \[ 将变成 [
-    eval dname_real="$dname"
-    eval bname_real="$bname"
+    #用于消除转义符 例如 \[ 将变成 [
+    dname_real="${dname//\\/}"
+    bname_real="${bname//\\/}"
 
     if [ "${cur:0:1}" = "~" ];then
         dname_real="${dname_real#${HOME}}"
