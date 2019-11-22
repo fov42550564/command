@@ -39,23 +39,26 @@ fi
 
 _py_completion() {
     local IFS=$'\t\n'
-    local cur dname_real bname_real dname bname sep
+    local cur dname_real bname_real dname bname sep var var1 found len
     local -a list sys_list
 
     cur="$(_get_cword)"
-
-    dname="$(dirname "$cur")";
-    bname="$(basename "$cur")";
-
-    if [[ "${dname:0:1}" == "\"" ]]; then
-        dname="${dname:1}"
+    __MYLOG "cur=${cur}"
+    if [ "${cur:${#cur}-1}" = "/" ];then
+        dname="${cur}"
+        bname=""
+        sep=""
+    else
+        dname="$(dirname "$cur")";
+        bname="$(basename "$cur")";
+        if [[ "$dname" == "/" ]];then
+            sep=""
+        else
+            sep="/"
+        fi
     fi
 
-    if [[ "${bname:0:1}" == "\"" ]]; then
-        bname="${bname:1}"
-    fi
-
-    #用于消除转义符 例如 \[ 将变成 [
+    #用于消除转义符 \
     dname_real="${dname//\\/}"
     bname_real="${bname//\\/}"
 
@@ -63,38 +66,56 @@ _py_completion() {
         dname_real="${dname_real#${HOME}}"
     fi
 
+    __MYLOG dname_real="$dname_real"
+    __MYLOG bname_real="$bname_real"
+    __MYLOG sep="$sep"
+
     test -z "$bname_real" && return 0;
-
-    if [[ "$dname" == "/" ]];then
-        sep=""
-    else
-        sep="/"
-    fi
-
     test ! -d "$dname_real" && return 0;
     cd $dname_real
 
     if [[ "$1" == "-d" ]];then
         __MYLOG "has -d"
-        list=($(compgen -d|sort|pinyinmatch "$bname_real" $PY_FULL))
+        if [ "$__HAS_LOG" = "1" ];then
+            list=($(compgen -d|sort|pinyinmatch "$bname_real" $PY_FULL 2>${__logfile}))
+        else
+            list=($(compgen -d|sort|pinyinmatch "$bname_real" $PY_FULL))
+        fi
     else
-        list=($(compgen -f|sort|pinyinmatch "$bname_real" $PY_FULL))
+        if [ "$__HAS_LOG" = "1" ];then
+            list=($(compgen -f|sort|pinyinmatch "$bname_real" $PY_FULL 2>${__logfile}))
+        else
+            list=($(compgen -f|sort|pinyinmatch "$bname_real" $PY_FULL))
+        fi
         [ ${#list[@]} -ne 0 ] && _compopt_o_filenames
     fi
     cd $OLDPWD
     sys_list=("${COMPREPLY[@]}")
 
-    __MYLOG dname_real="$dname_real"
-    __MYLOG keyword="$bname_real"
     __MYLOG list="${list[@]}"
     __MYLOG sys_list="${sys_list[@]}"
 
-
     if [ ${#list[@]} -eq 1 ];then
         if [ "${list[0]}" = "$bname_real" ];then # 如果关键字和查询出来的是相同，则采取系统的集合
-            COMPREPLY=("${sys_list[@]}")
+            # 出去重复的COMPREPLY
+            COMPREPLY=()
+            for var in "${sys_list[@]}";do
+                found=0
+                for var1 in "${COMPREPLY[@]}";do
+                    if [ "$var" = "$var1" ];then
+                        found=1
+                    fi
+                done
+                if [ "$found" = "0" ];then
+                    COMPREPLY=("${COMPREPLY[@]}" "${var}");
+                fi
+            done
         else
-            COMPREPLY=("${list[0]}")
+            if [ "$dname_real" != "." ];then
+                COMPREPLY=("${dname_real}${sep}${list[0]}")
+            else
+                COMPREPLY=("${list[0]}")
+            fi
         fi
     elif [[ "${dname_real:0:1}" = "~" ||"${dname_real:0:1}" = "/"  ]];then
         COMPREPLY=()
@@ -105,43 +126,19 @@ _py_completion() {
         COMPREPLY=("${list[@]}")
     fi
 
-    # 出去重复的COMPREPLY
-    local var var1 found len
-    for var in "${COMPREPLY[@]}";do
+    len=${#COMPREPLY[@]}
+    var1=$(echo "${list[@]}"|grep "[^ -~]")
+    if [[ ${len} -gt 1 && -n "$var1" ]];then
+        # 如果全部开头有相同的部分，则可以用数字选择
+        var1="${COMPREPLY[0]:0:1}"
         found=0
-        for var1 in "${list[@]}";do
-            if [ "$var" = "$var1" ];then
+        for var in "${COMPREPLY[@]:1}";do
+            if [ "${var:0:1}" != "${var1}" ];then
                 found=1
             fi
         done
         if [ "$found" = "0" ];then
-            list=("${list[@]}" "${var}");
-        fi
-    done
-
-    len=${#list[@]}
-    if [ ${len} -eq 1 ];then
-        if [ "$dname_real" != "." ];then
-            COMPREPLY=("${dname_real}${sep}${list[0]}")
-        fi
-    elif [ ${len} -ne 0 ];then
-        var1=$(echo "${list[@]}"|grep "[^ -~]")
-        if [ -z "$var1" ];then #没有中文
-            COMPREPLY=("${list[@]}")
-        else
-            # 如果全部开头有相同的部分，则可以用数字选择
-            var1="${list[0]:0:1}"
-            found=0
-            for var in "${list[@]:1}";do
-                if [ "${var:0:1}" != "${var1}" ];then
-                    found=1
-                fi
-            done
-            if [ "$found" = "0" ];then
-                COMPREPLY=("+[1-${len}]选择:" "${list[@]}")
-            else
-                COMPREPLY=("${list[@]}")
-            fi
+            COMPREPLY=("+[1-${len}]选择:" "${COMPREPLY[@]}")
         fi
     fi
 
