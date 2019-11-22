@@ -6,7 +6,7 @@
 #用于保存覆盖之前的函数
 #from http://mivok.net/2009/09/20/bashfunctionoverride.html
 __logfile=~/command/pinyin.log
-__HAS_LOG=0
+__HAS_LOG=1
 # __logfile=/dev/null
 __MYLOG() {
     if [ "$__HAS_LOG" = "1" ];then
@@ -67,7 +67,7 @@ _py_completion() {
     fi
 
     eval _dname_real="$dname"
-    test -z "$_dname_real" && return 0;
+    test ! -d "$_dname_real" && return 0;
     cd $_dname_real
 
     __MYLOG dname_real="$dname_real"
@@ -88,7 +88,7 @@ _py_completion() {
         else
             list=($(compgen -f|sort|pinyinmatch "$bname_real" $PY_FULL))
         fi
-        [ ${#list[@]} -ne 0 ] && _compopt_o_filenames
+        # [ ${#list[@]} -ne 0 ] && _compopt_o_filenames
     fi
     cd $OLDPWD
     sys_list=("${COMPREPLY[@]}")
