@@ -39,7 +39,7 @@ fi
 
 _py_completion() {
     local IFS=$'\t\n'
-    local cur dname_real bname_real dname bname sep var var1 found len
+    local cur _dname_real dname_real bname_real dname bname sep var var1 found len
     local -a list sys_list
 
     cur="$(_get_cword)"
@@ -66,13 +66,14 @@ _py_completion() {
         dname_real="${dname_real#${HOME}}"
     fi
 
+    eval _dname_real="$dname"
+    test -z "$_dname_real" && return 0;
+    cd $_dname_real
+
     __MYLOG dname_real="$dname_real"
+    __MYLOG _dname_real="$_dname_real"
     __MYLOG bname_real="$bname_real"
     __MYLOG sep="$sep"
-
-    # test -z "$bname_real" && return 0;
-    # test ! -d "$dname_real" && return 0;
-    cd $dname_real
 
     if [[ "$1" == "-d" ]];then
         __MYLOG "has -d"
