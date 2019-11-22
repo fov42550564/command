@@ -185,6 +185,9 @@ elif __linux;then
     export PATH=$JAVA_HOME/bin:$PATH
 fi
 
+#pinyin complete
+function pinyin(){ if [ "$1" = "on" ];then PY_FULL=1;else PY_FULL=;fi  }
+
 #only for mac
 if __mac;then
     # iphone6
