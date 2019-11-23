@@ -183,23 +183,6 @@ int main(int argc, char **argv) {
     if (found) {
         goto end;
     }
-    // 全字连续匹配带数字
-    if (select > 0) {
-        word_len--;
-        _word[strlen(_word)-1] = '\0';
-        int show_index = 0;
-        for (int i=0; i<index; i++) {
-            const char *line = lines[i];
-            if (word_len == 0 || match_line(line, count, _word, true, true)) {
-                show_index++;
-                if (show_index == select) {
-                    printf("%s\n", line);
-                    goto end;
-                }
-            }
-        }
-        _word[strlen(_word)] = select + 48;
-    }
     // 拼音首字母连续匹配
     for (int i=0; i<index; i++) {
         const char *line = lines[i];
@@ -210,22 +193,6 @@ int main(int argc, char **argv) {
     }
     if (found) {
         goto end;
-    }
-    // 拼音首字母连续匹配带数字
-    if (select > 0) {
-        _sword[strlen(_sword)-1] = '\0';
-        int show_index = 0;
-        for (int i=0; i<index; i++) {
-            const char *line = lines[i];
-            if (match_line(line, count, _sword, false, true)) {
-                show_index++;
-                if (show_index == select) {
-                    printf("%s\n", line);
-                    goto end;
-                }
-            }
-        }
-        _sword[strlen(_sword)] = select + 48;
     }
     // 拼音首字母跳跃匹配
     for (int i=0; i<index; i++) {
@@ -238,22 +205,6 @@ int main(int argc, char **argv) {
     if (found) {
         goto end;
     }
-    // 拼音首字母跳跃匹配带数字
-    if (select > 0) {
-        _sword[strlen(_sword)-1] = '\0';
-        int show_index = 0;
-        for (int i=0; i<index; i++) {
-            const char *line = lines[i];
-            if (match_line(line, count, _sword, false, false)) {
-                show_index++;
-                if (show_index == select) {
-                    printf("%s\n", line);
-                    goto end;
-                }
-            }
-        }
-        _sword[strlen(_sword)] = select + 48;
-    }
     // 全字跳跃匹配
     for (int i=0; i<index; i++) {
         const char *line = lines[i];
@@ -265,10 +216,50 @@ int main(int argc, char **argv) {
     if (found) {
         goto end;
     }
-    // 全字跳跃匹配带数字
     if (select > 0) {
+        // 全字连续匹配带数字
         _word[strlen(_word)-1] = '\0';
         int show_index = 0;
+        for (int i=0; i<index; i++) {
+            const char *line = lines[i];
+            if (match_line(line, count, _word, true, true)) {
+                show_index++;
+                if (show_index == select) {
+                    printf("%s\n", line);
+                    goto end;
+                }
+            }
+        }
+
+        // 拼音首字母连续匹配带数字
+        _sword[strlen(_sword)-1] = '\0';
+        show_index = 0;
+        for (int i=0; i<index; i++) {
+            const char *line = lines[i];
+            if (match_line(line, count, _sword, false, true)) {
+                show_index++;
+                if (show_index == select) {
+                    printf("%s\n", line);
+                    goto end;
+                }
+            }
+        }
+
+        // 拼音首字母跳跃匹配带数字
+        show_index = 0;
+        for (int i=0; i<index; i++) {
+            const char *line = lines[i];
+            if (match_line(line, count, _sword, false, false)) {
+                show_index++;
+                if (show_index == select) {
+                    printf("%s\n", line);
+                    goto end;
+                }
+            }
+        }
+
+        // 全字跳跃匹配带数字
+        show_index = 0;
         for (int i=0; i<index; i++) {
             const char *line = lines[i];
             if (match_line(line, count, _word, true, false)) {
@@ -279,7 +270,6 @@ int main(int argc, char **argv) {
                 }
             }
         }
-        _word[strlen(_word)] = select + 48;
     }
 end:
     linereader_free(reader);
