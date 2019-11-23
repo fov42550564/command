@@ -21,7 +21,7 @@ static bool strict_mode = true;
 #define __MYLOG(x, ARGS...)
 #endif //DEBUG
 
-char * strcat_ex(char *str, const char* str1) {
+char * strcat_uppper(char *str, const char* str1) {
     char *_str = (char *)str1;
     while (*_str) {
         str[strlen(str)] = pinyin_uppercase(*_str);
@@ -82,7 +82,7 @@ void set_parents_pinyins(char **parents, int parent_count, const char **pinyins,
         if (strict_mode) {
             parents[i][strlen(parents[i])] = pinyin_uppercase(pinyins[(i/pre_count)%current_count][0]);
         } else {
-            strcat_ex(parents[i], pinyins[(i/pre_count)%current_count]);
+            strcat_uppper(parents[i], pinyins[(i/pre_count)%current_count]);
         }
     }
 }
@@ -91,7 +91,51 @@ void set_parents_char(char **parents, int parent_count, char ch) {
         parents[i][strlen(parents[i])] = ch;
     }
 }
-bool match_line(const char *line, int line_length, const char *word) {
+bool match_serial_full_line(const char *line, int line_length, const char *word) {
+    wchar_t line_char;
+    utf8vector line_vector = utf8vector_create(line, line_length);
+    int size = utf8vector_uni_count(line_vector);
+
+    int parent_count = 1;
+    int *count_list = (int *)calloc(size, sizeof(int));
+    int level = 0;
+    while((line_char = utf8vector_next_unichar(line_vector)) != '\0') {
+        if (pinyin_ishanzi(line_char)) {
+            int count = get_pinyin_count(line_char);
+            parent_count *= count;
+            count_list[level] = count;
+            level++;
+        }
+    }
+    utf8vector_reset(line_vector);
+    char **parents = (char **)calloc(parent_count, sizeof(char *));
+    for (int i = 0; i < parent_count; i++) {
+        parents[i] = (char *)calloc(size * (strict_mode ? 1 : 6 ) + 1, sizeof(char));
+    }
+
+    level = 0;
+    while((line_char = utf8vector_next_unichar(line_vector)) != '\0') {
+        if (pinyin_ishanzi(line_char)) {
+            const char **pinyins;
+            pinyin_get_pinyins_by_unicode(line_char, &pinyins);
+            set_parents_pinyins(parents, parent_count, pinyins, count_list, level);
+            level++;
+            free(pinyins);
+        } else {
+            set_parents_char(parents, parent_count, pinyin_lowercase(line_char));
+        }
+    }
+    bool result = match(parents, parent_count, word);
+    utf8vector_free(line_vector);
+    for (int i = 0; i < parent_count; i++) {
+        free(parents[i]);
+    }
+    free(parents);
+    free(count_list);
+
+    return result;
+}
+bool match_serial_first_line(const char *line, int line_length, const char *word) {
     wchar_t line_char;
     utf8vector line_vector = utf8vector_create(line, line_length);
     int size = utf8vector_uni_count(line_vector);
@@ -137,9 +181,6 @@ bool match_line(const char *line, int line_length, const char *word) {
 }
 int main(int argc, char **argv) {
     char *word = argv[1];
-    if (NULL != argv[2]) {
-        strict_mode = false;
-    }
     if (NULL == word) {
         word = "";
     }
@@ -148,7 +189,6 @@ int main(int argc, char **argv) {
     if (word_len > 1 && word[word_len-1] > 48 && word[word_len-1] < 58) { // 使用数字1-9查看第几个，如果这个数字本身存在，则直接找到该选项
         select = word[word_len-1] - 48;
     }
-    __MYLOG("strict_mode=%d", strict_mode);
     utf8vector word_vector = utf8vector_create(word, -1);
     int word_size = utf8vector_uni_count(word_vector);
     char *_word = (char *)calloc(word_size * (strict_mode ? 1 : 6 ) + 1, sizeof(char));
@@ -157,11 +197,7 @@ int main(int argc, char **argv) {
         if (pinyin_ishanzi(word_char)) {
             const char **pinyins;
             pinyin_get_pinyins_by_unicode(word_char, &pinyins);
-            if (strict_mode) {
-                _word[strlen(_word)] = pinyin_uppercase(pinyins[0][0]);
-            } else {
-                strcat_ex(_word, pinyins[0]);
-            }
+            strcat_uppper(_word, pinyins[0]);
             free(pinyins);
         } else {
             _word[strlen(_word)] = pinyin_lowercase(word_char);
@@ -173,33 +209,129 @@ int main(int argc, char **argv) {
     int index = 0;
     linereader reader = linereader_create(STDIN_FILENO);
     bool found = false;
-    char ** lines = (char **)calloc(256, sizeof(char *));
+    char ** lines = (char **)calloc(1024, sizeof(char *));
+    // 全字连续匹配
     while ((count = linereader_readline(reader)) != -1) {
         const char *line = reader->line_buffer;
-        if (index < 256) {
+        if (index < 1024) {
             lines[index++] = strdup(line);
         }
-        if (word_len == 0 || match_line(line, count, _word)) {
+        if (word_len == 0 || match_serial_full_line(line, count, _word)) {
             found = true;
             printf("%s\n", line);
         }
     }
-    if (!found && select > 0) {
+    if (found) {
+        goto end;
+    }
+    // 全字连续匹配带数字
+    if (select > 0) {
         word_len--;
         _word[strlen(_word)-1] = '\0';
         int show_index = 0;
         for (int i=0; i<index; i++) {
             const char *line = lines[i];
-            if (word_len == 0 || match_line(line, count, _word)) {
+            if (word_len == 0 || match_serial_full_line(line, count, _word)) {
                 show_index++;
                 if (show_index == select) {
                     printf("%s\n", line);
-                    break;
+                    goto end;
                 }
             }
         }
+        word_len++;
+        _word[strlen(_word)] = select + 48;
     }
+    // 拼音首字母连续匹配
+    for (int i=0; i<index; i++) {
+        const char *line = lines[i];
+        if (match_serial_first_line(line, count, _word)) {
+            found = true;
+            printf("%s\n", line);
+        }
+    }
+    if (found) {
+        goto end;
+    }
+    // 拼音首字母连续匹配带数字
+    if (select > 0) {
+        word_len--;
+        _word[strlen(_word)-1] = '\0';
+        int show_index = 0;
+        for (int i=0; i<index; i++) {
+            const char *line = lines[i];
+            if (match_serial_first_line(line, count, _word)) {
+                show_index++;
+                if (show_index == select) {
+                    printf("%s\n", line);
+                    goto end;
+                }
+            }
+        }
+        word_len++;
+        _word[strlen(_word)] = select + 48;
+    }
+    // 拼音首字母跳跃匹配
+    for (int i=0; i<index; i++) {
+        const char *line = lines[i];
+        if (match_jump_first_line(line, count, _word)) {
+            found = true;
+            printf("%s\n", line);
+        }
+    }
+    if (found) {
+        goto end;
+    }
+    // 拼音首字母跳跃匹配带数字
+    if (select > 0) {
+        word_len--;
+        _word[strlen(_word)-1] = '\0';
+        int show_index = 0;
+        for (int i=0; i<index; i++) {
+            const char *line = lines[i];
+            if (match_jump_first_line(line, count, _word)) {
+                show_index++;
+                if (show_index == select) {
+                    printf("%s\n", line);
+                    goto end;
+                }
+            }
+        }
+        word_len++;
+        _word[strlen(_word)] = select + 48;
+    }
+    // 全字跳跃匹配
+    for (int i=0; i<index; i++) {
+        const char *line = lines[i];
+        if (match_jump_full_line(line, count, _word)) {
+            found = true;
+            printf("%s\n", line);
+        }
+    }
+    if (found) {
+        goto end;
+    }
+    // 全字跳跃匹配带数字
+    if (select > 0) {
+        word_len--;
+        _word[strlen(_word)-1] = '\0';
+        int show_index = 0;
+        for (int i=0; i<index; i++) {
+            const char *line = lines[i];
+            if (match_jump_full_line(line, count, _word)) {
+                show_index++;
+                if (show_index == select) {
+                    printf("%s\n", line);
+                    goto end;
+                }
+            }
+        }
+        word_len++;
+        _word[strlen(_word)] = select + 48;
+    }
+end:
     linereader_free(reader);
     free(_word);
-    return false;
+    free(lines);
+    return 0;
 }
