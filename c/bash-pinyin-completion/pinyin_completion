@@ -6,7 +6,7 @@
 #用于保存覆盖之前的函数
 #from http://mivok.net/2009/09/20/bashfunctionoverride.html
 __logfile=~/command/pinyin.log
-__HAS_LOG=1
+__HAS_LOG=0
 __MYLOG() {
     if [ "$__HAS_LOG" = "1" ];then
         echo "$@" >> ${__logfile}
