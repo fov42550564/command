@@ -19,7 +19,7 @@ _py_save_function() {
 }
 _py_completion() {
     local IFS=$'\t\n'
-    local cur _dname_real dname_real bname_real dname bname sep var var1 found len
+    local cur _dname_real dname_real bname_real dname bname sep var var1 hasHanzi found len
     local -a list sys_list
 
     cur="$(_get_cword)"
@@ -76,6 +76,7 @@ _py_completion() {
     __MYLOG list="${list[@]}"
     __MYLOG sys_list="${sys_list[@]}"
 
+    hasHanzi=$(echo "${list[@]}"|grep "[^ -~]")
     if [ ${#list[@]} -eq 1 ];then
         if [ "${list[0]}" = "$bname_real" ];then # 如果关键字和查询出来的是相同，则采取系统的集合
             # 出去重复的COMPREPLY
@@ -98,18 +99,19 @@ _py_completion() {
                 COMPREPLY=("${list[0]}")
             fi
         fi
-    elif [[ "${dname_real:0:1}" = "~" ||"${dname_real:0:1}" = "/"  ]];then
-        COMPREPLY=()
-        for var in "${list[@]}";do
-            COMPREPLY=("${COMPREPLY[@]}" "${dname_real}${sep}${var}")
-        done
-    else
-        COMPREPLY=("${list[@]}")
+    elif [ -n "$hasHanzi" ];then
+        if [[ "${dname_real:0:1}" = "~" ||"${dname_real:0:1}" = "/"  ]];then
+            COMPREPLY=()
+            for var in "${list[@]}";do
+                COMPREPLY=("${COMPREPLY[@]}" "${dname_real}${sep}${var}")
+            done
+        else
+            COMPREPLY=("${list[@]}")
+        fi
     fi
 
     len=${#COMPREPLY[@]}
-    var1=$(echo "${list[@]}"|grep "[^ -~]")
-    if [[ ${len} -gt 1 && -n "$var1" ]];then
+    if [[ ${len} -gt 1 && -n "$hasHanzi" ]];then
         # 如果全部开头有相同的部分，则可以用数字选择
         var1="${COMPREPLY[0]:0:1}"
         found=0
