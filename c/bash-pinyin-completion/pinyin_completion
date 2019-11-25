@@ -19,7 +19,7 @@ _py_save_function() {
 }
 _py_completion() {
     local IFS=$'\t\n'
-    local cur _dname_real dname_real bname_real dname bname sep var var1 hasHanzi found len
+    local cur _dname_real dname_real bname_real dname bname sep var var1 same isAllSame len index found
     local -a list sys_list
 
     cur="$(_get_cword)"
@@ -76,7 +76,6 @@ _py_completion() {
     __MYLOG list="${list[@]}"
     __MYLOG sys_list="${sys_list[@]}"
 
-    hasHanzi=$(echo "${list[@]}"|grep "[^ -~]")
     if [ ${#list[@]} -eq 1 ];then
         if [ "${list[0]}" = "$bname_real" ];then # 如果关键字和查询出来的是相同，则采取系统的集合
             # 出去重复的COMPREPLY
@@ -99,28 +98,38 @@ _py_completion() {
                 COMPREPLY=("${list[0]}")
             fi
         fi
-    elif [ -n "$hasHanzi" ];then
-        if [[ "${dname_real:0:1}" = "~" ||"${dname_real:0:1}" = "/"  ]];then
-            COMPREPLY=()
-            for var in "${list[@]}";do
-                COMPREPLY=("${COMPREPLY[@]}" "${dname_real}${sep}${var}")
-            done
-        else
-            COMPREPLY=("${list[@]}")
-        fi
+    else
+        COMPREPLY=()
+        for var in "${list[@]}";do
+            COMPREPLY=("${COMPREPLY[@]}" "${dname_real}${sep}${var}")
+        done
     fi
 
     len=${#COMPREPLY[@]}
-    if [[ ${len} -gt 1 && -n "$hasHanzi" ]];then
+    found=0
+    if [[ ${len} -gt 1 ]];then
         # 如果全部开头有相同的部分，则可以用数字选择
-        var1="${COMPREPLY[0]:0:1}"
-        found=0
-        for var in "${COMPREPLY[@]}";do
-            if [ "${var:0:1}" != "${var1}" ];then
-                found=1
+        same=""
+        index=0
+        while [ 1 ];do
+            isAllSame=1
+            var1="${COMPREPLY[0]:${index}:1}"
+            for var in "${COMPREPLY[@]}";do
+                if [ "${var:${index}:1}" != "${var1}" ];then
+                    isAllSame=0
+                fi
+            done
+            if [ "$isAllSame" = "1" ];then
+                same="${same}${COMPREPLY[0]:${index}:1}"
+                if [ "$same" = "$cur" ];then
+                    found=1;
+                fi
+            else
+                break
             fi
+            ((index++))
         done
-        if [ "$found" = "0" ];then
+        if [ "$found" = "0" -a -n "$same" ];then
             COMPREPLY=("+[1-${len}]选择:" "${COMPREPLY[@]}")
         fi
     fi
