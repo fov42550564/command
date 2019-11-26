@@ -19,7 +19,7 @@ _py_save_function() {
 }
 _py_completion() {
     local IFS=$'\t\n'
-    local cur _dname_real dname_real bname_real dname bname sep var var1 same isAllSame len index found
+    local cur _dname_real dname_real bname_real dname bname sep found var var1 same isAllSame len index hasHanzi
     local -a list sys_list
 
     cur="$(_get_cword)"
@@ -98,15 +98,16 @@ _py_completion() {
                 COMPREPLY=("${list[0]}")
             fi
         fi
-    else
+    elif [ "$dname_real" != "." ];then
         COMPREPLY=()
         for var in "${list[@]}";do
             COMPREPLY=("${COMPREPLY[@]}" "${dname_real}${sep}${var}")
         done
+    else
+        COMPREPLY=("${list[@]}")
     fi
 
     len=${#COMPREPLY[@]}
-    found=0
     if [[ ${len} -gt 1 ]];then
         # 如果全部开头有相同的部分，则可以用数字选择
         same=""
@@ -121,16 +122,27 @@ _py_completion() {
             done
             if [ "$isAllSame" = "1" ];then
                 same="${same}${COMPREPLY[0]:${index}:1}"
-                if [ "$same" = "$cur" ];then
-                    found=1;
-                fi
             else
                 break
             fi
             ((index++))
         done
-        if [ "$found" = "0" -a -n "$same" ];then
-            COMPREPLY=("+[1-${len}]选择:" "${COMPREPLY[@]}")
+        __MYLOG same=${same}
+        if [ -n "$same" ];then
+            if [ "${same:${#same}-1}" = "/" ];then
+                bname=""
+            else
+                bname="$(basename "$same")";
+            fi
+            __MYLOG bname=${bname}
+            if [[ -n "$bname" && -n "$bname_real" && "$bname_real" != "${bname:0:${#bname_real}}" ]];then
+                COMPREPLY=("+[1-${len}]选择:" "${COMPREPLY[@]}")
+            elif [ -z "$bname" ];then
+                hasHanzi=$(echo "${list[@]}"|grep "[^ -~]")
+                if [ -n "$hasHanzi" ];then
+                    COMPREPLY=("+[1-${len}]选择:" "${COMPREPLY[@]}")
+                fi
+            fi
         fi
     fi
 
