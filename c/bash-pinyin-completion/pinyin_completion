@@ -5,6 +5,10 @@
 
 #用于保存覆盖之前的函数
 #from http://mivok.net/2009/09/20/bashfunctionoverride.html
+
+# 支持 atom open 等
+# 在 /usr/local/etc/bash_completion 文件中 makeinfo and texi2dvi are defined elsewhere 的下一行添加上 atom 和 open 即可。
+
 __logfile=~/command/pinyin.log
 __HAS_LOG=0
 __MYLOG() {

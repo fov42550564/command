@@ -28,19 +28,9 @@ make
 make install
 ```
 
-## 规则
+## 其他
 
 ```
- 实验目录如下：
- ls
- SVN培训  全球眼  浙江建行  浙江农信
-
- 使用: (输完后按 TAB 键自动补全)
-    cd S     <tab>             进入[SVN培训]
-    cd q     <tab>             进入[全球眼]
-    cd z     <tab>             自动补全[浙江]
-    cd zj    <tab><tab>        提示[浙江建行 浙江农信]备选
-    cd zjj   <tab>             进入[浙江建行]
-    cd zj1   <tab>             进入[浙江建行]
-    cd zj2   <tab>             进入[浙江农信]
+支持 atom open 等
+在 /usr/local/etc/bash_completion 文件中 makeinfo and texi2dvi are defined elsewhere 的下一行添加上 atom 和 open 即可。
 ```
