@@ -138,7 +138,7 @@ bool match_line(const char *line, int line_length, const char *word, bool is_ful
 int main(int argc, char **argv) {
     char *word = argv[1];
     if (NULL == word) {
-        word = "";
+        return 1;
     }
     int word_len = strlen(word);
     int select = 0;
@@ -171,7 +171,7 @@ int main(int argc, char **argv) {
     char ** lines = (char **)calloc(1024, sizeof(char *));
     // 全字连续匹配
     while ((count = linereader_readline(reader)) != -1) {
-        const char *line = reader->line_buffer;
+        const char *line = reader->line_buffer == NULL ? "" : reader->line_buffer;
         if (index < 1024) {
             lines[index++] = strdup(line);
         }
