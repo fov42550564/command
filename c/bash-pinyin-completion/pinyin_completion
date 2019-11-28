@@ -50,6 +50,7 @@ _py_completion() {
         dname_real="${dname_real#${HOME}}"
     fi
 
+    test -z "$bname_real" && return 0;
     eval _dname_real="$dname"
     test ! -d "$_dname_real" && return 0;
     cd $_dname_real
