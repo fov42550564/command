@@ -40,7 +40,6 @@ function sharpImage(str, width, height, fit) {
         mkdirp.sync(destPath);
         destFile = destName;
     }
-    console.log("=======", { width, height, fit });
     sharp(srcName)
     .resize({ width: width && width*1, height: height && height*1, fit })
     .toFile(destFile)
