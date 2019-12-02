@@ -37,6 +37,22 @@ function genrate_param_for_js() {
     fi
 }
 
+function change_english_symbol_to_chinese() {
+    if __mac ;then
+        pbpaste|sed "s#,#，#g"|sed "s#:#：#g"|sed "s#\.#。#g"|pbcopy
+    else
+         cat /dev/clipboard|sed "s#,#，#g"|sed "s#:#：#g"|sed "s#\.#。#g" > /dev/clipboard
+    fi
+}
+
+function change_chinese_symbol_to_english() {
+    if __mac ;then
+        pbpaste|sed "s#，#,#g"|sed "s#：#:#g"|sed "s#。#.#g"|pbcopy
+    else
+         cat /dev/clipboard|sed "s#，#,#g"|sed "s#：#:#g"|sed "s#。#.#g" > /dev/clipboard
+    fi
+}
+
 function getSubmitComments() {
     str=""
     while read line;do
@@ -84,8 +100,10 @@ function show_help()
 	list=("${list[@]}" "  -p: genrate param without comment in clipboard")
 	list=("${list[@]}" "  -o: genrate param add 1")
 	list=("${list[@]}" "  -j: genrate param for js")
-	list=("${list[@]}" "  -a: add num for regex match (reg:num|str|func, 注意\和=>需要反正成\\和=\>)")
+	list=("${list[@]}" "  -a: add num for regex match (reg:num|str|func, 注意\和=>需要转义成\\\\和=\>)")
 	list=("${list[@]}" "  -t: get text of xml")
+	list=("${list[@]}" "  -c: 将英文的符号改变为中文的符号")
+	list=("${list[@]}" "  -C: 将中文的符号改变为英文的符号")
 	list=("${list[@]}" "  -h: show help")
 	__msgbox "${list[@]}"
     exit
@@ -100,7 +118,7 @@ function main()
 		show_help
 	fi
 
-	while getopts :mpojta:h opt;do
+	while getopts :mpojtacC:h opt;do
 		oper_right=1
 		case $opt in
 			m)_oper=1;;
@@ -109,6 +127,8 @@ function main()
 			j)_oper=4;;
 			a)_oper=5;param="$OPTARG";;
 			t)_oper=6;;
+			c)_oper=7;;
+			C)_oper=8;;
 			*)show_help;;
 		esac
 	done
@@ -120,6 +140,8 @@ function main()
         4)genrate_param_for_js;;
         5)add_for_number "${param}";;
         6)get_text_from_xml;;
+        7)change_english_symbol_to_chinese;;
+        8)change_chinese_symbol_to_english;;
         *)show_help;;
 	esac
 }

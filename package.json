@@ -24,6 +24,7 @@
     "os-homedir": "1.0.2",
     "pinyin": "2.9.0",
     "printf": "0.2.5",
+    "sharp": "0.23.3",
     "shelljs": "0.7.8",
     "superagent": "3.5.2",
     "unzip": "0.1.11"
