@@ -28,7 +28,10 @@ function startServer(port, file) {
     var server = app.listen(port);
     server.on('listening', function () {
         console.log(`http://${ip}:${port}`);
-        if (typeof file !== 'undefined') {
+        if (file === '-m' || file === '--mobile') {
+            const url = `http://${ip}:${port}`;
+            qrcode.showCode(url);
+        } else if (typeof file !== 'undefined') {
             const url = `http://${ip}:${port}/${file}`;
             qrcode.showCode(url);
         }
@@ -319,6 +322,7 @@ if (param === '-h' || param === '--help') {
     console.log('   -i|--image [name]: show iphone6 size for image');
     console.log('   -g|--grid [name] [v|h]: show grid for image');
     console.log('   -d|--dir [name]: show dir file list');
+    console.log('   -m|--mobile: show qrcode for server');
     console.log('   file: show download qrcode for file');
     console.log('');
 } else if (param === '-u' || param === '--upload' || param === '-t' || param === '--text') {

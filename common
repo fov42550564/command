@@ -993,13 +993,11 @@ function __set_dest_path()
 	[ -a "$file" ] || echo -n > $file
 	[ -a "$config_file" ] || echo default > $config_file
 	tline=$(wc -l $file|awk '{print $1}')
-	if [ "$param" = "" ];then
-		dp=$(sed -n '1p' $file)
-	elif [ "$param" = "-h" ];then
-		echo "Usage:dt[--][-n[d:cd|o:open|m:move|c:clean|l:ls]]"
+	if [ "$param" = "-h" ];then
+		echo "Usage:dt[--][-n[d:cd|o:open|l:ls]]"
 		echo "      dt --"
-		echo "      dt -d|o|m|c|l"
-		echo "      dt -3d|o|m|c|l"
+		echo "      dt -d|o|l"
+		echo "      dt -3d|o|l"
 		echo "      -----"
 		echo "      dt -t [project|index] [delete|atom|vim]"
 	elif [ "$param" = "-t" ];then
@@ -1047,54 +1045,44 @@ function __set_dest_path()
 				echo "set to ${target}"
 			fi
 		fi
-	elif [ "$param" = "-d" ];then
-		__extend_cd "$(sed -n '1p' $file)"
-	elif [ "$param" = "-o" ];then
-		open $(sed -n '1p' $file)
-	elif [ "$param" = "-l" ];then
-		_dp=$(sed -n '1p' $file)
-		ls -l $_dp
-	elif [ "$param" = "-c" ];then
-		read -p "[y|n]" ret
-		[ "$ret" = "y" ]&&echo -n > $file
-	elif [ "$param" = "--" ];then
+	elif [ "$param" = "-a" ];then
+		cat ~/.dest_path_*|grep "^/"|sed =|sed 'N;s/\n/: /'
+	elif [ "$param" = "--" -o "$param" = "" ];then
 		sed = $file|sed 'N;s/\n/: /'
 	elif [ "${param:0:1}" = "-" ];then
-		ret=$(echo "$param"|sed -r -n '/^-[0-9]+[d|c|o|l|m]?$/p'|sed -r 's/^-([0-9]+[d|c|o]?)/\1/')
+		ret=$(echo "$param"|sed -r -n '/^-([0-9]+)?(d|c|o|l|m|ad)?$/p')
 		len=${#ret}
 		if [ $len -gt 0 ];then
-			if [ "${ret:$len-1}" = "d" ];then
-				line=${ret:0:$len-1}
+			if [ "${ret:$len-2}" = "ad" ];then
+				line=${ret:1:$len-3}
+				line=${line:=1}
+				_dp=$(cat ~/.dest_path_*|grep "^/"|sed -n $line'p')
+				__extend_cd "$_dp"
+			elif [ "${ret:$len-1}" = "d" ];then
+				line=${ret:1:$len-2}
+				line=${line:=1}
 				_dp=$(sed -n $line'p' $file)
 				__extend_cd "$_dp"
 			elif [ "${ret:$len-1}" = "l" ];then
-				line=${ret:0:$len-1}
+				line=${ret:1:$len-2}
+				line=${line:=1}
 				_dp=$(sed -n $line'p' $file)
 				ls -l $_dp
 			elif [ "${ret:$len-1}" = "c" ];then
-				line=${ret:0:$len-1}
+				line=${ret:1:$len-2}
+				line=${line:=1}
 				echo "remove $(sed -n $line'p' $file) success"
 				sed -i  $line'd' $file
-				return
 			elif [ "${ret:$len-1}" = "o" ];then
-				line=${ret:0:$len-1}
+				line=${ret:1:$len-2}
+				line=${line:=1}
 				_dp=$(sed -n $line'p' $file)
 				open $_dp
-				return
-			elif [ "${ret:$len-1}" = "m" ];then
-				line=${ret:0:$len-1}
-				if [ $line -gt 1 ];then
-					if [ $line -le $tline ];then
-						let line2=line*2
-						let line3=line-1
-						sed -i ':a N;'$line'!ba;p' $file
-						sed -i $line2'd;1,'$line3'd' $file
-					fi
-				fi
 			else
-				line=$ret
+				line=${ret:1}
+				line=${line:=1}
 				dp=$(sed -n $line'p' $file)
-				echo $dp
+				echo "$dp is set to \$dp"
 			fi
 		fi
 	else

@@ -2,6 +2,7 @@
 
 const fs = require("fs");
 const mkdirp = require("mkdirp");
+const shell = require("shelljs");
 const path = require("path");
 const program = require('commander');
 const sharp = require('sharp');
@@ -30,21 +31,30 @@ function sharpImage(str, width, height, fit) {
         return console.log("文件格式只支持 png/jpg/gif");
     }
     let destFile;
-    const destPath = path.dirname(destName);
-    const destExtname = path.extname(destName);
-    if (!destExtname) {
-        const basename = path.basename(srcName);
-        mkdirp.sync(destName);
-        destFile = path.join(destName, basename);
+    if (destName) {
+        const destPath = path.dirname(destName);
+        const destExtname = path.extname(destName);
+        if (!destExtname) {
+            const basename = path.basename(srcName);
+            mkdirp.sync(destName);
+            destFile = path.join(destName, basename);
+        } else {
+            mkdirp.sync(destPath);
+            destFile = destName;
+        }
     } else {
-        mkdirp.sync(destPath);
-        destFile = destName;
+        destFile = '.__'+srcName;
     }
     sharp(srcName)
     .resize({ width: width && width*1, height: height && height*1, fit })
     .toFile(destFile)
     .then(()=>{
-        console.log("生成文件："+ destFile);
+        if (!destName) {
+            shell.mv(destFile, srcName);
+            console.log("覆盖文件："+ srcName);
+        } else {
+            console.log("生成文件："+ destFile);
+        }
     });
 }
 
