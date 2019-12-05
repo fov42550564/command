@@ -994,10 +994,9 @@ function __set_dest_path()
 	[ -a "$config_file" ] || echo default > $config_file
 	tline=$(wc -l $file|awk '{print $1}')
 	if [ "$param" = "-h" ];then
-		echo "Usage:dt[--][-n[d:cd|o:open|l:ls]]"
-		echo "      dt --"
-		echo "      dt -d|o|l"
-		echo "      dt -3d|o|l"
+		echo "Usage:dt[--][-n[d:cd|o:open|l:ls|s:\$dp]]"
+		echo "      dt -d|o|l [3]"
+		echo "      dt -[3]d|o|l"
 		echo "      -----"
 		echo "      dt -t [project|index] [delete|atom|vim]"
 	elif [ "$param" = "-t" ];then
@@ -1045,77 +1044,77 @@ function __set_dest_path()
 				echo "set to ${target}"
 			fi
 		fi
-	elif [ "$param" = "-a" ];then
-		cat ~/.dest_path_*|grep "^/"|sed =|sed 'N;s/\n/: /'
-	elif [ "$param" = "--" -o "$param" = "" ];then
+	elif [ "$param" = "--" -o "$param" = "-" -o "$param" = "" ];then
 		sed = $file|sed 'N;s/\n/: /'
+	elif [ "$param" = "-a" ];then
+		if [ "$2" = "" ];then
+			cat ~/.dest_path_*|grep "^/"|sed =|sed 'N;s/\n/: /'
+		else
+			local m n found tl i word index
+			local -a tl
+			local -a list
+			# 使用pinyinmatch来匹配
+			word="$2"
+			index=$(echo "$word"|sed -r 's/^.*[^1-9]([1-9]+)?$/\1/')
+			if [ "$index" != "" ];then
+				word=${word:0:${#word}-${#index}}
+			else
+				index=10000
+			fi
+			list=($(cat ~/.dest_path_*|grep "^/"|sed 's#'${HOME}/'##'))
+			for t in "${list[@]}";do
+				OLD_IFS="$IFS"
+				IFS="/"
+				n=($t)
+				IFS="$OLD_IFS"
+				found=0
+				for m in "${n[@]}";do
+					m=$(echo $m|pinyinmatch "$word")
+					if [ "$m" != "" ];then
+						found=1
+						break
+					fi
+				done
+				if [ "$found" = "1" ];then
+					tl=("${tl[@]}" "$t")
+				fi
+			done
+			if [ "${#tl[@]}" = "1" ];then
+				_dp="$HOME/${tl[0]}"
+				__extend_cd "$_dp"
+			else
+				if [ "${tl[${index}-1]}" != "" ];then
+					_dp="$HOME/${tl[${index}-1]}"
+					__extend_cd "$_dp"
+				else
+					i=1
+					for m in "${tl[@]}";do
+						echo "${i}: ${m}"
+						((i++))
+					done
+				fi
+			fi
+		fi
 	elif [ "${param:0:1}" = "-" ];then
-		local m n found tl i
-		local -a tl
-		local -a list
-		ret=$(echo "$param"|sed -r -n '/^-([0-9]+)?(d|c|o|l|m|ad)?$/p')
+		ret=$(echo "$param"|sed -r -n '/^-([0-9]+)?(d|o|l|c|s)?$/p')
 		len=${#ret}
 		if [ $len -gt 0 ];then
-			if [ "${ret:$len-2}" = "ad" ];then
-				line=${ret:1:$len-3}
-				# 使用pinyinmatch来匹配
-				if [ "$line" = "" -a "$2" != "" ];then
-					list=($(cat ~/.dest_path_*|grep "^/"|sed 's#'${HOME}/'##'))
-					for t in "${list[@]}";do
-						OLD_IFS="$IFS"
-						IFS="/"
-						n=($t)
-						IFS="$OLD_IFS"
-						found=0
-						for m in "${n[@]}";do
-							m=$(echo $m|pinyinmatch "$2")
-							if [ "$m" != "" ];then
-								found=1
-								break
-							fi
-						done
-						if [ "$found" = "1" ];then
-							tl=("${tl[@]}" "$t")
-						fi
-					done
-					if [ "${#tl[@]}" = "1" ];then
-						_dp="$HOME/${tl[0]}"
-						__extend_cd "$_dp"
-					else
-						i=1
-						for m in "${tl[@]}";do
-							echo "${i}: ${m}"
-							((i++))
-						done
-					fi
-				else
-					line=${line:=1}
-					_dp=$(cat ~/.dest_path_*|grep "^/"|sed -n $line'p')
-					__extend_cd "$_dp"
-				fi
-			elif [ "${ret:$len-1}" = "d" ];then
-				line=${ret:1:$len-2}
-				line=${line:=1}
+			line=${ret:1:$len-2}
+			line=${line:="$2"}
+			line=${line:=1}
+			if [ "${ret:$len-1}" = "d" ];then
 				_dp=$(sed -n $line'p' $file)
 				__extend_cd "$_dp"
 			elif [ "${ret:$len-1}" = "l" ];then
-				line=${ret:1:$len-2}
-				line=${line:=1}
 				_dp=$(sed -n $line'p' $file)
 				ls -l $_dp
 			elif [ "${ret:$len-1}" = "c" ];then
-				line=${ret:1:$len-2}
-				line=${line:=1}
 				echo "remove $(sed -n $line'p' $file) success"
 				sed -i  $line'd' $file
 			elif [ "${ret:$len-1}" = "o" ];then
-				line=${ret:1:$len-2}
-				line=${line:=1}
 				_dp=$(sed -n $line'p' $file)
 				open $_dp
-			else
-				line=${ret:1}
-				line=${line:=1}
+			elif [ "${ret:$len-1}" = "s" ];then
 				dp=$(sed -n $line'p' $file)
 				echo "$dp is set to \$dp"
 			fi
