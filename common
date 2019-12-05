@@ -1050,14 +1050,49 @@ function __set_dest_path()
 	elif [ "$param" = "--" -o "$param" = "" ];then
 		sed = $file|sed 'N;s/\n/: /'
 	elif [ "${param:0:1}" = "-" ];then
+		local m n found tl i
+		local -a tl
+		local -a list
 		ret=$(echo "$param"|sed -r -n '/^-([0-9]+)?(d|c|o|l|m|ad)?$/p')
 		len=${#ret}
 		if [ $len -gt 0 ];then
 			if [ "${ret:$len-2}" = "ad" ];then
 				line=${ret:1:$len-3}
-				line=${line:=1}
-				_dp=$(cat ~/.dest_path_*|grep "^/"|sed -n $line'p')
-				__extend_cd "$_dp"
+				# 使用pinyinmatch来匹配
+				if [ "$line" = "" -a "$2" != "" ];then
+					list=($(cat ~/.dest_path_*|grep "^/"|sed 's#'${HOME}/'##'))
+					for t in "${list[@]}";do
+						OLD_IFS="$IFS"
+						IFS="/"
+						n=($t)
+						IFS="$OLD_IFS"
+						found=0
+						for m in "${n[@]}";do
+							m=$(echo $m|pinyinmatch "$2")
+							if [ "$m" != "" ];then
+								found=1
+								break
+							fi
+						done
+						if [ "$found" = "1" ];then
+							tl=("${tl[@]}" "$t")
+						fi
+					done
+					if [ "${#tl[@]}" = "1" ];then
+						_dp="$HOME/${tl[0]}"
+						__extend_cd "$_dp"
+					else
+						i=1
+						for m in "${tl[@]}";do
+							echo "${i}: ${m}"
+							((i++))
+						done
+					fi
+				else
+					line=${line:=1}
+					_dp=$(cat ~/.dest_path_*|grep "^/"|sed -n $line'p')
+					__extend_cd "$_dp"
+				fi
 			elif [ "${ret:$len-1}" = "d" ];then
 				line=${ret:1:$len-2}
 				line=${line:=1}

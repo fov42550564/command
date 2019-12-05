@@ -63,15 +63,15 @@ _py_completion() {
     if [[ "$1" == "-d" ]];then
         __MYLOG "has -d"
         if [ "$__HAS_LOG" = "1" ];then
-            list=($(compgen -d|sort|pinyinmatch "$bname_real" $PY_FULL 2>${__logfile}))
+            list=($(compgen -d|sort|pinyinmatch "$bname_real" 2>${__logfile}))
         else
-            list=($(compgen -d|sort|pinyinmatch "$bname_real" $PY_FULL))
+            list=($(compgen -d|sort|pinyinmatch "$bname_real"))
         fi
     else
         if [ "$__HAS_LOG" = "1" ];then
-            list=($(compgen -f|sort|pinyinmatch "$bname_real" $PY_FULL 2>${__logfile}))
+            list=($(compgen -f|sort|pinyinmatch "$bname_real" 2>${__logfile}))
         else
-            list=($(compgen -f|sort|pinyinmatch "$bname_real" $PY_FULL))
+            list=($(compgen -f|sort|pinyinmatch "$bname_real"))
         fi
         [ ${#list[@]} -ne 0 ] && _compopt_o_filenames
     fi
