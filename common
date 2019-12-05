@@ -997,8 +997,8 @@ function __set_dest_path()
 		echo "Usage:dt[--][-n[d:cd|o:open|l:ls|s:\$dp]]"
 		echo "      dt -d|o|l [3]"
 		echo "      dt -[3]d|o|l"
-		echo "      -----"
 		echo "      dt -t [project|index] [delete|atom|vim]"
+		echo "      dt -a word"
 	elif [ "$param" = "-t" ];then
 		if [ -z "$2" ];then
 			cat ${config_file}|sed =|sed 'N;s/\n/: /'
@@ -1096,7 +1096,7 @@ function __set_dest_path()
 			fi
 		fi
 	elif [ "${param:0:1}" = "-" ];then
-		ret=$(echo "$param"|sed -r -n '/^-([0-9]+)?(d|o|l|c|s)?$/p')
+		ret=$(echo "$param"|sed -r -n '/^-([0-9]+)?(d|o|l|c|s)$/p')
 		len=${#ret}
 		if [ $len -gt 0 ];then
 			line=${ret:1:$len-2}
@@ -1117,6 +1117,14 @@ function __set_dest_path()
 			elif [ "${ret:$len-1}" = "s" ];then
 				dp=$(sed -n $line'p' $file)
 				echo "$dp is set to \$dp"
+			fi
+		else
+			ret=$(echo "$param"|sed -r -n '/^-[0-9]+$/p')
+			len=${#ret}
+			if [ $len -gt 0 ];then
+				line=${ret:1:$len-1}
+				_dp=$(sed -n $line'p' $file)
+				__extend_cd "$_dp"
 			fi
 		fi
 	else
