@@ -82,6 +82,7 @@ function _declare_global_variables__()
 	declare -i _argc_
 	declare -a _argv_
 	_opt_=""
+	_hasopt_=""
 	_result_=""
 
 	[ -z "$_HTAG_" ]&&_HTAG_="-"
@@ -314,6 +315,7 @@ function __init_opts()
 			shift
 		fi
 	done
+	_hasopt_=""
 	_argv_=("${argv[@]}")
 }
 function __check_opts()
@@ -336,6 +338,7 @@ function __check_opts()
 			fi
 			unset _argv_[$i]
 			[ "${_argv_[i+1]}" = "$_opt_" ] && unset _argv_[i+1]
+			_hasopt_="1"
 			return $_TRUE_
 		fi
 	done
