@@ -300,48 +300,46 @@ function __get_pure_filename()
     purename=${basename/%.${extname}/}
     echo "$purename"
 }
+function __init_opts()
+{
+########################################
+#Usage: __init_opts "$@"
+########################################
+	local i
+	local -a argv
+	_argc_=$#
+	for ((i=0; i<_argc_; i++));do
+		if [ "${argv[i]}" = "" ];then
+			argv[i]="$1"
+			shift
+		fi
+	done
+	_argv_=("${argv[@]}")
+}
 function __check_opts()
 {
 ########################################
-#Usage: __check_opts -h --help
-#	 success return $_TRUE_
-#	 else return $_FALSE_
+#Usage: __check_opts
+# 	$@=(-h -p 3000 -t)
+#	__check_opts -h -> return $_TRUE_ _opt_=
+#	__check_opts -p -> return $_TRUE_ _opt_=3000
+#	__check_opts -t -> return $_TRUE_ _opt_=
 ########################################
-	local flag var i
-	for ((i=0; i<$_argc_; i++));do
-		flag=0
-		for var in "$@";do
-			[ "$var" = "${_argv_[i]}" ]&&flag=1&&break
-			[ "$var" = "${_argv_[i]}:" ]&&flag=2&&break
-			[ "$var" = "${_argv_[i]%%=*}=" ]&&flag=1&&_opt_=${_argv_[i]##*=}&&break
-		done
-		if [ $flag -eq 1 ];then
-			unset _argv_[$i]
-			return $_TRUE_
-		fi
-		if [ $flag -eq 2  ];then
+	local i
+	for ((i=0; i<_argc_; i++));do
+		if [ "$1" = "${_argv_[i]}" ];then
 			_opt_=${_argv_[i+1]}
+			if [ "${_opt_:0:1}" = "-" ];then
+				if ! [ "${_opt_:1:2}" -gt "0" ] 2>/dev/null;then
+					_opt_=""
+				fi
+			fi
 			unset _argv_[$i]
-			unset _argv_[i+1]
+			[ "${_argv_[i+1]}" = "$_opt_" ] && unset _argv_[i+1]
 			return $_TRUE_
 		fi
 	done
 	return $_FALSE_
-}
-function __add_opts()
-{
-########################################
-#Usage: __add_opts "${arr[@]}"
-########################################
-	local len i j
-	len=$#
-	for ((i=0,j=0; i<len; j++));do
-		if [ "${_argv_[j]}" = "" ];then
-			_argv_[j]="$1"
-			shift
-			((i++))
-		fi
-	done
 }
 function __ask()
 {

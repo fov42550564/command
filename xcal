@@ -131,9 +131,9 @@ function get_lunar_date()
 	0x6A4DBE 0x0A4D52 0x0D2546 0x5D52BA 0x0B544E 0x0D6A43 0x296D37 0x095B4B 0x749BC1 0x049754  #*1911-1920 *#
 	0x0A4B48 0x5B25BC 0x06A550 0x06D445 0x4ADAB8 0x02B64D 0x095742 0x2497B7 0x04974A 0x664B3E  #*1921-1930 *#
 	0x0D4A51 0x0EA546 0x56D4BA 0x05AD4E 0x02B644 0x393738 0x092E4B 0x7C96BF 0x0C9553 0x0D4A48  #*1931-1940 *#
-	0x6DA53B 0x0B554F 0x056A45 0x4AADB9 0x025D4D 0x092D42 0x2C95B6 0x0A954A 0x7B4ABD 0x06CA51  #*1941-1950 *# 
-	0x0B5546 0x555ABB 0x04DA4E 0x0A5B43 0x352BB8 0x052B4C 0x8A953F 0x0E9552 0x06AA48 0x7AD53C  #*1951-1960 *# 
-	0x0AB54F 0x04B645 0x4A5739 0x0A574D 0x052642 0x3E9335 0x0D9549 0x75AABE 0x056A51 0x096D46  #*1961-1970 *# 
+	0x6DA53B 0x0B554F 0x056A45 0x4AADB9 0x025D4D 0x092D42 0x2C95B6 0x0A954A 0x7B4ABD 0x06CA51  #*1941-1950 *#
+	0x0B5546 0x555ABB 0x04DA4E 0x0A5B43 0x352BB8 0x052B4C 0x8A953F 0x0E9552 0x06AA48 0x7AD53C  #*1951-1960 *#
+	0x0AB54F 0x04B645 0x4A5739 0x0A574D 0x052642 0x3E9335 0x0D9549 0x75AABE 0x056A51 0x096D46  #*1961-1970 *#
 	0x54AEBB 0x04AD4F 0x0A4D43 0x4D26B7 0x0D254B 0x8D52BF 0x0B5452 0x0B6A47 0x696D3C 0x095B50  #*1971-1980 *#
 	0x049B45 0x4A4BB9 0x0A4B4D 0xAB25C2 0x06A554 0x06D449 0x6ADA3D 0x0AB651 0x093746 0x5497BB  #*1981-1990 *#
 	0x04974F 0x064B44 0x36A537 0x0EA54A 0x86B2BF 0x05AC53 0x0AB647 0x5936BC 0x092E50 0x0C9645  #*1991-2000 *#
@@ -220,7 +220,7 @@ function get_lunar_year_name()
 	((jiazi=($lu_y-4)%60))
 	((tiangan=$jiazi%10))
 	((dizhi=jiazi%12))
-	
+
 	[ -n "$__ret_lu_year_name" ] && eval $__ret_lu_year_name="${tiangan_list[tiangan]}${dizhi_list[dizhi]}"
 	[ -n "$__ret_shuxiang" ] && eval $__ret_shuxiang=${shuxiang_list[dizhi]}
 }
@@ -284,7 +284,7 @@ function show_month_cal()
 		y=$_ret_y;m=_ret_m;d=$_ret_d
 	fi
 
-	get_week_day $y $m 1; wd=$? 
+	get_week_day $y $m 1; wd=$?
 	get_month_max_day $y $m; md=$?; ((md+=wd))
 
 	lud_name=("null" "初一" "初二" "初三" "初四" "初五" "初六" "初七" "初八" "初九" "初十" "十一" "十二" "十三" "十四" "十五" "十六" "十七" "十八" "十九" "二十" "廿一" "廿二" "廿三" "廿四" "廿五" "廿六" "廿七" "廿八" "廿九" "三十")
@@ -339,9 +339,9 @@ function show_3month_cal()
 	lud_name=("null" "初一" "初二" "初三" "初四" "初五" "初六" "初七" "初八" "初九" "初十" "十一" "十二" "十三" "十四" "十五" "十六" "十七" "十八" "十九" "二十" "廿一" "廿二" "廿三" "廿四" "廿五" "廿六" "廿七" "廿八" "廿九" "三十")
 	lum_name=("null" "正月" "二月" "三月" "四月" "五月" "六月" "七月" "八月" "九月" "十月" "冬月" "腊月" "正月" "二月" "三月")
 
-	get_week_day $1 $2 1; wd[0]=$? 
-	get_week_day $1 $(($2+1)) 1; wd[1]=$? 
-	get_week_day $1 $(($2+2)) 1; wd[2]=$? 
+	get_week_day $1 $2 1; wd[0]=$?
+	get_week_day $1 $(($2+1)) 1; wd[1]=$?
+	get_week_day $1 $(($2+2)) 1; wd[2]=$?
 	get_month_max_day $1 $2; md[0]=$?; ((md[0]+=wd[0]))
 	get_month_max_day $1 $(($2+1)); md[1]=$?; ((md[1]+=wd[1]))
 	get_month_max_day $1 $(($2+2)); md[2]=$?; ((md[2]+=wd[2]))
@@ -460,9 +460,9 @@ function show_3month_cal()
 function show_year_cal()
 {
 	show_year_title "$1"
-	show_3month_cal "$1" 1 
+	show_3month_cal "$1" 1
 	show_3month_cal "$1" 4
-	show_3month_cal "$1" 7 
+	show_3month_cal "$1" 7
 	show_3month_cal "$1" 10
 }
 
@@ -482,19 +482,21 @@ function show_all_cal()
 	esac
 }
 
-function get_flags()
-{
-	_argc_=$#
-	_argv_=("$@")
-	__check_opts "--chinese" "-c"  && use_cn=1
-	__check_opts "--lunar" "-l"  && lunar_on=1
-	((lunar_on==1))&&ITEM_WIDTH=5||ITEM_WIDTH=3
-	((lunar_on==1))&&((MONTH_BLANK_WIDTH=ITEM_WIDTH))||((MONTH_BLANK_WIDTH=ITEM_WIDTH*2))
-}
-
 function main()
 {
-	get_flags "$@"
+	__init_opts "$@"
+	__check_opts "-h" && {
+		echo "xcal -h|-c|-l"
+		echo "  -h: help"
+		echo "  -c: chinese"
+		echo "  -l: lunar"
+		exit
+	}
+	__check_opts "-c"  && use_cn=1
+	__check_opts "-l"  && lunar_on=1
+	((lunar_on==1))&&ITEM_WIDTH=5||ITEM_WIDTH=3
+	((lunar_on==1))&&((MONTH_BLANK_WIDTH=ITEM_WIDTH))||((MONTH_BLANK_WIDTH=ITEM_WIDTH*2))
+
 	show_all_cal ${_argv_[@]}
 }
 
@@ -502,7 +504,7 @@ function test()
 {
 	echo get_lunar_date $1 $2 $3 max ri yue year
 	get_lunar_date $1 $2 $3 max ri yue year
-	echo max=$max 
+	echo max=$max
 	echo year=$year
 	echo yue=$yue
 	echo ri=$ri
@@ -510,5 +512,3 @@ function test()
 
 #test "$@"
 main "$@"
-
-
