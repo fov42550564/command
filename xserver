@@ -217,7 +217,7 @@ function getHtmlInDir(dir) {
         var info = fs.statSync(fullname);
         if(info.isDirectory()) {
             html += getHtmlInDir(fullname);
-        } else {
+        } else if (!/.DS_Store/.test(file)) {
             html += `<div style="position:relative; width:144px; height: 144px; display: flex; justify-content: center; align-items: center; margin: 10px; padding:2px; background-color: #EBEBEB">`;
             if (['.png', '.jpg', '.gif', 'jpeg'].indexOf(path.extname(file)) !== -1) {
                 html += `<img src="${fullname}" style="max-width: 140px; max-height: 140px;">`;
