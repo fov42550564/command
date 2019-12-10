@@ -8,6 +8,7 @@
 # dispcripe: this is a common function declare for bash shell
 # global function declare like __func
 # static function declare like _func__
+# global veriable declare like _var_
 #############################################
 function _declare_colors__()
 {
@@ -897,7 +898,7 @@ function __extend_cd()
 	fi
 
 	the_new_dir=$1
-	[[ -z $1 ]] && the_new_dir=$HOME
+	[[ -z "${the_new_dir}" ]] && the_new_dir=$HOME
 
 	[ -f "$the_new_dir" ]&&df=$(basename "$the_new_dir")&&the_new_dir=$(dirname "$the_new_dir")
 
@@ -999,7 +1000,7 @@ function __set_dest_path()
 		echo "      dt -d|o|l [3]"
 		echo "      dt -[3]d|o|l"
 		echo "      dt -t [project|index] [delete|atom|vim]"
-		echo "      dt -a word"
+		echo "      dt -a word|index|word[index]"
 	elif [ "$param" = "-t" ];then
 		if [ -z "$2" ];then
 			cat ${config_file}|sed =|sed 'N;s/\n/: /'
@@ -1056,7 +1057,7 @@ function __set_dest_path()
 			local -a list
 			# 使用pinyinmatch来匹配
 			word="$2"
-			index=$(echo "$word"|sed -r 's/^.*[^1-9]([1-9]+)?$/\1/')
+			index=$(echo "$word"|sed -r 's/^.*[^0-9]([0-9]+)?$/\1/')
 			if [ "$index" != "" ];then
 				word=${word:0:${#word}-${#index}}
 			else
