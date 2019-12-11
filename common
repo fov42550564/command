@@ -1050,7 +1050,7 @@ function __set_dest_path()
 		sed = $file|sed 'N;s/\n/: /'
 	elif [ "$param" = "-a" ];then
 		if [ "$2" = "" ];then
-			cat ~/.dest_path_*|grep "^/"|sed =|sed 'N;s/\n/: /'
+			cat ~/.dest_path*|grep "^/"|sed =|sed 'N;s/\n/: /'
 		else
 			local m n found tl i word index
 			local -a tl
@@ -1063,7 +1063,7 @@ function __set_dest_path()
 			else
 				index=10000
 			fi
-			list=($(cat ~/.dest_path_*|grep "^/"|sed 's#'${HOME}/'##'))
+			list=($(cat ~/.dest_path*|grep "^/"|sed 's#'${HOME}/'##'))
 			for t in "${list[@]}";do
 				OLD_IFS="$IFS"
 				IFS="/"
