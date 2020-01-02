@@ -72,10 +72,15 @@ function createOracle (commands, options) {
 }
 function formatResult(values, fields) {
     const obj = {};
+    if (values instanceof Array) {
+        return values.map(o=>formatResult(o));
+    }
     for (const i in values) {
         const value = values[i];
         const key = fields[i];
-        if (value instanceof Buffer) {
+        if (value instanceof Array) {
+            obj[key] = formatResult(value);
+        } else if (value instanceof Buffer) {
             obj[key] = !!value.readInt8(0);
         } else if (value instanceof Date) {
             obj[key] = moment(value).format('YYYY-MM-DD HH:mm:ss');

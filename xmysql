@@ -79,9 +79,14 @@ async function createMysql (commands, options) {
     _verbose = true;
 }
 function formatResult(obj) {
+    if (obj instanceof Array) {
+        return obj.map(o=>formatResult(o));
+    }
     for (const key in obj) {
         const item = obj[key];
-        if (item instanceof Buffer) {
+        if (item instanceof Array) {
+            obj[key] = formatResult(item);
+        } else if (item instanceof Buffer) {
             obj[key] = !!item.readInt8(0);
         } else if (item instanceof Date) {
             obj[key] = moment(item).format('YYYY-MM-DD HH:mm:ss.SSS');
