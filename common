@@ -1211,7 +1211,7 @@ function __echo_center()
 	((flen=len/2))
 	((flen1=flen+(len&1)))
 
-	[ -n "$color" ] && printf "$color"
+	[ -n "$color" ] && printf $color
 	printf %-"$flen"s
 	printf "%s" "$str"
 	printf %-"$flen1"s
@@ -1344,7 +1344,7 @@ function __echo_string()
 ########################################
 #Usage: __echo_string text
 ########################################
-	local str unicode head text
+	local str unicode head text t
 
 	str="$1"
 	unicode="${str//[[:space:][:punct:][:alnum:]]/}"
@@ -1352,10 +1352,16 @@ function __echo_string()
 	if [ -z "$unicode" ];then
 		__echo_string_ascii "$str"
 	else
-		head="${str%%: *}:"
-		text=${str#*: }
-		[ "$head" = "$str:" ] && head=""
-		[ -n "$head" ] && text=" ${text}"
+		t=($str)
+		if [ "${t[0]:0:1}" = "@" ];then
+			head=""
+			text=`echo "$str"|sed 's/^\(\s*\)@/\1/'`
+		else
+			head="${str%%: *}:"
+			text=${str#*: }
+			[ "$head" = "$str:" ] && head=""
+			[ -n "$head" ] && text=" ${text}"
+		fi
 		__echo_string_unicode "$head" "$text"
 	fi
 }

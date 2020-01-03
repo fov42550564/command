@@ -77,7 +77,7 @@ function add_for_number() {
         exit
     fi
     if __mac ;then
-        pbpaste|getSubmitComments|pbcopy
+        pbpaste|getSubmitComments
     else
          cat /dev/clipboard|getSubmitComments > /dev/clipboard
     fi
@@ -96,15 +96,19 @@ function show_help()
 	local -a list
 	list="help"
 	list=("${list[@]}" "Usage :xt [OPTIONS]")
-	list=("${list[@]}" "  -m: genrate param from model in clipboard")
-	list=("${list[@]}" "  -p: genrate param without comment in clipboard")
-	list=("${list[@]}" "  -o: genrate param add 1")
-	list=("${list[@]}" "  -j: genrate param for js")
+	list=("${list[@]}" "  -m: 将model的字段变为函数的声明参数")
+	list=("${list[@]}" "      @如: createTime: { type: Date }, // 创建时间 -> createTime, //创建时间")
+	list=("${list[@]}" "  -p: 将函数的声明参数去除注释作为函数调用参数")
+	list=("${list[@]}" "      @如: createTime, //创建时间 -> createTime,")
+	list=("${list[@]}" "  -j: 将函数的声明参数添加参数空字符串作为调试参数")
+	list=("${list[@]}" "      @如: createTime, //创建时间 -> createTime: '', //创建时间")
+	list=("${list[@]}" "  -o: 将函数的声明参数添加参数数字1作为调试参数")
+	list=("${list[@]}" "      @如: createTime, //创建时间 -> createTime: 1, //创建时间")
 	list=("${list[@]}" "  -a: add num for regex match (reg:num|str|func, 注意\和=>需要转义成\\\\和=\>)")
-	list=("${list[@]}" "  -t: get text of xml")
+	list=("${list[@]}" "  -t: 获取xml的文字部分")
 	list=("${list[@]}" "  -c: 将英文的符号改变为中文的符号")
 	list=("${list[@]}" "  -C: 将中文的符号改变为英文的符号")
-	list=("${list[@]}" "  -h: show help")
+	list=("${list[@]}" "  -h: 帮助")
 	__msgbox "${list[@]}"
     exit
 }
@@ -118,7 +122,7 @@ function main()
 		show_help
 	fi
 
-	while getopts :mpojtacC:h opt;do
+	while getopts :mpojta:cCh opt;do
 		oper_right=1
 		case $opt in
 			m)_oper=1;;
