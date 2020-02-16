@@ -19,7 +19,7 @@ let _host = 'localhost';
 
 let _verbose = false;
 let _prettyShell = true;
-let _limit = 10;
+let _limit = 1;
 async function createMysql (commands, options) {
     const db = mysql.createConnection({
         host: _host,
@@ -257,7 +257,7 @@ async function showTableRows (line, { db }) {
         limit = limit ? ` LIMIT ${limit}` : '';
         list.splice(limitIndex, 1);
     } else {
-        limit = ` LIMIT ${_limit}`;
+        limit = ` LIMIT 10`;
     }
 
     let cond = '';

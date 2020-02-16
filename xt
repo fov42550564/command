@@ -99,6 +99,35 @@ function get_text_from_xml() {
     fi
 }
 
+function to_list() {
+    local str list var
+    if __mac ;then
+        str=(`pbpaste`)
+        list="["
+        for var in "${str[@]}";do
+            if [ "$list" = "[" ];then
+                list="${list}'${var}'"
+            else
+                list="${list},'${var}'"
+            fi
+        done
+        list="${list}]"
+        echo $list|pbcopy
+    else
+         str=(`cat /dev/clipboard`)
+         list="["
+         for var in "${str[@]}";do
+             if [ "$list" = "[" ];then
+                 list="${list}'${var}'"
+             else
+                 list="${list},'${var}'"
+             fi
+         done
+         list="${list}]"
+         echo $list> /dev/clipboard
+    fi
+}
+
 function show_help()
 {
 	local -a list
@@ -116,6 +145,8 @@ function show_help()
     list=("${list[@]}" "      如果为func，使用=xx的格式，参数为(i, _, m)，其中i为匹配到的参数，_为lodash, m为moment")
     list=("${list[@]}" "      @如: [ -a 1:fang ] : createTime: 1, //创建时间 -> createTime: fang, //创建时间")
     list=("${list[@]}" "      @如: [ -a 1:=i+4 ] : createTime: 1, //创建时间 -> createTime: 5, //创建时间")
+	list=("${list[@]}" "  -l: 转化为list，分隔符为\n或者空格")
+    list=("${list[@]}" "      @如: 1 2 3 4 5 -> ['1','2','3','4','5']")
 	list=("${list[@]}" "  -t: 获取xml的文字部分")
 	list=("${list[@]}" "  -c: 将英文的符号改变为中文的符号")
 	list=("${list[@]}" "  -C: 将中文的符号改变为英文的符号")
@@ -133,7 +164,7 @@ function main()
 		show_help
 	fi
 
-	while getopts :mpojta:cCh opt;do
+	while getopts :mpojtla:cCh opt;do
 		oper_right=1
 		case $opt in
 			m)_oper=1;;
@@ -144,6 +175,7 @@ function main()
 			t)_oper=6;;
 			c)_oper=7;;
 			C)_oper=8;;
+			l)_oper=9;;
 			*)show_help;;
 		esac
 	done
@@ -157,6 +189,7 @@ function main()
         6)get_text_from_xml;;
         7)change_english_symbol_to_chinese;;
         8)change_chinese_symbol_to_english;;
+        9)to_list;;
         *)show_help;;
 	esac
 }

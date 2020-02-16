@@ -16,7 +16,7 @@ let _host = 'localhost';
 
 let _verbose = true;
 let _prettyShell = true;
-let _limit = 10;
+let _limit = 1;
 async function createMongo (commands, options) {
     const db = mongojs(_database);
     const tables = await getTables(db);
@@ -543,7 +543,7 @@ async function showTableRows (line, { db }) {
             showCount = true;
         }
     } else {
-        limit = _limit;
+        limit = 10;
     }
 
     let cond = {};
