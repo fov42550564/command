@@ -78,6 +78,7 @@ function dropBrack(line) {
     }
     return line;
 }
+
 function parseItem(item) {
     const list = item.match(/(\w+)(!==|!=|>=|>|==|<=|<|=|~|#)(.*)/);
     if (!list) {
@@ -90,12 +91,23 @@ function parseItem(item) {
     if (key === undefined || oper === undefined || value === undefined) {
         return null;
     }
+    if (/^("|').*("|')$/.test(value)) {
+        value = value.substr(1, value.length-2);
+    }
     if (value === 'null') {
         value = null;
-    } else if (+value == value) {
+    } else if (/^[a-z0-9]{24}$/.test(value)) {
+        value = mongojs.ObjectId(value);
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        value = moment(value, 'YYYY-MM-DD').toDate();
+    } else if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value)) {
+        value = moment(value, 'YYYY-MM-DD HH:mm:ss').toDate();
+    } else if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/.test(value)) {
+        value = moment(value, 'YYYY-MM-DD HH:mm:ss.SSS').toDate();
+    }
+    if (+value == value) {
         value = +value
     }
-
     switch (oper) {
         case '!=':return { [key]: { $ne: value } };
         case '!==':return { [key]: { $ne: value } };
@@ -105,9 +117,6 @@ function parseItem(item) {
         case '=': {
             if (oper === '==') {
                 return { [key]: value };
-            }
-            if (/^[a-z0-9]{24}$/.test(value)) {
-                return mongojs.ObjectId(value);
             }
             const values = [];
             if (typeof value === 'number') {
@@ -228,35 +237,11 @@ function formatResult(obj) {
     }
     return obj;
 }
-// 转化 [] 和  {} 中的逗号
-function replaceUpdateLine(line) {
-    let i = -1, max = line.length - 1, newLine = '', amatch = 0, bmatch = 0;
-    while (i++ < max) {
-        let ch = line[i];
-        if (ch === '[') {
-            amatch++;
-        } else if (ch === ']') {
-            amatch--;
-        }
-        if (ch === '{') {
-            bmatch++;
-        } else if (ch === '}') {
-            bmatch--;
-        }
-        if ((amatch > 0 || bmatch > 0) && ch===',') {
-            ch='&comma;';
-        }
-        newLine=`${newLine}${ch}`;
-    }
-    return newLine;
-}
 function formatUpdate(doc, line) {
     if (!line) {
         return null;
     }
-    line = replaceUpdateLine(line);
-
-    let list = line.split(',').filter(o=>o);
+    let list = line.split(';').filter(o=>o);
     if (!list.length) {
         return null;
     }
@@ -266,7 +251,7 @@ function formatUpdate(doc, line) {
         const items = item.split('=');
         const key = items[0];
         let value = items[1]||'';
-        value = value.replace(/&comma;/g, ',');
+
         if (value === 'true') {
             set[key] = true;
             continue;
@@ -285,12 +270,12 @@ function formatUpdate(doc, line) {
         }
         // 解析数组
         if (/^\[.*]$/.test(value)) {
-            set[key] = JSON.parse(value);
+            set[key] = (new Function(`return ${value}`))();
             continue;
         }
         // 解析obj
         if (/^{.*}$/.test(value)) {
-            set[key] = JSON.parse(value);
+            set[key] = (new Function(`return ${value}`))();
             continue;
         }
         const matches = _.uniq(value.match(/\$\w+/g));
@@ -321,6 +306,10 @@ function formatUpdate(doc, line) {
         }
         if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/.test(value)) {
             set[key] = moment(value, 'YYYY-MM-DD HH:mm:ss.SSS').toDate();
+            continue;
+        }
+        if (/^[0-9a-z]{24}$/.test(value)) {
+            set[key] = mongojs.ObjectId(value);
             continue;
         }
         set[key] = value;
@@ -552,7 +541,6 @@ async function showTableRows (line, { db }) {
         cond = formatCond(list[condIndex]);
         list.splice(condIndex, 1);
     }
-
     if (showCount) {
         if (_verbose) {
             this.verbose(`db.${table}.count(${j2s(cond)})`);
@@ -578,6 +566,7 @@ async function showTableRows (line, { db }) {
     if (_verbose) {
         this.verbose(`db.${table}.find(${j2s(cond)}, ${j2s(fields)}).sort(${j2s(sort)}).limit(${limit})`);
     }
+
     db[table].find(cond, fields).sort(sort).limit(limit).toArray((err, docs)=>{
         if (err) {
             this.print('no record', 'red');
@@ -614,7 +603,7 @@ async function modifyTable(line, { db }) {
     }
 
     const setFields = list[0];
-    if (!setFields || !_.every(setFields.split(','), o=>/[a-zA-Z][a-zA-Z0-9_]*=/.test(o))) {
+    if (!setFields || !_.every(setFields.split(';'), o=>/[a-zA-Z][a-zA-Z0-9_]*=/.test(o))) {
         return this.error('invalid oper');
     }
     list = _.drop(list);
@@ -856,9 +845,9 @@ function showHelp () {
     this.print('    cd: change to database');
     this.print('    ls: showTables|ls ..: showDatabases|ls table: showTableFields');
     this.print('    s(showTableRows): s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit(-1:count) [+-]sortField');
-    this.print('    m(modifyTable): m table f1=xx,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
+    this.print('    m(modifyTable): m table f1=xx;f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
     this.print('    r(removeTable): # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
-    this.print('    c(copyTableRows): c table f1=$f1+1,f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
+    this.print('    c(copyTableRows): c table f1=$f1+1;f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
     this.print('    d(dumpTables): d [table1 table2 xx.mongo]');
     this.print('    _: togglePrettyShell');
     this.print('    v: toggleVerbose');
