@@ -627,7 +627,7 @@ async function modifyTable(line, { db }) {
     }
 
     if (_verbose) {
-        this.verbose(j2s(cond));
+        this.verbose(`db.${table}.find(${j2s(cond)}).sort(${j2s(sort)}).limit(${limit})`);
     }
     db[table].find(cond).sort(sort).limit(limit).toArray((err, docs)=>{
         if (err || !docs.length) {
@@ -641,7 +641,7 @@ async function modifyTable(line, { db }) {
                     continue;
                 }
                 if (_verbose) {
-                    this.verbose(`db.${table}.update(${doc._id}, ${j2s(update)}).limit(${+limit})`);
+                    this.verbose(`db.${table}.update(${doc._id}, ${j2s(update)})`);
                 }
                 db[table].findAndModify({
                     query: { _id: doc._id },
@@ -769,17 +769,21 @@ async function copyTableRows(line, { db }) {
                         this.print(err, 'red');
                     } else {
                         const update = formatUpdate(_doc, setFields);
-                        update && db[table].findAndModify({
-                            query: { _id: ret._id },
-                            update,
-                            new: true
-                        }, (err, ret) => {
-                            if (err) {
-                                this.print(err, 'red');
-                            } else {
-                                showJson(this, ret);
-                            }
-                        });
+                        if (update) {
+                            db[table].findAndModify({
+                                query: { _id: ret._id },
+                                update,
+                                new: true
+                            }, (err, ret) => {
+                                if (err) {
+                                    this.print(err, 'red');
+                                } else {
+                                    showJson(this, ret);
+                                }
+                            });
+                        } else {
+                            showJson(this, ret);
+                        }
                     }
                 });
             }
@@ -820,7 +824,7 @@ async function changeToDatabase(line, { db }) {
     fs.writeJSONSync(configFile, { host: _host, database: _database });
     this.prompt();
 }
-function dumpTables(line) {
+function dumpTables(line = '') {
     let list = line.split(/\s+/).filter(o=>o);
     let dir = _.find(list, o=>/\.mongo$/.test(o));
     if (dir) {
