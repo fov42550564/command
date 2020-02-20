@@ -503,7 +503,7 @@ async function showTables(line, { db }) {
     }
 }
 function getLimitIndex(list) {
-    return _.findIndex(list, o=>+o==o && o<1000);
+    return _.findIndex(list, o=>+o==o && o<=1000);
 }
 function getCondIndex(list) {
     return _.findIndex(list, o=>/!=|>=|>\w|=|<=|<\w|~|#/.test(o) || /^[0-9a-z]{24}$/.test(o) || /^1[0-9]{10}$/.test(o));
@@ -730,16 +730,18 @@ async function copyTableRows(line, { db }) {
         list.splice(sortIndex, 1);
     }
 
-    let _cond = {};
-    let setFields = '';
-    if (!list[1]) {
-        setFields = '';
-        _cond = list[0];
-    } else {
-        setFields = list[0];
-        _cond = list[1];
+    const setFields = list[0];
+    if (!setFields || !_.every(setFields.split(';'), o=>/[a-zA-Z][a-zA-Z0-9_]*=/.test(o))) {
+        return this.error('invalid oper');
     }
-    const cond = formatCond(_cond);
+    list = _.drop(list);
+
+    let cond = {};
+    let condIndex = getCondIndex(list);;
+    if (condIndex !== -1) {
+        cond = formatCond(list[condIndex]);
+        list.splice(condIndex, 1);
+    }
 
     if (_verbose) {
         this.verbose(`db.${table}.copy(${j2s(cond)}).to(${j2s(setFields)}).sort(${j2s(sort)}).limit(${limit})`);
