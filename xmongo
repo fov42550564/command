@@ -847,7 +847,7 @@ function showHelp () {
     this.print('    cd: change to database');
     this.print('    ls: showTables|ls ..: showDatabases|ls table: showTableFields');
     this.print('    s(showTableRows): s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit(-1:count) [+-]sortField');
-    this.print('    m(modifyTable): m table f1=xx;f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
+    this.print('    m(modifyTable): m table f1=$f1+1;f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
     this.print('    r(removeTable): # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
     this.print('    c(copyTableRows): c table f1=$f1+1;f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
     this.print('    d(dumpTables): d [table1 table2 xx.mongo]');

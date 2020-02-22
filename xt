@@ -84,6 +84,9 @@ function add_for_number() {
         echo "格式：xt -a reg:num|str|func"
         exit
     fi
+    if [ "$_reg" = "*" ];then
+        _reg="^.*$"
+    fi
     if __mac ;then
         pbpaste|getSubmitComments|pbcopy
     else
@@ -144,7 +147,9 @@ function show_help()
     list=("${list[@]}" "  -a: 通过正则表达式替换 (reg:±num|str|func, 注意\和=>需要转义成\\\\和=\>)")
     list=("${list[@]}" "      如果为func，使用=xx的格式，参数为(i, _, m)，其中i为匹配到的参数，_为lodash, m为moment")
     list=("${list[@]}" "      @如: [ -a 1:fang ] : createTime: 1, //创建时间 -> createTime: fang, //创建时间")
-    list=("${list[@]}" "      @如: [ -a 1:=i+4 ] : createTime: 1, //创建时间 -> createTime: 5, //创建时间")
+    list=("${list[@]}" "      @如: [ -a 1:=i+4 ] : createTime: 1, //创建时间 -> createTime: 14, //创建时间")
+    list=("${list[@]}" "      @如: [ -a 1:=+i+4 ] : createTime: 1, //创建时间 -> createTime: 5, //创建时间")
+    list=("${list[@]}" "      @如: [ -a *:=\\\`pre\\ \\\${i}\\ post\\\` ] : createTime ->pre createTime post")
 	list=("${list[@]}" "  -l: 转化为list，分隔符为\n或者空格")
     list=("${list[@]}" "      @如: 1 2 3 4 5 -> ['1','2','3','4','5']")
 	list=("${list[@]}" "  -t: 获取xml的文字部分")
