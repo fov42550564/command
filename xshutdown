@@ -1,0 +1,4 @@
+#!/bin/bash
+
+t=${1:-120}
+sudo shutdown -h +$t
