@@ -14,7 +14,9 @@ shopt -s expand_aliases
 source ~/command/common
 
 [ -f /usr/local/etc/bash_completion ] && . /usr/local/etc/bash_completion
-echo "fangyunjiang"|pinyinmatch "fx"
+if __mac ;then
+  echo "fangyunjiang"|pinyinmatch "fx"
+fi
 
 # Set a default prompt of: user@time and current_directory
 PS1='\n\[\e[32m\]\u\[\e[34m\]@\[\e[32m\]\t \[\e[33m\]\w\[\e[0m\]\n\$'
