@@ -402,7 +402,7 @@ function __diff()
     if __mac;then
         tool='diffmerge.sh'
     else
-        tool='bcompare'
+        tool='sgdm'
     fi
     if [ -n "$a" ];then
         atom "$f1" "$f2"
