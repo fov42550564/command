@@ -29,6 +29,13 @@ if __windows;then
     export SHELLOPTS
     alias open='__open'
     alias atom='__atom'
+    function new() {
+      if [ -z "$1" ];then
+        mintty -D
+      else
+        "/c/Program Files/Git/git-bash.exe"
+      fi
+    }
 fi
 
 #set options
