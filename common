@@ -1021,7 +1021,11 @@ function __set_dest_path()
 				fi
 			fi
 			if [ "${oldproj}" != "${target}" ];then
-				mv "${file}" "${file}_${oldproj}"
+				if [ "`sed -n '1p' ${file} 2</dev/null`" = "" ];then
+					sed -i '/^'${oldproj}'$/d' ${config_file}
+				else
+					mv "${file}" "${file}_${oldproj}"
+				fi
 				mv "${file}_${target}" "${file}" 2>/dev/null
 				[ -a "$file" ] || echo -n > $file
 				echo "${target}" >> ${config_file}
