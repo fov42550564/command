@@ -1,6 +1,6 @@
 LINUX_BASHCD=$(DESTDIR)/etc/bash_completion.d
 LINUX_BIN=$(DESTDIR)/usr/bin
-XCODE_SDK=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk
+XCODE_SDK=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk
 PLATFORM=$(shell uname)
 
 ifeq ($(PLATFORM),Darwin)
