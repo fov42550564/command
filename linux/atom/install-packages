@@ -1,0 +1,7 @@
+#!/bin/bash
+
+apm install atom-react-native-style
+apm install cursor-history
+apm install hyperclick
+apm install js-hyperclick
+apm install react
