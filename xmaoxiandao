@@ -1,0 +1,50 @@
+#!/bin/bash
+
+adb connect localhost:6555
+
+# click 870 620 #key1
+# click 920 520 #key2
+# click 1020 440 #key3
+# click 1135 430 #key4
+# click 920 400 #key5
+# click 1020 330 #key6
+# click 1135 300 #key7
+
+# 每0.1秒攻击一次
+# 每十秒转向一次，首次面向右边
+# 每5秒释放一次技能
+function click() {
+    adb shell input tap $1 $2 1>/dev/null 2>&1
+}
+
+i=0
+turn="right"
+skill="one"
+while [ 1 ];do
+    ((i++))
+    if ((i >= 1000000));then
+        i=0;
+    fi
+    if ((i%30 == 0));then
+        if [ "$turn" = "right" ];then
+            turn="left"
+            click 80 570 #左移
+        else
+            turn="right"
+            click 240 570 #右移
+        fi
+        continue
+    fi
+    if ((i%10 == 0));then
+        if [ "$skill" = "one" ];then
+            skill="two"
+            click 920 520 #key2
+        else
+            skill="one"
+            click 920 400 #key5
+        fi
+        continue
+    fi
+    click 1180 550 #普通攻击
+    sleep 0.1s
+done

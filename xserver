@@ -245,7 +245,7 @@ function startImageServer(port, file, mode) {
                     div.style.top = offset + index * step;
                     div.style.height = step;
                     div.style.width = (tx+3) * step;
-                    div.innerHTML = "<div class='hlineText'>"+(!(index%5) ? index * step : "" )+"</div><div class='hline' style='"+(!(index%5) ? "margin-left: 1px;" : "" )+"'></div>";
+                    div.innerHTML = "<div class='hlineText'>"+(!(index%5) ? index * step : "" )+"</div><div class='hline' style='"+(!(index%5) ? "margin-left: 1px;background: green;" : "" )+"'></div>";
                     document.body.appendChild(div);
                 }
                 function createVL(index, step, offset) {
@@ -254,7 +254,7 @@ function startImageServer(port, file, mode) {
                     div.style.left = offset + index * step;
                     div.style.width = step;
                     div.style.height = (ty+3) * step+5;
-                    div.innerHTML = "<div class='vlineText'>"+(!(index%5) ? index * step : "" )+"</div><div class='vline' style='"+(!(index%5) ? "margin-top: 1px;" : "" )+"'></div>";
+                    div.innerHTML = "<div class='vlineText'>"+(!(index%5) ? index * step : "" )+"</div><div class='vline' style='"+(!(index%5) ? "margin-top: 1px;background: green;" : "" )+"'></div>";
                     document.body.appendChild(div);
                 }
                 while (hmode && y < ty) {
