@@ -1,0 +1,36 @@
+#!/bin/bash
+
+adb connect localhost:6555
+
+# click 870 620 #key1
+# click 920 520 #key2
+# click 1020 440 #key3
+# click 1135 430 #key4
+# click 920 400 #key5
+# click 1020 330 #key6
+# click 1135 300 #key7
+# click 60 260 #auto
+
+# 每2秒释放一次技能
+# 每20秒使用一次蓝
+function click() {
+    adb shell input tap $1 $2 1>/dev/null 2>&1
+}
+
+i=0
+while [ 1 ];do
+    if ((i%10 == 0));then
+        click 60 260 #auto
+        sleep 0.5s
+        click 1135 430 #key4
+        sleep 0.5s
+        click 60 260 #auto
+        sleep 0.5s
+    fi
+    click 870 620 #key1
+    sleep 3s
+    ((i++))
+    if ((i >= 1000000));then
+        i=0;
+    fi
+done
