@@ -215,7 +215,11 @@ function startUploadServer(port, isText) {
     })
 }
 
-function startImageServer(port, file, mode) {
+function startImageServer(port, file, mode, offset) {
+    if (+mode == mode) {
+        offset = mode;
+        mode = undefined;
+    }
     var server = app.listen(port);
     app.get('/*', function(req, res, next){
         var html = `
@@ -237,8 +241,8 @@ function startImageServer(port, file, mode) {
                 var x = 0;
                 var step = 10;
                 var offset = 40;
-                var ty = Math.floor((document.body.clientHeight-100) / step);
-                var tx = Math.floor((document.body.clientWidth-100) / step);
+                var ty = Math.floor((document.body.clientHeight+${offset||0}) / step);
+                var tx = Math.floor((document.body.clientWidth+${offset||0}) / step);
                 function createHL(index, step, offset) {
                     var div = document.createElement("div");
                     div.className = "hlineContainer";
@@ -277,7 +281,7 @@ function startImageServer(port, file, mode) {
         console.log(url);
     });
     server.on('error', function (err) {
-        startImageServer(port+1, file, mode);
+        startImageServer(port+1, file, mode, offset);
     })
 }
 
@@ -387,6 +391,7 @@ app.use(express.static(__dirname+'/static'));
 var param = process.argv[2];
 var param1 = process.argv[3];
 var param2 = process.argv[4];
+var param3 = process.argv[5];
 if (param === '-h' || param === '--help') {
     console.log('');
     console.log('xserver opts');
@@ -396,7 +401,7 @@ if (param === '-h' || param === '--help') {
     console.log('   -u|--upload: upload files with multer');
     console.log('   -t|--text: send text');
     console.log('   -i|--image [name]: show iphone6 size for image');
-    console.log('   -g|--grid [name] [v|h]: show grid for image');
+    console.log('   -g|--grid [name] [v|h] [offset]: show grid for image');
     console.log('   -d|--dir [name]: show dir file list');
     console.log('   -m|--mobile: show qrcode for server');
     console.log('   file: show download qrcode for file');
@@ -411,7 +416,7 @@ if (param === '-h' || param === '--help') {
 } else if (param === '-d' || param === '--dir') {
     startDirServer(port, param1);
 } else if (param === '-g' || param === '--grid') {
-    startImageServer(port, param1, param2);
+    startImageServer(port, param1, param2, param3);
     openChrome('http:'+ip+':'+port);
 } else {
     startServer(port, param);
