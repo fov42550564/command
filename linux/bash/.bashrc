@@ -30,11 +30,8 @@ if __windows;then
     alias open='__open'
     alias atom='__atom'
     function new() {
-      if [ -z "$1" ];then
-        mintty -D
-      else
-        "/c/Program Files/Git/git-bash.exe"
-      fi
+      local path
+      mintty -i /Cygwin-Terminal.ico -t "$PWD" -e /bin/bash --login -c "cd \"$PWD\";exec bash --rcfile ~/.bashrc"
     }
 fi
 

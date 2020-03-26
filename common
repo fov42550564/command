@@ -119,7 +119,7 @@ function __windows()
 #	  check if is windows system
 ########################################
   local name=$(uname)
-  [ ${name:0:5} = "MINGW" ]&&return $_TRUE_||return $_FALSE_
+  [ ${name:0:5} = "MINGW" -o ${name:0:6} = "CYGWIN" ]&&return $_TRUE_||return $_FALSE_
 }
 function __debug()
 {
@@ -407,7 +407,11 @@ function __diff()
     if [ -n "$a" ];then
         atom "$f1" "$f2"
     else
-        $tool "$f1" "$f2"
+		if __windows;then
+			$tool "`cygpath -lw "$f1"`" "`cygpath -lw "$f2"`"
+		else
+        	$tool "$f1" "$f2"
+		fi
     fi
 }
 function __sudo()
@@ -462,7 +466,7 @@ function __open()
 #Usage: __open dir
 ########################################
 	local dir
-	dir=`cygpath -w "$@"`
+	dir=`cygpath -lw "$@"`
 	explorer "$dir"
 }
 function __atom()
@@ -473,10 +477,10 @@ function __atom()
 	local dir path
 	if [ $# -ne 0 ];then
 		path=`__get_full_path "$@"`
-		dir=`cygpath -w "$path"`
+		dir=`cygpath -lw "$path"`
 	fi
-	atom=$HOME/AppData/Local/atom/atom
-	$atom "$dir"
+	atom=$WINDOWS_HOME/AppData/Local/atom/atom
+	"$atom" "$dir"
 }
 function __simple_cp()
 {

@@ -1,6 +1,6 @@
 @echo off
 
-set root=c:\linux\linux
+set root=c:\cygwin
 set /a isFile=0
 
 (2>nul pushd %1)||(set /a isFile=1)

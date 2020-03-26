@@ -31,16 +31,16 @@
 # Atom Flight Manual:
 # http://flight-manual.atom.io/using-atom/sections/basic-customization/#_cson
 '.workspace .editor':
-  'ctrl-cmd-=': 'react:reformat-JSX'
-  'cmd-d':'editor:duplicate-lines'
-  'shift-cmd-D': 'editor:delete-line'
-  'shift-cmd-t': 'editor:toggle-soft-wrap'
+  'ctrl-alt-=': 'react:reformat-JSX'
+  'ctrl-d':'editor:duplicate-lines'
+  'ctrl-shift-d': 'editor:delete-line'
+  'ctrl-shift-t': 'editor:toggle-soft-wrap'
 
 'atom-text-editor':
-  'cmd-alt-l': 'editor:auto-indent'
+  'ctrl-alt-l': 'editor:auto-indent'
 
 '.tree-view,.editor':
-  'cmd-o': 'tree-view:show-current-file-in-file-manager'
+  'ctrl-o': 'tree-view:show-current-file-in-file-manager'
 
 '.tree-view':
-  'cmd-shift-C': 'tree-view:copy-full-path'
+  'ctrl-shift-c': 'tree-view:copy-full-path'

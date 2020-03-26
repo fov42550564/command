@@ -49,6 +49,8 @@ function install_bash()
         mkdir -p $HOME/.Trash
         install_single bash/.minttyrc .minttyrc
         install_single bash/.dir_colors .dir_colors
+        cd /usr/local/bin/
+        ln -s /home/Admin/command/xnode node
     fi
 }
 

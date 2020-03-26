@@ -1,17 +1,27 @@
 #!/bin/bash
+source ~/command/common
+
+if __windows;then
+    DIST=$WINDOWS_HOME
+else
+    DIST=$HOME
+fi
 
 if [ "$1" = "--help" -o  "$1" = "-h" ];then
   echo ./install [--es6]
   exit
 fi
-
-cp ./keymap/keymap.cson ~/.atom/
-cp ./config/config.cson ~/.atom/
-cp ./snippets/snippets.cson ~/.atom/
+if __windows;then
+    cp ./config/keymap_windows.cson $DIST/.atom/
+else
+    cp ./config/keymap.cson $DIST/.atom/
+fi
+cp ./config/config.cson $DIST/.atom/
+cp ./config/snippets.cson $DIST/.atom/
 
 if [ "$1" = "--es6" ];then
-  cp "./snippets/react6.cson" "$HOME/.atom/packages/react/snippets/JavaScript (JSX).cson"
+  cp "./config/react6.cson" "$DIST/.atom/packages/react/snippets/JavaScript (JSX).cson"
 else
-  cp "./snippets/react.cson" "$HOME/.atom/packages/react/snippets/JavaScript (JSX).cson"
+  cp "./config/react.cson" "$DIST/.atom/packages/react/snippets/JavaScript (JSX).cson"
 fi
 echo "done"

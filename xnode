@@ -1,0 +1,5 @@
+#!/bin/sh
+
+_cmd="$(cygpath -lw -- "$1" )"
+shift
+"${NODE_HOME}/node" "$_cmd" "$@"
