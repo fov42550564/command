@@ -8,6 +8,8 @@
 #############################################
 source ~/command/common
 
+LANG=en_US
+
 declare -a _files
 declare -a _versions
 _backup_path="~/command/gitbackup/"
