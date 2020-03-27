@@ -30,8 +30,7 @@ if __windows;then
     alias open='__open'
     alias atom='__atom'
     function new() {
-      local path
-      mintty -i /Cygwin-Terminal.ico -t "$PWD" -e /bin/bash --login -c "cd \"$PWD\";exec bash --rcfile ~/.bashrc"
+      C:/cygwin/CygwinEx.bat "$PWD"
     }
 fi
 
