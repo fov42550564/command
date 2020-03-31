@@ -121,6 +121,15 @@ function __windows()
   local name=$(uname)
   [ ${name:0:5} = "MINGW" -o ${name:0:6} = "CYGWIN" ]&&return $_TRUE_||return $_FALSE_
 }
+function __cygwin()
+{
+########################################
+#Usage: __cygwin
+#	  check if is cygwin system
+########################################
+  local name=$(uname)
+  [ ${name:0:6} = "CYGWIN" ]&&return $_TRUE_||return $_FALSE_
+}
 function __debug()
 {
 ########################################
