@@ -49,6 +49,12 @@ function install_bash()
         mkdir -p $HOME/.Trash
         install_single bash/.minttyrc .minttyrc
         install_single bash/.dir_colors .dir_colors
+        cd ~
+        ln -s $WINDOWS_HOME/AppData/Roaming/npm/node_modules node_modules
+        [ -a /cygdrive/c ] &&  ln -s /cygdrive/c c
+        [ -a /cygdrive/d ] &&  ln -s /cygdrive/d d
+        [ -a /cygdrive/e ] &&  ln -s /cygdrive/e e
+        [ -a /cygdrive/f ] &&  ln -s /cygdrive/f f
         cd /usr/local/bin/
         ln -s  $HOME/command/xnode node
     fi

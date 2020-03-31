@@ -44,6 +44,7 @@
 	autocrlf = false
 	editor = /usr/bin/vim
 	quotepath = false
+	filemode = false
 [http]
 	postBuffer = 2077721600
 [filter "lfs"]
