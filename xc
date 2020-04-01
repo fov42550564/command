@@ -5,6 +5,7 @@ try {
     var params = args.join('');
     params = params.replace(/\[/g, '(').replace(/]/g, ')');
     params = params.replace(/{/g, '(').replace(/}/g, ')');
+    params = params.replace(/x/g, '*');
     params = params.replace('m.', 'Math.')
     console.log(eval(params));
 } catch (e) {

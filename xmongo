@@ -237,7 +237,7 @@ function formatResult(obj) {
     }
     return obj;
 }
-function formatUpdate(doc, line) {
+function formatUpdate(self, doc, line) {
     if (!line) {
         return null;
     }
@@ -248,9 +248,9 @@ function formatUpdate(doc, line) {
     const set = {};
     const unset = {};
     for (const item of list) {
-        const items = item.split('=');
-        const key = items[0];
-        let value = items[1]||'';
+        const items = line.match(/^([a-zA-Z][a-zA-Z0-9_]*):(.*)/);
+        const key = items[1];
+        let value = items[2]||'';
 
         if (value === 'true') {
             set[key] = true;
@@ -270,12 +270,22 @@ function formatUpdate(doc, line) {
         }
         // 解析数组
         if (/^\[.*]$/.test(value)) {
-            set[key] = (new Function(`return ${value}`))();
+            try {
+                set[key] = (new Function(`return ${value}`))();
+            } catch(e) {
+                self.error(`Array:${value} 格式错误`);
+                return null;
+            }
             continue;
         }
         // 解析obj
         if (/^{.*}$/.test(value)) {
-            set[key] = (new Function(`return ${value}`))();
+            try {
+                set[key] = (new Function(`return ${value}`))();
+            } catch(e) {
+                self.error(`Object:${value} 格式错误`);
+                return null;
+            }
             continue;
         }
         const matches = _.uniq(value.match(/\$\w+/g));
@@ -384,15 +394,17 @@ function formatLine(self, line) {
     return newLine
     .replace(/"[^"]+"/g, o=>o.replace(' ', '&nbsp;'))
     .replace(/'[^']+'/g, o=>o.replace(' ', '&nbsp;'))
-    .replace(/\s,\s/g, ',')
-    .replace(/\s!=\s/g, '!=')
-    .replace(/\s!==\s/g, '!==')
-    .replace(/\s=\s/g, '=')
-    .replace(/\s==\s/g, '==')
-    .replace(/\s~\s/g, '~')
-    .replace(/\s\|\s/g, '|')
-    .replace(/\s&\s/g, '&')
-    .replace(/\s#\s/g, '#')
+    .replace(/\s*:\s*/g, ':')
+    .replace(/\s*;\s*/g, ';')
+    .replace(/\s*,\s*/g, ',')
+    .replace(/\s*!=\s*/g, '!=')
+    .replace(/\s*!==\s*/g, '!==')
+    .replace(/\s*=\s*/g, '=')
+    .replace(/\s*==\s*/g, '==')
+    .replace(/\s*~\s*/g, '~')
+    .replace(/\s*\|\s*/g, '|')
+    .replace(/\s*&\s*/g, '&')
+    .replace(/\s*#\s*/g, '#')
     .trim().split(/\s/).filter(o=>o).map(o=>o.replace('&nbsp;', ' '));
 }
 function j2s(obj) {
@@ -511,6 +523,9 @@ function getCondIndex(list) {
 function getSortIndex(list) {
     return _.findIndex(list, o=>/^(\+|-)[a-zA-Z][a-zA-Z0-9_]*/.test(o));
 }
+function getSetFieldsIndex(list) {
+    return _.findIndex(list, o=>_.every(o.split(';'), o=>/^[a-zA-Z][a-zA-Z0-9_]*:/.test(o)));
+}
 async function showTableRows (line, { db }) {
     if (!line) {
         return this.prompt();
@@ -587,7 +602,7 @@ async function modifyTable(line, { db }) {
     list = _.drop(list);
 
     let limit = 0;
-    let limitIndex = getLimitIndex(list);;
+    let limitIndex = getLimitIndex(list);
     if (limitIndex !== -1) {
         limit = +list[limitIndex];
         list.splice(limitIndex, 1);
@@ -602,18 +617,20 @@ async function modifyTable(line, { db }) {
         list.splice(sortIndex, 1);
     }
 
-    const setFields = list[0];
-    if (!setFields || !_.every(setFields.split(';'), o=>/[a-zA-Z][a-zA-Z0-9_]*=/.test(o))) {
-        return this.error('invalid oper');
-    }
-    list = _.drop(list);
-
     let cond = {};
-    let condIndex = getCondIndex(list);;
+    let condIndex = getCondIndex(list);
     if (condIndex !== -1) {
         cond = formatCond(list[condIndex]);
         list.splice(condIndex, 1);
     }
+
+    let setFieldsIndex = getSetFieldsIndex(list);
+    if (setFieldsIndex === -1) {
+        this.verbose(`db.${table}.find(${j2s(cond)}).sort(${j2s(sort)}).limit(${limit})`);
+        return this.error('no set fields');
+    }
+    const setFields = list[setFieldsIndex];
+    list.splice(setFieldsIndex, 1);
 
     if (_verbose) {
         this.verbose(`db.${table}.find(${j2s(cond)}).sort(${j2s(sort)}).limit(${limit})`);
@@ -625,7 +642,7 @@ async function modifyTable(line, { db }) {
         } else {
             for (const doc of docs) {
                 this.verbose(list[0]);
-                const update = formatUpdate(doc, setFields);
+                const update = formatUpdate(this, doc, setFields);
                 if (!update) {
                     continue;
                 }
@@ -659,7 +676,7 @@ async function removeTable(line, { db }) {
     list = _.drop(list);
 
     let limit = 0;
-    let limitIndex = getLimitIndex(list);;
+    let limitIndex = getLimitIndex(list);
     if (limitIndex !== -1) {
         limit = +list[limitIndex];
         list.splice(limitIndex, 1);
@@ -668,7 +685,7 @@ async function removeTable(line, { db }) {
     }
 
     let cond = {};
-    let condIndex = getCondIndex(list);;
+    let condIndex = getCondIndex(list);
     if (condIndex !== -1) {
         cond = formatCond(list[condIndex]);
         list.splice(condIndex, 1);
@@ -715,7 +732,7 @@ async function copyTableRows(line, { db }) {
     list = _.drop(list);
 
     let limit = 0;
-    let limitIndex = getLimitIndex(list);;
+    let limitIndex = getLimitIndex(list);
     if (limitIndex !== -1) {
         limit = +list[limitIndex];
         list.splice(limitIndex, 1);
@@ -730,18 +747,19 @@ async function copyTableRows(line, { db }) {
         list.splice(sortIndex, 1);
     }
 
-    const setFields = list[0];
-    if (!setFields || !_.every(setFields.split(';'), o=>/[a-zA-Z][a-zA-Z0-9_]*=/.test(o))) {
-        return this.error('invalid oper');
-    }
-    list = _.drop(list);
-
     let cond = {};
-    let condIndex = getCondIndex(list);;
+    let condIndex = getCondIndex(list);
     if (condIndex !== -1) {
         cond = formatCond(list[condIndex]);
         list.splice(condIndex, 1);
     }
+
+    let setFieldsIndex = getSetFieldsIndex(list);
+    if (setFieldsIndex === -1) {
+        return this.error('invalid oper');
+    }
+    const setFields = list[setFieldsIndex];
+    list.splice(setFieldsIndex, 1);
 
     if (_verbose) {
         this.verbose(`db.${table}.copy(${j2s(cond)}).to(${j2s(setFields)}).sort(${j2s(sort)}).limit(${limit})`);
@@ -759,7 +777,7 @@ async function copyTableRows(line, { db }) {
                     if (err) {
                         this.print(err, 'red');
                     } else {
-                        const update = formatUpdate(_doc, setFields);
+                        const update = formatUpdate(this, _doc, setFields);
                         if (update) {
                             db[table].findAndModify({
                                 query: { _id: ret._id },
@@ -847,9 +865,9 @@ function showHelp () {
     this.print('    cd: change to database');
     this.print('    ls: showTables|ls ..: showDatabases|ls table: showTableFields');
     this.print('    s(showTableRows): s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit(-1:count) [+-]sortField');
-    this.print('    m(modifyTable): m table f1=$f1+1;f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
+    this.print('    m(modifyTable): m table f1:$f1+1;f2:xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
     this.print('    r(removeTable): # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
-    this.print('    c(copyTableRows): c table f1=$f1+1;f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
+    this.print('    c(copyTableRows): c table f1:$f1+1;f2:xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
     this.print('    d(dumpTables): d [table1 table2 xx.mongo]');
     this.print('    _: togglePrettyShell');
     this.print('    v: toggleVerbose');
