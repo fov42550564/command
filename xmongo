@@ -91,22 +91,26 @@ function parseItem(item) {
     if (key === undefined || oper === undefined || value === undefined) {
         return null;
     }
-    if (/^("|').*("|')$/.test(value)) {
-        value = value.substr(1, value.length-2);
-    }
     if (value === 'null') {
         value = null;
+    } else if (value === '$exists') {
+        if (oper === '=') {
+            return { [key]: { $exists: true } };
+        } else {
+            return { [key]: { $exists: false } };
+        }
     } else if (/^[a-z0-9]{24}$/.test(value)) {
         value = mongojs.ObjectId(value);
-    } else if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    } else if (/^'\d{4}-\d{2}-\d{2}'$/.test(value)) {
         value = moment(value, 'YYYY-MM-DD').toDate();
-    } else if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value)) {
+    } else if (/^'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}'$/.test(value)) {
         value = moment(value, 'YYYY-MM-DD HH:mm:ss').toDate();
-    } else if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/.test(value)) {
+    } else if (/^'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}'$/.test(value)) {
         value = moment(value, 'YYYY-MM-DD HH:mm:ss.SSS').toDate();
-    }
-    if (+value == value) {
+    } else if (+value == value) {
         value = +value
+    } else if (/^("|').*("|')$/.test(value)) {
+        value = value.substr(1, value.length-2);
     }
     switch (oper) {
         case '!=':return { [key]: { $ne: value } };
@@ -251,6 +255,7 @@ function formatUpdate(self, doc, line) {
         const items = line.match(/^([a-zA-Z][a-zA-Z0-9_]*):(.*)/);
         const key = items[1];
         let value = items[2]||'';
+        self.error(`${key}, ${value[0]}`);
 
         if (value === 'true') {
             set[key] = true;
@@ -295,32 +300,37 @@ function formatUpdate(self, doc, line) {
                 value = value.replace(new RegExp(match.replace('$', '\\$'), 'g'), refValue);
             }
         }
-        if (/\+|-|\*|\//.test(value)) {
-            try {
-                value = eval(value);
-            } catch(err) {}
-        }
-        if (+value == value) {
-            value = +value
-        } else if (/^['"].*['"]$/.test(value)) {
-            value = value.replace(/^['"](.*)['"]$/, '$1');
-        }
-        // 解析时间
-        if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-            set[key] = moment(value, 'YYYY-MM-DD').toDate();
-            continue;
-        }
-        if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value)) {
-            set[key] = moment(value, 'YYYY-MM-DD HH:mm:ss').toDate();
-            continue;
-        }
-        if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/.test(value)) {
-            set[key] = moment(value, 'YYYY-MM-DD HH:mm:ss.SSS').toDate();
-            continue;
-        }
         if (/^[0-9a-z]{24}$/.test(value)) {
             set[key] = mongojs.ObjectId(value);
             continue;
+        }
+        if (+value == value) {
+            value = +value
+        } else if (/\+|-|\*|\//.test(value)) {
+            try {
+                let _val = eval(value);
+                if (typeof _val === 'number') {
+                    value = _val;
+                } else {
+                    _val = value.replace(/^'(.*)'$/, '$1');
+                    // 解析时间
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(_val)) {
+                        set[key] = moment(_val, 'YYYY-MM-DD').toDate();
+                        continue;
+                    }
+                    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(_val)) {
+                        set[key] = moment(_val, 'YYYY-MM-DD HH:mm:ss').toDate();
+                        continue;
+                    }
+                    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/.test(_val)) {
+                        set[key] = moment(_val, 'YYYY-MM-DD HH:mm:ss.SSS').toDate();
+                        continue;
+                    }
+                }
+            } catch(err) {}
+        }
+        if (/^['"].*['"]$/.test(value)) {
+            value = value.replace(/^['"](.*)['"]$/, '$1');
         }
         set[key] = value;
     }
@@ -869,6 +879,7 @@ function showHelp () {
     this.print('    r(removeTable): # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
     this.print('    c(copyTableRows): c table f1:$f1+1;f2:xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
     this.print('    d(dumpTables): d [table1 table2 xx.mongo]');
+    this.print('    format: id: \"xx\"|\'xx\':string xx:ObjectId date:\"xx\":string xx|\'xx\':date');
     this.print('    _: togglePrettyShell');
     this.print('    v: toggleVerbose');
     this.print('    limit: setDefaultLimit');
