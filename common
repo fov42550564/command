@@ -169,6 +169,14 @@ function __error()
 		fi
 	fi
 }
+function __ip()
+{
+########################################
+#Usage: __ip
+#	show current machine ip
+########################################
+	ifconfig -a|grep -w inet|grep -v 127.0.0.1|awk '{print $2}'|tr -d "addr:"
+}
 function __join_path()
 {
 ########################################

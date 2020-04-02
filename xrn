@@ -1,0 +1,66 @@
+#!/bin/bash
+source ~/command/common
+
+_port=''
+_oper=0
+
+function key() {
+    adb shell input keyevent $1 1>/dev/null 2>&1
+}
+function create_proxy() {
+    adb shell settings put global http_proxy $1:$2
+    echo adb shell settings put global http_proxy $1:$2
+}
+function xrn_init() {
+    echo adb connect localhost:6555
+    adb connect localhost:6555
+    sleep 1
+    adb reverse --list
+    echo adb reverse tcp:8081 tcp:8081
+    adb reverse tcp:8081 tcp:8081
+    echo adb reverse tcp:$_port tcp:$_port
+    adb reverse tcp:$_port tcp:$_port
+}
+function xrn_log() {
+    adb logcat *:S ReactNativeJS:V
+}
+function xrn_full_log() {
+    adb logcat *:S ReactNative:V ReactNativeJS:V
+}
+function xrn_show_settting() {
+    key 82
+}
+function show_help() {
+	local -a list
+	list="help"
+	list=("${list[@]}" "Usage: xrn [OPTIONS]")
+	list=("${list[@]}" "  -i [port]: init with port")
+	list=("${list[@]}" "  -l: show log")
+	list=("${list[@]}" "  -L: show full log")
+	list=("${list[@]}" "  -s: show settting")
+	__msgbox "${list[@]}"
+}
+function main() {
+	while getopts :i:clLsh opt;do
+		_oper_right=1
+		case $opt in
+			i)_oper=0;_port="$OPTARG";;
+			l)_oper=1;;
+			L)_oper=2;;
+			s)_oper=3;;
+			h)show_help;exit;;
+			*)show_help;exit;;
+		esac
+	done
+
+	[ $_oper_right -eq 0 ] && show_help && exit
+
+	case $_oper in
+		0)xrn_init;;
+		1)xrn_log;;
+		2)xrn_full_log;;
+		3)xrn_show_settting;;
+	esac
+}
+
+main "$@"
