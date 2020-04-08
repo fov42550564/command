@@ -255,7 +255,6 @@ function formatUpdate(self, doc, line) {
         const items = line.match(/^([a-zA-Z][a-zA-Z0-9_]*):(.*)/);
         const key = items[1];
         let value = items[2]||'';
-        self.error(`${key}, ${value[0]}`);
 
         if (value === 'true') {
             set[key] = true;

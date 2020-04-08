@@ -258,8 +258,8 @@ function xjavaShowHelp()
 	local -a list
 
 	list="help"
-	list=("${list[@]}" "Usage:xjava [-n full_class_name|-c|-b|-e|-r|-p|-f|-a|-j|-h]")
-	list=("${list[@]}" "-n full_class_name:set full_class_name[package.Class]")
+	list=("${list[@]}" "Usage: xjava [-n full_class_name|-c|-b|-e|-r|-p|-f|-a|-j|-h]")
+	list=("${list[@]}" "-n full_class_name: set full_class_name[package.Class]")
 	list=("${list[@]}" "-c: create class")
 	list=("${list[@]}" "-b: build/complie java project")
 	list=("${list[@]}" "-e: execute program")
