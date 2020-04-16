@@ -71,6 +71,7 @@ function _declare_global_variables__()
 	_INPUTBOX_WIDTH_=$_MSGBOX_WIDTH_
 
 	__mac && _SUDO_=sudo || _SUDO_=""
+	__cygwin && export LANG=en_US.UTF-8
 
 	_TRUE_=0
 	_FALSE_=255

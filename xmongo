@@ -991,7 +991,7 @@ function showHelp () {
     this.print('    r(removeTable): # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
     this.print('    c(copyTableRows): c table f1:$f1+1;f2:xx;f3:()=>xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
     this.print('    d(dumpTables): d [table1 table2 xx.mongo]');
-    this.print('    format: id: \"xx\"|\'xx\':string xx:ObjectId date:\"xx\":string xx|\'xx\':date');
+    this.print('    format: id: \"xx\"|\'xx\':string xx:ObjectId date:\"xx\":string xx|\'xx\':date number:\"xx\"|\'xx\':string xx:number');
     this.print('    _: togglePrettyShell');
     this.print('    v: toggleVerbose');
     this.print('    limit: setDefaultLimit');
