@@ -634,7 +634,7 @@ function getLimitIndex(list) {
     return _.findIndex(list, o=>+o==o && o<=1000);
 }
 function getCondIndex(list) {
-    return _.findIndex(list, o=>/!=|>=|>\w|=|<=|<\w|~|#/.test(o) || /^[0-9a-z]{24}$/.test(o) || /^1[0-9]{10}$/.test(o));
+    return _.findIndex(list, o=>/!=|>=|[^=]>\w|=\w|<=|<\w|~|#/.test(o) || /^[0-9a-z]{24}$/.test(o) || /^1[0-9]{10}$/.test(o));
 }
 function getSortIndex(list) {
     return _.findIndex(list, o=>/^(\+|-)[a-zA-Z][a-zA-Z0-9_]*/.test(o));
@@ -744,8 +744,7 @@ async function modifyTable(line, { db }) {
     if (setFieldsIndex === -1) {
         return this.error('no set fields');
     }
-    let setFields = list[setFieldsIndex];
-    setFields = formatSetFields(setFields);
+    const setFields = formatSetFields(list[setFieldsIndex]);
     if (!setFields) {
         return this.error('set fields error');
     }
@@ -874,11 +873,15 @@ async function copyTableRows(line, { db }) {
     }
 
     let setFieldsIndex = getSetFieldsIndex(list);
-    if (setFieldsIndex === -1) {
-        return this.error('invalid oper');
+    let setFields = null;
+    if (setFieldsIndex !== -1) {
+        setFields = list[setFieldsIndex];
+        setFields = formatSetFields(setFields);
+        if (!setFields) {
+            return this.error('set fields error');
+        }
+        list.splice(setFieldsIndex, 1);
     }
-    const setFields = list[setFieldsIndex];
-    list.splice(setFieldsIndex, 1);
 
     if (_verbose) {
         this.verbose(`db.${table}.copy(${j2s(cond)}).to(${j2s(setFields)}).sort(${j2s(sort)}).limit(${limit})`);
@@ -896,8 +899,8 @@ async function copyTableRows(line, { db }) {
                     if (err) {
                         this.print(err, 'red');
                     } else {
-                        const update = formatUpdate(this, _doc, setFields);
-                        if (update) {
+                        if (setFields) {
+                            const update = formatUpdate(this, _doc, setFields);
                             db[table].findAndModify({
                                 query: { _id: ret._id },
                                 update,
