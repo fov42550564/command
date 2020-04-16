@@ -227,6 +227,110 @@ function formatCond(line) {
     }
     return parseOr(dropBrack(line));
 }
+function formatSetFields(line) {
+    const list = [];
+    let flag = true;
+    while (flag) {
+        let matches = line.match(/^([a-zA-Z][a-zA-Z0-9_]*):(.*)/);
+        if (matches) {
+            const key = matches[1];
+            let value = matches[2];
+            if (/^[^;]*=>{/.test(value)) { //带{函数
+                let i = -1, max = value.length, match = 0;
+                while (i++ < max) {
+                    const ch = value[i];
+                    if (ch === '{') {
+                        match++;
+                    } else if (ch === '}') {
+                        match--;
+                    }
+                    if ((ch === ';' || !ch) && match === 0) {
+                        line = value.substr(i+1);
+                        value = value.substr(0, i);
+                        list.push({ key, value });
+                        if (!line) {
+                            flag = false;
+                        }
+                        break;
+                    }
+                }
+                if (match !== 0) {
+                    return null;
+                }
+            } else if (_.startsWith(value, '[')) { // 数组
+                let i = -1, max = value.length, bmatch = 0, cmatch = 0;
+                while (i++ < max) {
+                    const ch = value[i];
+                    if (ch === '[') {
+                        bmatch++;
+                    } else if (ch === ']') {
+                        bmatch--;
+                    } else if (ch === '{') {
+                        cmatch++;
+                    } else if (ch === '}') {
+                        cmatch--;
+                    }
+                    if ((ch === ';' || !ch) && bmatch === 0) {
+                        if (cmatch !== 0) {
+                            return null;
+                        }
+                        line = value.substr(i+1);
+                        value = value.substr(0, i);
+                        list.push({ key, value });
+                        if (!line) {
+                            flag = false;
+                        }
+                        break;
+                    }
+                }
+                if (bmatch !== 0) {
+                    return null;
+                }
+            } else if (_.startsWith(value, '{')) { // 对象
+                let i = -1, max = value.length, bmatch = 0, cmatch = 0;
+                while (i++ < max) {
+                    const ch = value[i];
+                    if (ch === '[') {
+                        bmatch++;
+                    } else if (ch === ']') {
+                        bmatch--;
+                    } else if (ch === '{') {
+                        cmatch++;
+                    } else if (ch === '}') {
+                        cmatch--;
+                    }
+                    if ((ch === ';' || !ch) && cmatch === 0) {
+                        if (bmatch !== 0) {
+                            return null;
+                        }
+                        line = value.substr(i+1);
+                        value = value.substr(0, i);
+                        list.push({ key, value });
+                        if (!line) {
+                            flag = false;
+                        }
+                        break;
+                    }
+                }
+                if (cmatch !== 0) {
+                    return null;
+                }
+            } else {
+                matches = value.match(/([^;]*);(.*)/);
+                if (!matches) {
+                    list.push({ key, value });
+                    break;
+                }
+                value = matches[1];
+                list.push({ key, value });
+                line = matches[2];
+            }
+        } else {
+            return null;
+        }
+    }
+    return list;
+}
 function formatResult(obj) {
     if (obj instanceof Array) {
         return obj.map(o=>formatResult(o));
@@ -241,20 +345,12 @@ function formatResult(obj) {
     }
     return obj;
 }
-function formatUpdate(self, doc, line) {
-    if (!line) {
-        return null;
-    }
-    let list = line.split(';').filter(o=>o);
-    if (!list.length) {
-        return null;
-    }
+function formatUpdate(self, doc, setFields) {
     const set = {};
     const unset = {};
-    for (const item of list) {
-        const items = line.match(/^([a-zA-Z][a-zA-Z0-9_]*):(.*)/);
-        const key = items[1];
-        let value = items[2]||'';
+    for (const item of setFields) {
+        const key = item.key;
+        let value = item.value||'';
 
         if (value === 'true') {
             set[key] = true;
@@ -270,6 +366,24 @@ function formatUpdate(self, doc, line) {
         }
         if (value === '$unset') {
             unset[key] = 1;
+            continue;
+        }
+        const matches = _.uniq(value.match(/\$\w+/g));
+        for (const match of matches) {
+            const refValue =  doc[match.replace('$', '')];
+            if (refValue != undefined) {
+                value = value.replace(new RegExp(match.replace('$', '\\$'), 'g'), refValue);
+            }
+        }
+        // 解析函数
+        if (/^[^;]*=>/.test(value)) {
+            try {
+                const func = (new Function(`return ${value}`))();
+                set[key] = func(doc, _, moment);
+            } catch(e) {
+                self.error(`Function:${value} 格式错误`);
+                return null;
+            }
             continue;
         }
         // 解析数组
@@ -291,13 +405,6 @@ function formatUpdate(self, doc, line) {
                 return null;
             }
             continue;
-        }
-        const matches = _.uniq(value.match(/\$\w+/g));
-        for (const match of matches) {
-            const refValue =  doc[match.replace('$', '')];
-            if (refValue != undefined) {
-                value = value.replace(new RegExp(match.replace('$', '\\$'), 'g'), refValue);
-            }
         }
         if (/^[0-9a-z]{24}$/.test(value)) {
             set[key] = mongojs.ObjectId(value);
@@ -533,7 +640,7 @@ function getSortIndex(list) {
     return _.findIndex(list, o=>/^(\+|-)[a-zA-Z][a-zA-Z0-9_]*/.test(o));
 }
 function getSetFieldsIndex(list) {
-    return _.findIndex(list, o=>_.every(o.split(';'), o=>/^[a-zA-Z][a-zA-Z0-9_]*:/.test(o)));
+    return _.findIndex(list, o=>/^[a-zA-Z][a-zA-Z0-9_]*:/.test(o));
 }
 async function showTableRows (line, { db }) {
     if (!line) {
@@ -635,10 +742,13 @@ async function modifyTable(line, { db }) {
 
     let setFieldsIndex = getSetFieldsIndex(list);
     if (setFieldsIndex === -1) {
-        this.verbose(`db.${table}.find(${j2s(cond)}).sort(${j2s(sort)}).limit(${limit})`);
         return this.error('no set fields');
     }
-    const setFields = list[setFieldsIndex];
+    let setFields = list[setFieldsIndex];
+    setFields = formatSetFields(setFields);
+    if (!setFields) {
+        return this.error('set fields error');
+    }
     list.splice(setFieldsIndex, 1);
 
     if (_verbose) {
@@ -874,9 +984,9 @@ function showHelp () {
     this.print('    cd: change to database');
     this.print('    ls: showTables|ls ..: showDatabases|ls table: showTableFields');
     this.print('    s(showTableRows): s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit(-1:count) [+-]sortField');
-    this.print('    m(modifyTable): m table f1:$f1+1;f2:xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
+    this.print('    m(modifyTable): m table f1:$f1+1;f2:xx;f3:()=>xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
     this.print('    r(removeTable): # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
-    this.print('    c(copyTableRows): c table f1:$f1+1;f2:xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
+    this.print('    c(copyTableRows): c table f1:$f1+1;f2:xx;f3:()=>xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
     this.print('    d(dumpTables): d [table1 table2 xx.mongo]');
     this.print('    format: id: \"xx\"|\'xx\':string xx:ObjectId date:\"xx\":string xx|\'xx\':date');
     this.print('    _: togglePrettyShell');
