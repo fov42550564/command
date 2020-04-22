@@ -24,7 +24,7 @@ install:
 		test ! -e "/usr/local/etc/bash_completion.d" && echo 需要安装bash-completion && exit 1; \
 		cp pinyinmatch /usr/local/bin ;\
 		cp pinyin_completion /usr/local/etc/bash_completion.d/ ;\
-	elif [ "`uname`" = "Linux" ];then \
+	else \
 		echo linux; \
 		install -d $(LINUX_BASHCD) ;\
 		install -d $(LINUX_BIN) ;\
@@ -37,7 +37,7 @@ uninstall:
 		echo macos; \
 		rm /usr/local/bin/pinyinmatch  ;\
 		rm /usr/local/etc/bash_completion.d/pinyin_completion ;\
-	elif [ "`uname`" = "Linux" ];then \
+	else \
 		echo linux; \
 		rm $(LINUX_BASHCD)/pinyin_completion  ;\
 		rm $(LINUX_BIN)/pinyinmatch  ;\

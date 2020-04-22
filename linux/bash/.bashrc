@@ -13,9 +13,11 @@ shopt -s expand_aliases
 
 source ~/command/common
 
-[ -f /usr/local/etc/bash_completion ] && . /usr/local/etc/bash_completion
-if __mac ;then
+if __mac;then
+  [ -f /usr/local/etc/bash_completion ] && . /usr/local/etc/bash_completion
   echo "fangyunjiang"|pinyinmatch "fx"
+elif __cygwin;then
+  [ -f /usr/share/bash-completion/bash_completion ] && . /usr/share/bash-completion/bash_completion
 fi
 
 # Set a default prompt of: user@time and current_directory
