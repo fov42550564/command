@@ -14,10 +14,10 @@ shopt -s expand_aliases
 source ~/command/common
 
 if __mac;then
-  [ -f /usr/local/etc/bash_completion ] && . /usr/local/etc/bash_completion
-  echo "fangyunjiang"|pinyinmatch "fx"
+    [ -f /usr/local/etc/bash_completion ] && . /usr/local/etc/bash_completion
+    echo "fangyunjiang"|pinyinmatch "fx"
 elif __cygwin;then
-  [ -f /usr/share/bash-completion/bash_completion ] && . /usr/share/bash-completion/bash_completion
+    [ -f /usr/share/bash-completion/bash_completion ] && . /usr/share/bash-completion/bash_completion
 fi
 
 # Set a default prompt of: user@time and current_directory
@@ -31,8 +31,15 @@ if __windows;then
     export SHELLOPTS
     alias open='__open'
     alias atom='__atom'
+    cd "`cygpath "$_pa_"`"
     function new() {
-      C:/cygwin/CygwinEx.bat "$PWD"
+        local p
+        p="$PWD"
+        if [[ $p =~ " " ]];then
+            C:/cygwin/CygwinEx.bat "`cygpath -w "$p"`"
+        else
+            C:/cygwin/CygwinEx.bat "'`cygpath -w "$p"`'"
+        fi
     }
 fi
 

@@ -1,14 +1,6 @@
 @echo off
 
 set root=c:\cygwin
-set /a isFile=0
-
-(2>nul pushd %1)||(set /a isFile=1)
-for /f %%a in ('%root%\bin\cygpath.exe %1') do (
-	set pa=%%a
-)
-if %isFile% EQU 0 (
-start %root%\bin\mintty.exe -i /Cygwin-Terminal.ico -t "%pa%" -e /bin/bash --login -c "cd '%pa%';exec bash --rcfile ~/.bashrc"
-) else (
-start %root%\bin\mintty.exe -i /Cygwin-Terminal.ico -t "%pa%" -e /bin/bash --login -c "cd $(dirname %pa%);export df=$(basename %pa%);exec bash --rcfile ~/.bashrc"
-)
+set _pa_=%1
+set _pa_=%_pa_:~1,-1%
+start %root%\bin\mintty.exe -i /Cygwin-Terminal.ico -t "%_pa_%" -e /bin/bash --login
