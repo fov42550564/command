@@ -19,6 +19,7 @@ let _host = 'localhost';
 
 let _verbose = false;
 let _prettyShell = true;
+let _highLightStyle;
 let _limit = 1;
 async function createMysql (commands, options) {
     const db = mysql.createConnection({
@@ -94,18 +95,107 @@ function formatResult(obj) {
     }
     return obj;
 }
-function formatLine(line) {
-    return line
-    .replace(/"[^"]+"/g, o=>o.replace(' ', '&nbsp;'))
-    .replace(/'[^']+'/g, o=>o.replace(' ', '&nbsp;'))
-    .replace(/\s,\s/g, ',')
-    .replace(/\s!=\s/g, '!=')
-    .replace(/\s=\s/g, '=')
-    .replace(/\s~\s/g, '~')
-    .replace(/\s\|\s/g, '|')
-    .replace(/\s&\s/g, '&')
-    .replace(/\s#\s/g, '#')
-    .trim().split(/\s/).filter(o=>o).map(o=>o.replace('&nbsp;', ' '));
+function formatCond(line) {
+    if (!line) {
+        return '';
+    }
+    if (/^1[0-9]{10}$/.test(line)) {
+        return ` WHERE phone="${line}"`;
+    }
+    return ' WHERE ' + line
+    .replace(/~[^&)|]+/g, o=>{let m = o[1]==='<'?o.slice(2):`%${o.substr(1)}`;return _.last(m)==='>'?` LIKE "${m.slice(0, -1)}"`:` LIKE "${m}%"`})
+    .replace(/!=null|!=NULL/g, ' is not null ')
+    .replace(/=null|=NULL/g, ' is null ')
+    .replace(/(>=|<=|!=|=)([^&)|]+)/g, (o, m, n)=>`${m}${(m==='='||m==='!=')&&((n[0]!==`"`&& _.last(n)!==`"`)&&(n[0]!==`'`&& _.last(n)!==`'`))?`"${n}"`: n}`)
+    .replace(/&/g, ' AND ')
+    .replace(/\|/g, ' OR ')
+    .replace(/#([\w,]*)/g, ' IN ($1)');
+}
+function formatSetFields(line, isReturnObject) {
+    const list = [];
+    let flag = true;
+    let mode = false;
+    while (flag) {
+        let matches = line.match(/^([a-zA-Z][a-zA-Z0-9_]*):(.*)/);
+        if (matches) {
+            const key = matches[1];
+            let value = matches[2];
+            if (/^[^;]*=>{/.test(value)) { //带{函数
+                mode = true;
+                let i = -1, max = value.length, match = 0;
+                while (i++ < max) {
+                    const ch = value[i];
+                    if (ch === '{') {
+                        match++;
+                    } else if (ch === '}') {
+                        match--;
+                    }
+                    if ((ch === ';' || !ch) && match === 0) {
+                        line = value.substr(i+1);
+                        value = value.substr(0, i);
+                        list.push({ key, value });
+                        if (!line) {
+                            flag = false;
+                        }
+                        break;
+                    }
+                }
+                if (match !== 0) {
+                    return null;
+                }
+            } else {
+                matches = value.match(/([^;]*);(.*)/);
+                if (matches) {
+                    value = matches[1];
+                    line = matches[2];
+                }
+                if (!mode && (/\$\w+/.test(value) || /^[^;]*=>/.test(value))) {
+                    mode = true;
+                }
+                list.push({ key, value });
+                if (!matches) {
+                    break;
+                }
+            }
+        } else {
+            return null;
+        }
+    }
+    if (!mode && !isReturnObject) {
+        return list.map(o=>`${o.key}=${o.value}`).join(',');
+    }
+    return list;
+}
+function formatUpdate(self, doc, setFields) {
+    if (!setFields) {
+        return {};
+    }
+    const obj = {};
+    for (const item of setFields) {
+        const key = item.key;
+        let value = item.value||'';
+
+        const matches = _.uniq(value.match(/\$\w+/g));
+        for (const match of matches) {
+            const refValue =  doc[match.replace('$', '')];
+            if (refValue != undefined) {
+                value = value.replace(new RegExp(match.replace('$', '\\$'), 'g'), refValue);
+            }
+        }
+        // 解析函数
+        if (/^[^;]*=>/.test(value)) {
+            try {
+                const func = (new Function(`return ${value}`))();
+                obj[key] = func(doc, _, moment);
+            } catch(e) {
+                self.error(`Function:${value} 格式错误`);
+                return null;
+            }
+            continue;
+        }
+        obj[key] = value;
+    }
+    return obj;
 }
 async function formatFields(self, db, table, line) {
     if (!line || line === '*') {
@@ -124,22 +214,6 @@ async function formatFields(self, db, table, line) {
     list = list.map(o => new RegExp(o.replace('<', '^').replace('>', '$'), 'i'));
 
     return method(allFields, o=>_.some(list, r=>r.test(o))).join(',');
-}
-function formatCond(line) {
-    if (!line) {
-        return '';
-    }
-    if (/^1[0-9]{10}$/.test(line)) {
-        return ` WHERE phone="${line}"`;
-    }
-    return ' WHERE ' + line
-    .replace(/~[^&)|]+/g, o=>{let m = o[1]==='<'?o.slice(2):`%${o.substr(1)}`;return _.last(m)==='>'?` LIKE "${m.slice(0, -1)}"`:` LIKE "${m}%"`})
-    .replace(/!=null|!=NULL/g, ' is not null ')
-    .replace(/=null|=NULL/g, ' is null ')
-    .replace(/(>=|<=|!=|=)([^&)|]+)/g, (o, m, n)=>`${m}${(m==='='||m==='!=')&&((n[0]!==`"`&& _.last(n)!==`"`)&&(n[0]!==`'`&& _.last(n)!==`'`))?`"${n}"`: n}`)
-    .replace(/&/g, ' AND ')
-    .replace(/\|/g, ' OR ')
-    .replace(/#([\w,]*)/g, ' IN ($1)');
 }
 async function formatSort(self, db, table, line) {
     if (!line) {
@@ -160,6 +234,51 @@ async function formatSort(self, db, table, line) {
         return '';
     }
     return ` ORDER BY ${sort.join(',')}`;
+}
+function formatLine(self, line) {
+    let i = -1, max = line.length - 1, newLine = '', amatch = 0, bmatch = 0, cmatch = 0;
+    while (i++ < max) {
+        let ch = line[i];
+        if (ch === '[') {
+            amatch++;
+        } else if (ch === ']') {
+            amatch--;
+        }
+        if (ch === '{') {
+            bmatch++;
+        } else if (ch === '}') {
+            bmatch--;
+        }
+        if (ch === '(') {
+            cmatch++;
+        } else if (ch === ')') {
+            cmatch--;
+        }
+        if (amatch < 0 || bmatch < 0 || cmatch < 0) {
+            self.error('括号不匹配');
+            return [];
+        }
+        if (!(ch === ' ' && (amatch || bmatch || cmatch))) {
+            newLine += ch;
+        }
+    }
+    if (amatch || bmatch || cmatch) {
+        self.error('括号不匹配');
+        return [];
+    }
+    return newLine
+    .replace(/"[^"]+"/g, o=>o.replace(' ', '&nbsp;'))
+    .replace(/'[^']+'/g, o=>o.replace(' ', '&nbsp;'))
+    .replace(/\s*:\s*/g, ':')
+    .replace(/\s*;\s*/g, ';')
+    .replace(/\s*,\s*/g, ',')
+    .replace(/\s*!=\s*/g, '!=')
+    .replace(/\s*=\s*/g, '=')
+    .replace(/\s*~\s*/g, '~')
+    .replace(/\s*\|\s*/g, '|')
+    .replace(/\s*&\s*/g, '&')
+    .replace(/\s*#\s*/g, '#')
+    .trim().split(/\s/).filter(o=>o).map(o=>o.replace('&nbsp;', ' '));
 }
 async function getTables(self, db, force) {
     if (!CACHE._tables || force) {
@@ -191,14 +310,14 @@ function querySQL(self, db, query) {
         });
     })
 }
-async function executeSQL(self, line, db) {
+async function executeSQL(self, db, line) {
     const results = await querySQL(self, db, line);
     if (results.forEach) {
         results.forEach(o=>{
-            self.showJson(formatResult(o), _prettyShell);
+            showJson(self, formatResult(o));
         });
     } else {
-        self.showJson(results, _prettyShell);
+        showJson(self, results);
     }
     self.prompt();
 }
@@ -206,7 +325,10 @@ async function executeLine(line, { db }) {
     if (!line) {
         return this.prompt();
     }
-    await executeSQL(this, line, db);
+    await executeSQL(this, db, line);
+}
+function showJson(self, docs) {
+    self.showJson(formatResult(docs), _prettyShell, _highLightStyle);
 }
 async function showTables(line, { db }) {
     if (!line || line === '.') { // show tables
@@ -227,20 +349,23 @@ async function showTables(line, { db }) {
     }
 }
 function getLimitIndex(list) {
-    return _.findIndex(list, o=>+o==o && o<1000);
+    return _.findIndex(list, o=>+o==o && o<=1000);
 }
 function getCondIndex(list) {
-    return _.findIndex(list, o=>/!=|>=|>\w|=|<=|<\w|~|#/.test(o) || /^1[0-9]{10}$/.test(o));
+    return _.findIndex(list, o=>/!=|>=|[^=]>\w|=\w|<=|<\w|~|#/.test(o) || /^1[0-9]{10}$/.test(o));
 }
 function getSortIndex(list) {
     return _.findIndex(list, o=>/^(\+|-)[a-zA-Z][a-zA-Z0-9_]*/.test(o));
+}
+function getSetFieldsIndex(list) {
+    return _.findIndex(list, o=>/^[a-zA-Z][a-zA-Z0-9_]*:/.test(o));
 }
 async function showTableRows (line, { db }) {
     if (!line) {
         return this.prompt();
     }
     let showCount = false;
-    let list = formatLine(line);
+    let list = formatLine(this, line);
     const table = list[0];
     if (!table) {
         return this.error('invalid oper');
@@ -268,7 +393,7 @@ async function showTableRows (line, { db }) {
     }
 
     if (showCount) {
-        return await executeSQL(this, `SELECT COUNT(*) FROM ${table}${cond}`, db);
+        return await executeSQL(this, db, `SELECT COUNT(*) FROM ${table}${cond}`);
     }
 
     let sort = '';
@@ -279,13 +404,13 @@ async function showTableRows (line, { db }) {
     }
 
     const fields = await formatFields(this, db, table, list[0]);
-    await executeSQL(this, `SELECT ${fields} FROM ${table}${cond}${sort}${limit}`, db);
+    await executeSQL(this, db, `SELECT ${fields} FROM ${table}${cond}${sort}${limit}`);
 }
 async function modifyTable(line, { db }) {
     if (!line) {
         return this.prompt();
     }
-    let list = formatLine(line);
+    let list = formatLine(this, line);
     const table = list[0];
     if (!table) {
         return this.error('invalid oper');
@@ -309,12 +434,6 @@ async function modifyTable(line, { db }) {
         list.splice(sortIndex, 1);
     }
 
-    const setFields = list[0];
-    if (!setFields || !_.every(setFields.split(';'), o=>/[a-zA-Z][a-zA-Z0-9_]*=/.test(o))) {
-        return this.error('invalid oper');
-    }
-    list = _.drop(list);
-
     let cond = '';
     let condIndex = getCondIndex(list);
     if (condIndex !== -1) {
@@ -322,13 +441,33 @@ async function modifyTable(line, { db }) {
         list.splice(condIndex, 1);
     }
 
-    await executeSQL(this, `UPDATE ${table} SET ${setFields}${cond}${sort}${limit}`, db);
+    let setFieldsIndex = getSetFieldsIndex(list);
+    if (setFieldsIndex === -1) {
+        return this.error('no set fields');
+    }
+    const setFields = formatSetFields(list[setFieldsIndex]);
+    if (!setFields) {
+        return this.error('set fields error');
+    }
+    list.splice(setFieldsIndex, 1);
+    if (typeof setFields === 'string') {
+        await querySQL(this, db, `UPDATE ${table} SET ${setFields}${cond}${sort}${limit}`);
+        return await executeSQL(this, db, `SELECT * FROM ${table}${cond}${sort}${limit}`);
+    }
+
+    const docs = await querySQL(this, db, `SELECT * FROM ${table}${cond}${sort}${limit}`);
+    for (const doc of docs) {
+        cond = ` WHERE id="${doc.id}"`;
+        const update = _.map(formatUpdate(this, doc, setFields), (o,k)=>`${k}=${o}`).join(',');
+        await querySQL(this, db, `UPDATE ${table} SET ${update}${cond}`);
+    }
+    return executeSQL(this, db, `SELECT * FROM ${table}${cond}${sort}${limit}`);
 }
 async function removeTable(line, { db }) {
     if (!line) {
         return this.prompt();
     }
-    let list = formatLine(line);
+    let list = formatLine(this, line);
     const table = list[0];
     if (!table) {
         return this.error('invalid oper');
@@ -359,13 +498,13 @@ async function removeTable(line, { db }) {
         list.splice(sortIndex, 1);
     }
 
-    await executeSQL(this, `DELETE FROM ${table} ${cond}${sort}${limit}`, db);
+    await executeSQL(this, db, `DELETE FROM ${table} ${cond}${sort}${limit}`);
 }
 async function copyTableRows(line, { db }) {
     if (!line) {
         return this.prompt();
     }
-    let list = formatLine(line);
+    let list = formatLine(this, line);
     const table = list[0];
     if (!table) {
         return this.error('invalid oper');
@@ -389,46 +528,41 @@ async function copyTableRows(line, { db }) {
         list.splice(sortIndex, 1);
     }
 
-    let _cond = '';
-    let setFields = [];
-    if (!list[1]) {
-        setFields = [];
-        _cond = list[0];
-    } else {
-        setFields = list[0].split(';').map(o=>o.split('='));
-        _cond = list[1];
+    let cond = '';
+    let condIndex = getCondIndex(list);
+    if (condIndex !== -1) {
+        cond = formatCond(list[condIndex]);
+        list.splice(condIndex, 1);
     }
-    const cond = formatCond(_cond);
+
+    let setFieldsIndex = getSetFieldsIndex(list);
+    let setFields = null;
+    if (setFieldsIndex !== -1) {
+        setFields = list[setFieldsIndex];
+        setFields = formatSetFields(setFields, true);
+        if (!setFields) {
+            return this.error('set fields error');
+        }
+        list.splice(setFieldsIndex, 1);
+    }
 
     const docs = await querySQL(this, db, `SELECT * FROM ${table}${cond}${sort}${limit}`);
-    const fields = (await getFieldsOfTable(this, db, table)).filter(o=>o!=='id');
+    const fields = await getFieldsOfTable(this, db, table);
     for (const doc of docs) {
+        const update = formatUpdate(this, doc, setFields);
         const values = fields.map(o=>{
-            const setField = _.find(setFields, m=>m[0]===o);
-            if (setField) {
-                let setValue = setField[1];
-                const matches = setValue.match(/\$\w+/g);
-                if (matches) {
-                    const tmps = matches.map(o=>o.replace('\$', ''));
-                    for (const tmp of tmps) {
-                        setValue = setValue.replace('$'+tmp, doc[tmp]);
-                    }
-                }
-                if (/[+-\\*/]/.test(setValue)) {
-                    return eval(eval(setValue));
-                }
-                return setValue;
-            }
-            const item = doc[o];
+            const item = update[o] || doc[o];
             if (item instanceof Date) {
                 return `"${moment(item).format('YYYY-MM-DD HH:mm:ss.SSS')}"`;
             }
-            if (doc[o] !== undefined) {
-                return JSON.stringify(doc[o]);
+            if (item !== undefined) {
+                return JSON.stringify(item);
             }
             return 'NULL';
         });
-        await executeSQL(this, `INSERT INTO ${table} (${fields.join(',')}) VALUES (${values.join(',')})`, db);
+        await querySQL(this, db, `INSERT INTO ${table} (${fields.join(',')}) VALUES (${values.join(',')})`);
+        cond = ` WHERE id="${update.id}"`;
+        return executeSQL(this, db, `SELECT * FROM ${table}${cond}`);
     }
 }
 function togglePrettyShell() {
@@ -439,6 +573,11 @@ function togglePrettyShell() {
 function toggleVerbose() {
     _verbose = !_verbose;
     this.print('verbose format change to ' + _verbose);
+    this.prompt();
+}
+function setHighLightStyle(value) {
+    _highLightStyle = value == 0 ? 'railscasts' : 'github';
+    this.print('highLightStyle set to ' + _highLightStyle);
     this.prompt();
 }
 function setDefaultLimit(line) {
@@ -496,12 +635,13 @@ function showHelp () {
     this.print('    cd: change to database');
     this.print('    ls: showTables|ls ..: showDatabases|ls table: showTableFields');
     this.print('    s(showTableRows): s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit(-1:count) [+-]sortField');
-    this.print('    m(modifyTable): m table f1=xx;f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
+    this.print('    m(modifyTable): m table f1:$f1+1;f2:xx;f3:()=>xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
     this.print('    r(removeTable): # r table (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
-    this.print('    c(copyTableRows): c table f1=$f1+1;f2=xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
+    this.print('    c(copyTableRows): c table f1:$f1+1;f2:xx;f3:()=>xx (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit [+-]sortField');
     this.print('    d(dumpTables): d [table1 table2 xx.sql]');
     this.print('    _: togglePrettyShell');
     this.print('    v: toggleVerbose');
+    this.print('    hl: setHighLightStyle 0: railscasts 1: github');
     this.print('    limit: setDefaultLimit');
     this.print('');
     this.prompt();
@@ -519,6 +659,7 @@ const COMMANDS = {
     'd': dumpTables,
     '_': togglePrettyShell,
     'v': toggleVerbose,
+    'hl': setHighLightStyle,
     'limit': setDefaultLimit,
     'default': executeLine,
 };

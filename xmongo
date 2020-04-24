@@ -216,6 +216,20 @@ function parseOr(line) {
     }
     return list.length > 1 ? { $or: list } : list[0];
 }
+function formatResult(obj) {
+    if (obj instanceof Array) {
+        return obj.map(o=>formatResult(o));
+    }
+    for (const key in obj) {
+        const item = obj[key];
+        if (item instanceof Array) {
+            obj[key] = formatResult(item);
+        } else if (item instanceof Date) {
+            obj[key] = moment(item).format('YYYY-MM-DD HH:mm:ss.SSS');
+        }
+    }
+    return obj;
+}
 function formatCond(line) {
     if (!line) {
         return {};
@@ -331,20 +345,6 @@ function formatSetFields(line) {
         }
     }
     return list;
-}
-function formatResult(obj) {
-    if (obj instanceof Array) {
-        return obj.map(o=>formatResult(o));
-    }
-    for (const key in obj) {
-        const item = obj[key];
-        if (item instanceof Array) {
-            obj[key] = formatResult(item);
-        } else if (item instanceof Date) {
-            obj[key] = moment(item).format('YYYY-MM-DD HH:mm:ss.SSS');
-        }
-    }
-    return obj;
 }
 function formatUpdate(self, doc, setFields) {
     const set = {};
