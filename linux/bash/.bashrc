@@ -31,12 +31,14 @@ if __windows;then
     export SHELLOPTS
     alias open='__open'
     alias atom='__atom'
-    _pa_="`cygpath "$_pa_"`"
-    if ! [ -d "$_pa_" ];then
-        export df="`basename "$_pa_"`"
-        _pa_="`dirname "$_pa_"`"
+    if [ -n "$_pa_" ];then
+      _pa_="`cygpath "$_pa_"`"
+      if ! [ -d "$_pa_" ];then
+          export df="`basename "$_pa_"`"
+          _pa_="`dirname "$_pa_"`"
+      fi
+      cd "$_pa_"
     fi
-    cd "$_pa_"
     function new() {
         local p
         p="$PWD"
