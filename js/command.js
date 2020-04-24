@@ -126,14 +126,14 @@ module.exports = (cmds, options = {}) => {
             msg = chalk[color] && chalk[color](msg) || msg;
             console.log(msg);
         },
-        showJson (obj, pretty) {
-            this.code(stringify(obj, pretty), 'json');
+        showJson (obj, pretty, style) {
+            this.code(stringify(obj, pretty), style, 'json');
             rl.prompt(true);
         },
-        code (text, lang, hsBg) {
+        code (text, style, lang, hsBg) {
             process.stdout.clearLine();
             process.stdout.cursorTo(0);
-            console.log(hl(text, process.platform === 'win32' ? 'railscasts' : 'github', lang, hsBg));
+            console.log(hl(text, style || (process.platform === 'win32' ? 'railscasts' : 'github'), lang, hsBg));
             rl.prompt(true);
         },
         log (msg) {

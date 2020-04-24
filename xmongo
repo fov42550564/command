@@ -16,6 +16,7 @@ let _host = 'localhost';
 
 let _verbose = true;
 let _prettyShell = true;
+let _highLightStyle;
 let _limit = 1;
 async function createMongo (commands, options) {
     const db = mongojs(_database);
@@ -610,7 +611,7 @@ async function executeLine(line, { db }) {
     showJson(this, ret);
 }
 function showJson(self, docs) {
-    self.showJson(formatResult(docs), _prettyShell);
+    self.showJson(formatResult(docs), _prettyShell, _highLightStyle);
 }
 async function showTables(line, { db }) {
     if (!line || line === '.') { // show tables
@@ -931,6 +932,11 @@ function toggleVerbose() {
     this.print('verbose format change to ' + _verbose);
     this.prompt();
 }
+function setHighLightStyle(value) {
+    _highLightStyle = value == 0 ? 'railscasts' : 'github';
+    this.print('highLightStyle set to ' + _highLightStyle);
+    this.prompt();
+}
 function setDefaultLimit(line) {
     _limit = +line || 10;
     this.print('set limit to ' + _limit);
@@ -994,6 +1000,7 @@ function showHelp () {
     this.print('    format: id: \"xx\"|\'xx\':string xx:ObjectId date:\"xx\":string xx|\'xx\':date number:\"xx\"|\'xx\':string xx:number');
     this.print('    _: togglePrettyShell');
     this.print('    v: toggleVerbose');
+    this.print('    hl: setHighLightStyle 0: railscasts 1: github');
     this.print('    limit: setDefaultLimit');
     this.print('');
     this.prompt();
@@ -1011,6 +1018,7 @@ const COMMANDS = {
     'd': dumpTables,
     '_': togglePrettyShell,
     'v': toggleVerbose,
+    'hl': setHighLightStyle,
     'limit': setDefaultLimit,
     'default': executeLine,
 };
