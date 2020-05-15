@@ -14,7 +14,7 @@ _targets=0
 targets_bash=1
 platforms_windows=1
 platforms_macosx=2
-platforms_linux=3
+platforms_linux=4
 
 function install_single()
 {
