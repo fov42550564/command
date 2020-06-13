@@ -635,7 +635,7 @@ function getLimitIndex(list) {
     return _.findIndex(list, o=>+o==o && o<=1000);
 }
 function getCondIndex(list) {
-    return _.findIndex(list, o=>/!=|>=|[^=]>\w|=\w|<=|<\w|~|#/.test(o) || /^[0-9a-z]{24}$/.test(o) || /^1[0-9]{10}$/.test(o));
+    return _.findIndex(list, o=>/!=|>=|[^=]>\w|=[\w\u4e00-\u9fa5]|<=|<\w|~|#/.test(o) || /^[0-9a-z]{24}$/.test(o) || /^1[0-9]{10}$/.test(o));
 }
 function getSortIndex(list) {
     return _.findIndex(list, o=>/^(\+|-)[a-zA-Z][a-zA-Z0-9_]*/.test(o));
