@@ -60,7 +60,7 @@ function getSubmitComments() {
     done
     str="${str}\`${line}\`,"
     if [ "${_func:0:1}" = "=" ];then
-        _func="i=>${_func:1}"
+        _func="m=>${_func:1}"
     else
         _func="'${_func}'";
     fi
@@ -68,10 +68,12 @@ function getSubmitComments() {
     var _ = require('lodash'); \
     var m = require('moment'); \
     var list = [${str}]; \
+    var n = 0; \
     var ret = list.filter(o=>o).map(o=>{ \
         var c = o.match(/(.*)(${_reg})(.*)/); \
         var f = ${_func}; \
-        return !c ? o : c[1] + (typeof(f) === 'function' ? f(c[2]) : f) + c[3]; \
+        c && (n++); \
+        return !c ? o : c[1] + (typeof(f) === 'function' ? f(c[2], n) : f) + c[3]; \
     }); \
 	console.log(ret.join('\n')); \
 	"
@@ -145,14 +147,15 @@ function show_help()
 	list=("${list[@]}" "  -o: 将函数的声明参数添加参数数字1作为调试参数")
 	list=("${list[@]}" "      @如: createTime, //创建时间 -> createTime: 1, //创建时间")
     list=("${list[@]}" "  -a: 通过正则表达式替换 (reg:±num|str|func, 注意\和=>需要转义成\\\\和=\>)")
-    list=("${list[@]}" "      如果为func，使用=xx的格式，参数为(i, _, m)，其中i为匹配到的参数，_为lodash, m为moment")
+    list=("${list[@]}" "      如果为func，使用=xx的格式，参数为(m, i, _, m)，其中m为匹配到的参数，i为序号[从1开始]，_为lodash, m为moment")
     list=("${list[@]}" "      @如: [ -a 1:fang ] : createTime: 1, //创建时间 -> createTime: fang, //创建时间")
-    list=("${list[@]}" "      @如: [ -a 1:=i+4 ] : createTime: 1, //创建时间 -> createTime: 14, //创建时间")
-    list=("${list[@]}" "      @如: [ -a 1:=+i+4 ] : createTime: 1, //创建时间 -> createTime: 5, //创建时间")
-    list=("${list[@]}" "      @如: [ -a \\\\d:=+i+4 ] : createTime: 1, //创建时间 -> createTime: 5, //创建时间")
-    list=("${list[@]}" "      @如: [ -a *:=\\\`pre\\ \\\${i}\\ post\\\` ] : createTime ->pre createTime post")
-    list=("${list[@]}" "      @如: [ -a *:=\"\\\"pre \\\"+i+\" post\\\"\" ] : createTime ->pre createTime post")
-    list=("${list[@]}" "      @如: [ -a *:=\"\\\"pre \\\"+i+\" post\\\"\" ] : createTime ->pre createTime post")
+    list=("${list[@]}" "      @如: [ -a 1:=m+4 ] : createTime: 1, //创建时间 -> createTime: 14, //创建时间")
+    list=("${list[@]}" "      @如: [ -a 1:=+m+4 ] : createTime: 1, //创建时间 -> createTime: 5, //创建时间")
+    list=("${list[@]}" "      @如: [ -a 1:=i+4 ] : createTime: 1, //创建时间 -> createTime: 4, //创建时间")
+    list=("${list[@]}" "      @如: [ -a \\\\d:=+m+4 ] : createTime: 1, //创建时间 -> createTime: 5, //创建时间")
+    list=("${list[@]}" "      @如: [ -a *:=\\\`pre\\ \\\${m}\\ post\\\` ] : createTime ->pre createTime post")
+    list=("${list[@]}" "      @如: [ -a *:=\"\\\"pre \\\"+m+\" post\\\"\" ] : createTime ->pre createTime post")
+    list=("${list[@]}" "      @如: [ -a *:=\"\\\"pre \\\"+m+\" post\\\"\" ] : createTime ->pre createTime post")
 	list=("${list[@]}" "  -l: 转化为list，分隔符为\n或者空格")
     list=("${list[@]}" "      @如: 1 2 3 4 5 -> ['1','2','3','4','5']")
 	list=("${list[@]}" "  -t: 获取xml的文字部分")
