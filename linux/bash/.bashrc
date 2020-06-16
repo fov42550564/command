@@ -48,6 +48,10 @@ if __windows;then
             C:/cygwin/CygwinEx.bat "'`cygpath -w "$p"`'"
         fi
     }
+    function xcd() {
+        path=`cat /dev/clipboard`
+        __extend_cd "${path//\\/\/}"
+    }
 fi
 
 #set options
