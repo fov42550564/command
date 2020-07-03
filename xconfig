@@ -6,7 +6,7 @@ if [ "$1" = "-r" ];then
   vim -e -s config.js -c ":%s/\(apiServer:.*\)\/\d\+\.\d\+\.\d\+\.\d\+:/\1\/localhost:/" -c ":wq"
   echo "set localhost done"
 else
-  vim -e -s config.js -c ":%s/\(apiServer:.*\)\/\(\d\+\.\d\+\.\d\+\.\d\+\)\|\(localhost\):/\1\/${ip}:/" -c ":wq"
+  vim -e -s config.js -c ":%s/\(apiServer:.*:\/\/\)\(\d\+\.\d\+\.\d\+\.\d\+:\)\|\(localhost:\)/\1${ip}:/" -c ":wq"
   echo "set $ip done"
 fi
 
