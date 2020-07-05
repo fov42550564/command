@@ -1,6 +1,24 @@
 #!/bin/bash
+source ~/command/common
 
-ip=`ifconfig -a | grep -w inet | grep -v '127.0.0.1' | awk '{ print $2}'`
+if __windows;then
+    ip=$(node -e " \
+    const os = require('os'); \
+    const interfaces = os.networkInterfaces(); \
+    let ip; \
+    for (let devName in interfaces) { \
+        var iface = interfaces[devName]; \
+        for (var i = 0; i < iface.length; i++) { \
+            var alias = iface[i]; \
+            if (alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal) { \
+                ip = alias.address; \
+            } \
+        } \
+    } \
+    console.log(ip)")
+else
+    ip=`ifconfig -a | grep -w inet | grep -v '127.0.0.1' | awk '{ print $2}'`
+fi
 
 if [ "$1" = "-r" ];then
   vim -e -s config.js -c ":%s/\(apiServer:.*\)\/\d\+\.\d\+\.\d\+\.\d\+:/\1\/localhost:/" -c ":wq"
@@ -9,4 +27,3 @@ else
   vim -e -s config.js -c ":%s/\(apiServer:.*:\/\/\)\(\d\+\.\d\+\.\d\+\.\d\+:\)\|\(localhost:\)/\1${ip}:/" -c ":wq"
   echo "set $ip done"
 fi
-
