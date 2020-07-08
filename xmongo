@@ -108,7 +108,7 @@ function parseItem(item) {
         value = moment(value, 'YYYY-MM-DD HH:mm:ss').toDate();
     } else if (/^'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}'$/.test(value)) {
         value = moment(value, 'YYYY-MM-DD HH:mm:ss.SSS').toDate();
-    } else if (+value == value) {
+    } else if (+value == value && +value < 999999) {
         value = +value
     } else if (/^("|').*("|')$/.test(value)) {
         value = value.substr(1, value.length-2);
@@ -604,6 +604,7 @@ async function executeLine(line, { db }) {
     if (!/^db\./.test(line)) {
         return this.prompt();
     }
+    line = line.replace(/"/g, `'`);
     const ret = await nativeMongo(this, line);
     if (!ret) {
         return this.prompt();
