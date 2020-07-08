@@ -21,9 +21,12 @@ else
 fi
 
 if [ "$1" = "-h" ];then
-  echo "xconfig -h|-i:show ip|-r:reset|default: modify config"
+  echo "xconfig -h|-i:show ip|-r:reset|-android:xx|default: modify config"
 elif [ "$1" = "-i" ];then
   echo $ip
+elif [ "$1" = "-android" ];then
+  echo "/usr/local/opt/android-sdk"
+  echo "/Users/whxx/Library/Android/sdk"
 elif [ "$1" = "-r" ];then
   vim -e -s config.js -c ":%s/\(apiServer:.*\)\/\d\+\.\d\+\.\d\+\.\d\+:/\1\/localhost:/" -c ":wq"
   echo "set localhost done"
