@@ -27,6 +27,7 @@ elif [ "$1" = "-i" ];then
 elif [ "$1" = "-android" ];then
   echo "/usr/local/opt/android-sdk"
   echo "/Users/whxx/Library/Android/sdk"
+  echo "C\\\\:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Android\\\\Sdk"
 elif [ "$1" = "-r" ];then
   vim -e -s config.js -c ":%s/\(apiServer:.*\)\/\d\+\.\d\+\.\d\+\.\d\+:/\1\/localhost:/" -c ":wq"
   echo "set localhost done"
