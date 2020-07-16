@@ -19,7 +19,7 @@ let _prettyShell = true;
 let _highLightStyle;
 let _limit = 1;
 async function createMongo (commands, options) {
-    const db = mongojs(_database);
+     const db = mongojs(`mongodb://${_host}:27017/${_database}`);
     const tables = await getTables(db);
     for (const table of tables) {
         await getFieldsOfTable(db, table);
@@ -81,7 +81,7 @@ function dropBrack(line) {
 }
 
 function parseItem(item) {
-    const list = item.match(/(\w+)(!==|!=|>=|>|==|<=|<|=|~|#)(.*)/);
+    const list = item.match(/(\w+)(!=|>=|>|<=|<|=|~|#)(.*)/);
     if (!list) {
         return null;
     }
@@ -94,6 +94,10 @@ function parseItem(item) {
     }
     if (value === 'null') {
         value = null;
+    } else if (value === 'true') {
+        value = true;
+    } else if (value === 'false') {
+        value = false;
     } else if (value === '$exists') {
         if (oper === '=') {
             return { [key]: { $exists: true } };
@@ -108,33 +112,14 @@ function parseItem(item) {
         value = moment(value, 'YYYY-MM-DD HH:mm:ss').toDate();
     } else if (/^'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}'$/.test(value)) {
         value = moment(value, 'YYYY-MM-DD HH:mm:ss.SSS').toDate();
-    } else if (+value == value && +value < 999999) {
-        value = +value
-    } else if (/^("|').*("|')$/.test(value)) {
+    } else if (/^("|')(true|false|null)("|')$/.test(value)) {
         value = value.substr(1, value.length-2);
     }
     switch (oper) {
         case '!=':return { [key]: { $ne: value } };
-        case '!==':return { [key]: { $ne: value } };
         case '>': return { [key]: { $gt: value } };
         case '>=': return { [key]: { $gte: value } };
-        case '==':
-        case '=': {
-            if (oper === '==') {
-                return { [key]: value };
-            }
-            const values = [];
-            if (typeof value === 'number') {
-                values.push('' + value);
-            } else if (+value == value) {
-                values.push(+value);
-            }
-            if (values.length) {
-                values.push(value);
-                return { [key]: { $in: values } };
-            }
-            return { [key]: value };
-        }
+        case '=': return { [key]: value };
         case '<': return { [key]: { $lt: value } };
         case '<=': return { [key]: { $lte: value } };
         case '~': {
@@ -239,6 +224,9 @@ function formatCond(line) {
     }
     if (/^1[0-9]{10}$/.test(line)) {
         return { phone: line };
+    }
+    if (/^1[0-9xX]{18}$/.test(line)) {
+        return { idNo: line };
     }
     return parseOr(dropBrack(line));
 }
@@ -636,7 +624,7 @@ function getLimitIndex(list) {
     return _.findIndex(list, o=>+o==o && o<=1000);
 }
 function getCondIndex(list) {
-    return _.findIndex(list, o=>/!=|>=|[^=]>\w|=[\w\u4e00-\u9fa5]|<=|<\w|~|#/.test(o) || /^[0-9a-z]{24}$/.test(o) || /^1[0-9]{10}$/.test(o));
+    return _.findIndex(list, o=>/!=|>=|[^=]>\w|=[\w\u4e00-\u9fa5'"]|<=|<\w|~|#/.test(o) || /^[0-9a-z]{24}$/.test(o) || /^1[0-9]{10}$/.test(o) || /^1[0-9xX]{18}$/.test(o));
 }
 function getSortIndex(list) {
     return _.findIndex(list, o=>/^(\+|-)[a-zA-Z][a-zA-Z0-9_]*/.test(o));
@@ -950,7 +938,7 @@ async function changeToDatabase(line, { db }) {
     }
     db.close();
     _database = line;
-    db = mongojs(_database);
+    db = mongojs(`mongodb://${_host}:27017/${_database}`);
     for (const table of CACHE._tables) {
         delete CACHE[table];
     }
