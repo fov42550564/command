@@ -81,12 +81,12 @@ function dropBrack(line) {
 }
 
 function parseItem(item) {
-    const list = item.match(/(\w+)(!=|>=|>|<=|<|=|~|#)(.*)/);
+    const list = item.match(/([\w\.]+)(!=|>=|>|<=|<|=|~|#)(.*)/);
     if (!list) {
         return null;
     }
-    const key = list[1];
-    const oper = list[2];
+    let key = list[1];
+    let oper = list[2];
     let value = list[3];
 
     if (key === undefined || oper === undefined || value === undefined) {
@@ -114,6 +114,9 @@ function parseItem(item) {
         value = moment(value, 'YYYY-MM-DD HH:mm:ss.SSS').toDate();
     } else if (/^("|')(true|false|null)("|')$/.test(value)) {
         value = value.substr(1, value.length-2);
+    }
+    if (_.endsWith(key, '.length')) {
+        return { $where: `this.${key}${oper === '=' ? '==' : oper}${value}` };
     }
     switch (oper) {
         case '!=':return { [key]: { $ne: value } };
