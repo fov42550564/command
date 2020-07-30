@@ -434,7 +434,7 @@ function formatUpdate(self, doc, setFields) {
     }
     return { ...(_.size(set) ? { $set: set } : {}), ...(_.size(unset) ? { $unset: unset } : {}) };
 }
-async function formatFields(db, table, line) {
+async function formatFields(db, table, line, cond) {
     if (!line || line === '*') {
         return {};
     }
@@ -444,7 +444,7 @@ async function formatFields(db, table, line) {
         line = line.substr(1);
     }
     let list = line.split(',').filter(o=>o);
-    const allFields = await getFieldsOfTable(db, table);
+    const allFields = await getFieldsOfTable(db, table, true, cond);
     list = list.map(o => new RegExp(o.replace('<', '^').replace('>', '$'), 'i'));
 
     const fields = {};
@@ -534,9 +534,9 @@ function getCollectionNames(db) {
         });
     });
 }
-function getFields(db, table) {
+function getFields(db, table, cond) {
     return new Promise(resolve=>{
-        db[table].find().limit(100).toArray((err, docs)=>{
+        db[table].find(cond||{}).limit(100).toArray((err, docs)=>{
             if (err) {
                 resolve([]);
             } else {
@@ -551,9 +551,9 @@ async function getTables(db, force) {
     }
     return CACHE._tables;
 }
-async function getFieldsOfTable(db, table, force) {
+async function getFieldsOfTable(db, table, force, cond) {
     if (!CACHE[table] || force) {
-        CACHE[table] = await getFields(db, table);
+        CACHE[table] = await getFields(db, table, cond);
     }
     return CACHE[table];
 }
@@ -685,7 +685,7 @@ async function showTableRows (line, { db }) {
         list.splice(sortIndex, 1);
     }
 
-    const fields = await formatFields(db, table, list[0]);
+    const fields = await formatFields(db, table, list[0], cond);
 
     if (_verbose) {
         this.verbose(`db.${table}.find(${j2s(cond)}, ${j2s(fields)}).sort(${j2s(sort)}).limit(${limit})`);
