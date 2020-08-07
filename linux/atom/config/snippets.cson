@@ -23,8 +23,16 @@
 '.source.js':
   'console.log("========", ...)':
     'prefix': 'logx'
-    'body': 'console.log("=======", ${1})'
+    'body': 'console.log("=======", ${1});'
+
+  'console.log("========", JSON.stringify(...))':
+    'prefix': 'logj'
+    'body': 'console.log("=======", JSON.stringify(${1}));'
+
+  'return console.log("========", ...)':
+    'prefix': 'logt'
+    'body': 'return console.log("=======", ${1});'
 
   'console.log(...)':
     'prefix': 'log'
-    'body': 'console.log(${1})'
+    'body': 'console.log(${1});'
