@@ -844,6 +844,26 @@ function __print_array()
 	done
 	echo ]
 }
+function __join()
+{
+########################################
+#Usage: __join array
+# need set __d e.g: __d=,
+########################################
+	if [ -z "$__d" ];then
+		__d=" "
+	fi
+	local ret
+	ret=""
+	for item in "$@";do
+		if [ -z "$ret" ];then
+			ret="$item"
+		else
+			ret="${ret}${__d}${item}"
+		fi
+	done
+	echo $ret
+}
 function __swap_two_files()
 {
 ########################################
