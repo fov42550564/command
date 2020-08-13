@@ -21,17 +21,21 @@ else
 fi
 
 if [ "$1" = "-h" ];then
-  echo "xconfig -h|-i:show ip|-r:reset|-android:xx|default: modify config"
-elif [ "$1" = "-i" ];then
-  echo $ip
+    echo "xconfig -h|-i:show ip|-r:reset|-android:xx|default: modify config"
+elif [ "$1" = "-i" -o "$1" = "-ip" ];then
+    echo $ip
 elif [ "$1" = "-android" ];then
-  echo "/usr/local/opt/android-sdk"
-  echo "/Users/whxx/Library/Android/sdk"
-  echo "C\\\\:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Android\\\\Sdk"
+    echo "/usr/local/opt/android-sdk"
+    echo "/Users/whxx/Library/Android/sdk"
+    echo "C\\\\:\\\\Users\\\\Admin\\\\AppData\\\\Local\\\\Android\\\\Sdk"
 elif [ "$1" = "-r" ];then
-  vim -e -s config.js -c ":%s/\(apiServer:.*\)\/\d\+\.\d\+\.\d\+\.\d\+:/\1\/localhost:/" -c ":wq"
-  echo "set localhost done"
+    vim -e -s config.js -c ":%s/\(apiServer:.*\)\/\d\+\.\d\+\.\d\+\.\d\+:/\1\/localhost:/" -c ":wq"
+    echo "set localhost done"
 else
-  vim -e -s config.js -c ":%s/\(apiServer:.*:\/\/\)\(\d\+\.\d\+\.\d\+\.\d\+:\)\|\(localhost:\)/\1${ip}:/" -c ":wq"
-  echo "set $ip done"
+    if ! [ -a config.js ];then
+        echo "have no config.js"
+        exit
+    fi
+    vim -e -s config.js -c ":%s/\(apiServer:.*:\/\/\)\(\d\+\.\d\+\.\d\+\.\d\+:\)\|\(localhost:\)/\1${ip}:/" -c ":wq"
+    echo "set $ip done"
 fi
