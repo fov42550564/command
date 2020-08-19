@@ -24,6 +24,30 @@ function checkCommand(cmds, line) {
 function checkHistory(cmds, options, line) {
     return checkCommand(_.omit(cmds, options.history || []), line);
 }
+function my_stringify (obj, pad = 2, level = 0) {
+    if (_.isPlainObject(obj)) {
+        const line = [ `{` ];
+        const keys = _.keys(obj);
+        for (const i in keys) {
+            line.push(`${_.pad('', (level+1)*pad)}${keys[i]}: ${my_stringify(obj[keys[i]], pad, level+1)}${i==keys.length-1?'':','}`);
+        }
+        line.push(`${_.pad('', level*pad)}}`);
+        return line.join('\n');
+    } else if (_.isArray(obj)) {
+        const line = [];
+        for (const o of obj) {
+            if (!_.isPlainObject(o) && !_.isArray(o)) {
+                line.push(_.isString(obj) ? `"${o}"` : `${o}`);
+            } else {
+                line.push(`${my_stringify(o, pad, level)}`);
+            }
+        }
+        return `[${line.join(',')}]`;
+    } else if (_.isString(obj)) {
+        return `"${obj}"`;
+    }
+    return obj;
+}
 function stringify(obj, pretty) {
     const str = JSON.stringify(obj, (key, value)=>{
         if (_.includes(['hash', 'salt', '__v'], key)) {
