@@ -1,15 +1,35 @@
 #!/bin/bash
+source ~/command/common
+
+if __windows;then
+    ip=$(node -e " \
+    const os = require('os'); \
+    const interfaces = os.networkInterfaces(); \
+    let ip; \
+    for (let devName in interfaces) { \
+        var iface = interfaces[devName]; \
+        for (var i = 0; i < iface.length; i++) { \
+            var alias = iface[i]; \
+            if (alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal) { \
+                ip = alias.address; \
+            } \
+        } \
+    } \
+    console.log(ip)")
+else
+    ip=`ifconfig -a | grep -w inet | grep -v '127.0.0.1' | awk '{ print $2}'`
+fi
 
 echo "########################################################################"
 echo "weinre调试远程界面"
 echo "使用方法："
 echo "1.在文件中添加"
-echo "<script src=\"http://192.168.1.137:8081/target/target-script-min.js#fang\"></script>"
+echo "<script src=\"http://${ip}:8081/target/target-script-min.js#fang\"></script>"
 echo "2.在浏览器访问"
-echo "http://192.168.1.137:8081/client/#fang"
+echo "http://${ip}:8081/client/#fang"
 echo "########################################################################"
 echo
 echo
 echo
 
-weinre --httpPort 8081 --boundHost 192.168.1.137
+weinre --httpPort 8081 --boundHost ${ip}
