@@ -18,6 +18,7 @@ let _verbose = true;
 let _prettyShell = true;
 let _highLightStyle;
 let _limit = 1;
+let _maxLimit = 1000;
 async function createMongo (commands, options) {
      const db = mongojs(`mongodb://${_host}:27017/${_database}`);
     const tables = await getTables(db);
@@ -626,7 +627,7 @@ async function showTables(line, { db }) {
     }
 }
 function getLimitIndex(list) {
-    return _.findIndex(list, o=>+o==o && o<=1000);
+    return _.findIndex(list, o=>+o==o && o<=_maxLimit);
 }
 function getCondIndex(list) {
     return _.findIndex(list, o=>/!=|>=|[^=]>\w|=[\w\u4e00-\u9fa5'"]|<=|<\w|~|#/.test(o) || /^[0-9a-z]{24}$/.test(o) || /^1[0-9]{10}$/.test(o) || /^1[0-9xX]{18}$/.test(o));
@@ -931,9 +932,9 @@ function setHighLightStyle(value) {
     this.print('highLightStyle set to ' + _highLightStyle);
     this.prompt();
 }
-function setDefaultLimit(line) {
-    _limit = +line || 10;
-    this.print('set limit to ' + _limit);
+function setMaxLimit(line) {
+    _maxLimit = +line || 1000;
+    this.print('set limit to ' + _maxLimit);
     this.prompt();
 }
 async function changeToDatabase(line, { db }) {
@@ -995,7 +996,7 @@ function showHelp () {
     this.print('    _: togglePrettyShell');
     this.print('    v: toggleVerbose');
     this.print('    hl: setHighLightStyle 0: railscasts 1: github');
-    this.print('    limit: setDefaultLimit');
+    this.print('    limit: setMaxLimit');
     this.print('');
     this.prompt();
 }
@@ -1013,7 +1014,7 @@ const COMMANDS = {
     '_': togglePrettyShell,
     'v': toggleVerbose,
     'hl': setHighLightStyle,
-    'limit': setDefaultLimit,
+    'limit': setMaxLimit,
     'default': executeLine,
 };
 

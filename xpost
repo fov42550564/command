@@ -6,11 +6,17 @@ const program = require('./js/dialog').commander();
 program
 .version('0.0.1')
 .option('-u, --url [http://127.0.0.1:3000/test]', 'url of api')
+.option('-i, --ip [127.0.0.1]', 'server ip of api', '127.0.0.1')
+.option('-p, --port [3000]', 'server port of api', '3000')
+.option('-t, --path [/]', 'server path of api', '/')
 .option('-d, --data <json>', 'data must be json format', (v)=>eval('v='+v), {})
 .option('-f, --format <json>', 'Accept Format:[json, text]', 'json')
 .parse(process.argv);
 
-const { url, data, format } = program;
+let { url, ip, port, path, data, format } = program;
+if (!url) {
+    url = `http://${ip}:${port}${path[0]!=='/'?'/':''}${path}`;
+}
 
 request
 .post(url)
@@ -21,7 +27,7 @@ request
 .send(data)
 .end((error, res) => {
     if (error) {
-        console.error('recv error:', error);
+        console.error(`[${url}] recv error:`, error.status);
     } else {
         if (format === 'json') {
             console.log(JSON.stringify(res.body, null, 2));
