@@ -928,7 +928,7 @@ function toggleVerbose() {
     this.prompt();
 }
 function setHighLightStyle(value) {
-    _highLightStyle = value == 0 ? 'railscasts' : 'github';
+    _highLightStyle = value == 0 ? 'railscasts' : value == 1 ? 'github' : _highLightStyle == 'railscasts' ? 'github' : 'railscasts';
     this.print('highLightStyle set to ' + _highLightStyle);
     this.prompt();
 }
@@ -995,7 +995,7 @@ function showHelp () {
     this.print('    format: [undefined: $unset][id: \"xx\"|\'xx\':string xx:ObjectId][date:\"xx\":string xx|\'xx\':date][number:\"xx\"|\'xx\':string xx:number]');
     this.print('    _: togglePrettyShell');
     this.print('    v: toggleVerbose');
-    this.print('    hl: setHighLightStyle 0: railscasts 1: github');
+    this.print('    hl: setHighLightStyle 0: railscasts 1: github else toggle');
     this.print('    limit: setMaxLimit');
     this.print('');
     this.prompt();
