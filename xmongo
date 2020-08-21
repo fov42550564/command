@@ -93,7 +93,7 @@ function parseItem(item) {
     if (key === undefined || oper === undefined || value === undefined) {
         return null;
     }
-    if (+value == value) {
+    if (value.length <16 && +value == value) {
         value = +value;
     } else if (value === 'null') {
         value = null;
@@ -231,7 +231,7 @@ function formatCond(line) {
     if (/^1[0-9]{10}$/.test(line)) {
         return { phone: line };
     }
-    if (/^1[0-9xX]{18}$/.test(line)) {
+    if (/^[0-9]{17}[0-9xX]$/.test(line)) {
         return { idNo: line };
     }
     return parseOr(dropBrack(line));
@@ -630,7 +630,7 @@ function getLimitIndex(list) {
     return _.findIndex(list, o=>+o==o && o<=_maxLimit);
 }
 function getCondIndex(list) {
-    return _.findIndex(list, o=>/!=|>=|[^=]>\w|=[\w\u4e00-\u9fa5'"]|<=|<\w|~|#/.test(o) || /^[0-9a-z]{24}$/.test(o) || /^1[0-9]{10}$/.test(o) || /^1[0-9xX]{18}$/.test(o));
+    return _.findIndex(list, o=>/!=|>=|[^=]>\w|=[\w\u4e00-\u9fa5'"]|<=|<\w|~|#/.test(o) || /^[0-9a-z]{24}$/.test(o) || /^1[0-9]{10}$/.test(o) || /^[0-9]{17}[0-9xX]$/.test(o));
 }
 function getSortIndex(list) {
     return _.findIndex(list, o=>/^(\+|-)[a-zA-Z][a-zA-Z0-9_]*/.test(o));
