@@ -659,7 +659,7 @@ async function showTableRows (line, { db }) {
             showCount = true;
         }
     } else {
-        limit = 10;
+        limit = _limit;
     }
 
     let cond = {};
