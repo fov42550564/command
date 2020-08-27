@@ -60,12 +60,12 @@ shopt -s checkwinsize
 shopt -s nocaseglob
 
 #confirm to do command
-alias cp='__cp'
 alias tcp=`which cp`
-alias mv='__mv'
+alias cp='__cp'
 alias tmv=`which mv`
-alias rm='__rm'
+alias mv='__mv'
 alias trm=`which rm`
+alias rm='__rm'
 alias rmr='__recover'
 alias rmf='__rm_files'
 #path

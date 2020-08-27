@@ -104,6 +104,14 @@ function get_text_from_xml() {
     fi
 }
 
+function join_all_comment() {
+    if __mac ;then
+        pbpaste|sed -n '/,/p'|sed 's#.*//##'|sed 's#;$##'|sed ':a;N;s/\r\n\|\n\|\r/;/;t a;'|pbcopy
+    else
+        cat /dev/clipboard|sed -n '/,/p'|sed 's#.*//##'|sed 's#;$##'|sed ':a;N;s/\r\n\|\n\|\r/;/;t a;'> /dev/clipboard
+    fi
+}
+
 function to_list() {
     local str list var
     if __mac ;then
@@ -161,6 +169,7 @@ function show_help()
 	list=("${list[@]}" "  -t: 获取xml的文字部分")
 	list=("${list[@]}" "  -c: 将英文的符号改变为中文的符号")
 	list=("${list[@]}" "  -C: 将中文的符号改变为英文的符号")
+	list=("${list[@]}" "  -t: 所有的注释用分号分开")
 	list=("${list[@]}" "  -h: 帮助")
 	__msgbox "${list[@]}"
     exit
@@ -175,7 +184,7 @@ function main()
 		show_help
 	fi
 
-	while getopts :mpojtla:cCh opt;do
+	while getopts :mpojtlta:cCh opt;do
 		oper_right=1
 		case $opt in
 			m)_oper=1;;
@@ -187,6 +196,7 @@ function main()
 			c)_oper=7;;
 			C)_oper=8;;
 			l)_oper=9;;
+			t)_oper=10;;
 			*)show_help;;
 		esac
 	done
@@ -201,6 +211,7 @@ function main()
         7)change_english_symbol_to_chinese;;
         8)change_chinese_symbol_to_english;;
         9)to_list;;
+        10)join_all_comment;;
         *)show_help;;
 	esac
 }
