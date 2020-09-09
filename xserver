@@ -28,7 +28,10 @@ function startServer(port, file) {
     var server = app.listen(port);
     server.on('listening', function () {
         console.log(`http://${ip}:${port}`);
-        if (file === '-m' || file === '--mobile') {
+        if (file === '-t' || file === '--text') {
+            app.get('/', function(req, res){
+                utils.paste((text)=>res.send(`<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=0"><div>${text}</div>`));
+            });
             const url = `http://${ip}:${port}`;
             qrcode.showCode(url);
         } else if (typeof file !== 'undefined') {
@@ -398,16 +401,15 @@ if (param === '-h' || param === '--help') {
     console.log('');
     console.log('   -h|--help: show help');
     console.log('   -c|--create [port]: create a app.js file for nodejs server');
-    console.log('   -u|--upload: upload files with multer');
+    console.log('   -u|--upload [text]: upload files with multer');
     console.log('   -t|--text: send text');
     console.log('   -i|--image [name]: show iphone6 size for image');
     console.log('   -g|--grid [name] [v|h] [offset]: show grid for image');
     console.log('   -d|--dir [name]: show dir file list');
-    console.log('   -m|--mobile: show qrcode for server');
     console.log('   file: show download qrcode for file');
     console.log('');
-} else if (param === '-u' || param === '--upload' || param === '-t' || param === '--text') {
-    startUploadServer(port, param === '-t' || param === '--text');
+} else if (param === '-u' || param === '--upload') {
+    startUploadServer(port, param1 === 'text');
 } else if (param === '-c' || param === '--create') {
     createServerFile('app.js', param1);
 } else if (param === '-i' || param === '--image') {
