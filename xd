@@ -38,14 +38,22 @@ if [ "$1" = "git" ];then
         echo >> ${file}
         exit
     else
-        pbpaste|sed 's#.*]:##'|sed '/^\s*$/d' >> ${file}
+        if __mac ;then
+            pbpaste|sed 's#.*]:##'|sed '/^\s*$/d' >> ${file}
+        else
+            cat /dev/clipboard|sed 's#.*]:##'|sed '/^\s*$/d' >> ${file}
+        fi
         echo >> ${file}
         exit
     fi
 fi
 
 if [ "$1" = "line" ];then
-    pbpaste|sed '/^\s*$/d' >> ${file}
+    if __mac ;then
+        pbpaste|sed '/^\s*$/d' >> ${file}
+    else
+        cat /dev/clipboard|sed '/^\s*$/d' >> ${file}
+    fi
     echo >> ${file}
     exit
 fi
