@@ -49,7 +49,7 @@ bool match_item(char* parent, const char *word, bool is_case, bool is_serial) {
             return false;
         }
     } else {
-        if (pinyin_lowercase(parent[0]) != word[0]) {
+        if (pinyin_lowercase(parent[0]) != pinyin_lowercase(word[0])) {
             return false;
         }
     }
@@ -66,7 +66,7 @@ bool match_item(char* parent, const char *word, bool is_case, bool is_serial) {
                     return false;
                 }
             } else {
-                if (parent[i] != ch  && pinyin_lowercase(parent[i]) != ch) {
+                if (pinyin_lowercase(parent[i]) != pinyin_lowercase(ch)) {
                     return false;
                 }
             }
@@ -211,7 +211,7 @@ int main(int argc, char **argv) {
     // 全字连续匹配
     for (int i=0; i<index; i++) {
         const char *line = lines[i];
-        if (match_line(line, count, _word, false, false, true)) {
+        if (match_line(line, count, _word, false, true, true)) {
             found = true;
             printf("%s\n", line);
         }
