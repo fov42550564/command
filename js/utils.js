@@ -37,18 +37,33 @@ function paste(callback) {
 			);
 			break;
 		case "win32":
-			var paste_vbs='Set objHTML = CreateObject("htmlfile")\n'
-			+'text = objHTML.ParentWindow.ClipboardData.GetData("Text")\n'
-			+'Wscript.Echo text';
-			fs.writeFileSync('paste.vbs', paste_vbs);
-			child_process.exec('cscript /nologo paste.vbs',
+			child_process.exec('uname',
 				function(err, stdout, stderr) {
-					if (err) {
-						console.log(err);
-						throw new Error("copy error");
+					if (!err) {
+						return child_process.exec('cat /dev/clipboard',
+							function(err, stdout, stderr) {
+								if (err) {
+									console.log(err);
+									throw new Error("copy error");
+								}
+								callback(stdout);
+							}
+						);
 					}
-					callback(stdout);
-					fs.unlinkSync('paste.vbs');
+					var paste_vbs='Set objHTML = CreateObject("htmlfile")\n'
+					+'text = objHTML.ParentWindow.ClipboardData.GetData("Text")\n'
+					+'Wscript.Echo text';
+					fs.writeFileSync('paste.vbs', paste_vbs);
+					child_process.exec('cscript /nologo paste.vbs',
+						function(err, stdout, stderr) {
+							if (err) {
+								console.log(err);
+								throw new Error("copy error");
+							}
+							callback(stdout);
+							fs.unlinkSync('paste.vbs');
+						}
+					);
 				}
 			);
 			break;

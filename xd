@@ -17,9 +17,10 @@ if [ "$1" = "-h" -o "$1"  = "--help" ];then
     echo ""
     echo "  xd"
     echo "  xd git [-]: set from clipboard from git lg, - for log 1"
-    echo "  xd lines: set from clipboard from lines"
+    echo "  xd line: set from clipboard from line"
     echo "  xd clear"
     echo "  xd history: show history"
+    echo "  xd copy: copy to clipboard"
     echo "  xd vim/atom"
     echo "  xd summary(unused): set summary"
     echo "  xd send(unused)"
@@ -55,6 +56,18 @@ if [ "$1" = "line" ];then
         cat /dev/clipboard|sed '/^\s*$/d' >> ${file}
     fi
     echo >> ${file}
+    exit
+fi
+
+if [ "$1" = "copy" ];then
+    echo "=================== start copy below:"
+    cat ${file} 2>/dev/null|sed '/^\s*$/d'|sed =|sed 'N;s/\n/: /'
+    if __mac ;then
+        cat ${file} 2>/dev/null|sed '/^\s*$/d'|sed =|sed 'N;s/\n/: /'|pbcopy
+    else
+        cat ${file} 2>/dev/null|sed '/^\s*$/d'|sed =|sed 'N;s/\n/: /' > /dev/clipboard
+    fi
+    echo "=================== success copy above"
     exit
 fi
 

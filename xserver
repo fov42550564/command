@@ -30,7 +30,8 @@ function startServer(port, file) {
         console.log(`http://${ip}:${port}`);
         if (file === '-t' || file === '--text') {
             app.get('/', function(req, res){
-                utils.paste((text)=>res.send(`<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=0"><div>${text}</div>`));
+                res.header('Content-Type', 'text/html;charset=utf-8');
+                utils.paste((text)=>res.send(`<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=0"><meta charset="UTF-8"><div>${text}</div>`));
             });
             const url = `http://${ip}:${port}`;
             qrcode.showCode(url);
@@ -401,8 +402,8 @@ if (param === '-h' || param === '--help') {
     console.log('');
     console.log('   -h|--help: show help');
     console.log('   -c|--create [port]: create a app.js file for nodejs server');
-    console.log('   -u|--upload [text]: upload files with multer');
-    console.log('   -t|--text: send text');
+    console.log('   -u|--upload [text]: upload files with multer or text to server');
+    console.log('   -t|--text: get server\'s clipboard text');
     console.log('   -i|--image [name]: show iphone6 size for image');
     console.log('   -g|--grid [name] [v|h] [offset]: show grid for image');
     console.log('   -d|--dir [name]: show dir file list');
