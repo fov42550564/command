@@ -9,32 +9,46 @@ _oldname1=""
 _newname1=""
 _oldname2=""
 _newname2=""
+_oldname3=""
+_newname3=""
 _oldnameFlag=0
 _newnameFlag=0
 
 function showHelp() {
     echo "Usage:"
-    echo "  xr oldname:newname [-r|-c|-f]"
+    echo "  xr oldname:newname[,oldname1:newname1] [-r|-c|-f]"
     echo "  默认替换剪切板的内容"
     echo "  -r: 进入某一个目录，将目录里面的文件按规则重命名，将文件中的内容按照规则替换"
     echo "  -c [folder]: 拷贝目录后，再替换"
     echo "  -f [file]: 拷贝文件后，再替换"
-    echo "  xr shop:client -f|-c shopTail，结果：cp [-r] shopTail clientTail"
-    echo "  xr Shop:client -f|-c ShopTail，结果：cp [-r] ShopTail ClientTail"
-    echo "  xr shop:client -f|-c，结果：cp [-r] shop client"
-    echo "  xr Shop:client -f|-c，结果：cp [-r] Shop Client"
+    echo "  xr shop:client[,店铺:客户] -f|-c shopTail，结果：cp [-r] shopTail clientTail"
+    echo "  xr Shop:client[,店铺:客户] -f|-c ShopTail，结果：cp [-r] ShopTail ClientTail"
+    echo "  xr shop:client[,店铺:客户] -f|-c，结果：cp [-r] shop client"
+    echo "  xr Shop:client[,店铺:客户] -f|-c，结果：cp [-r] Shop Client"
     echo "  替换规则：名称采用驼峰格式或者火箭式, 如: xr shopMemberModel:ClientModel 或者 xr ShopMemberModel:ClientModel"
     echo "  命令执行修改： shopMemberModel->clientModel; ShopMemberModel->ClientModel; SHOP_MEMBER_MODEL->CLIENT_MODEL"
     echo ""
     exit
 }
 
-oldname=${1%:*}
-newname=${1#*:}
-if [ "$1" != "$oldname:$newname" -o "$oldname" = "" -o "$newname" = "" ];then
-    showHelp
-fi
+pre="${1%,*}"
+post="${1#*,}"
+oldname="${pre%:*}"
+newname="${pre#*:}"
+_oldname3="${post%:*}"
+_newname3="${post#*:}"
 
+if [ "$oldname" = "$_oldname3" -a "$newname" = "$_newname3" ];then
+    _oldname3="__not_exists_word__"
+    _newname3="__not_exists_word__"
+    if [ "$1" != "$oldname:$newname" -o "$oldname" = "" -o "$newname" = "" ];then
+        showHelp
+    fi
+else
+    if [ "$oldname:$newname,$_oldname3:$_newname3" != "$1" -o "$oldname" = "" -o "$newname" = "" -o "$_oldname3" = "" -o "$_newname3" = "" ];then
+        showHelp
+    fi
+fi
 
 echo $oldname | grep '^[A-Z]' > /dev/null
 if [ $? -ne 0 ];then
@@ -68,9 +82,9 @@ _newname2=`echo $_newname|sed 's/[A-Z]/_&/g'|sed 's/[a-z]/\u&/g'`
 # 替换前切板的内容
 if [ "$2" == "" ];then
     if __mac ;then
-        pbpaste|sed 's/'${_oldname}'/'${_newname}'/g'|sed 's/'${_oldname1}'/'${_newname1}'/g'|sed 's/'${_oldname2}'/'${_newname2}'/g'|pbcopy
+        pbpaste|sed 's/'${_oldname}'/'${_newname}'/g'|sed 's/'${_oldname1}'/'${_newname1}'/g'|sed 's/'${_oldname2}'/'${_newname2}'/g'|sed 's/'${_oldname3}'/'${_newname3}'/g'|pbcopy
     else
-         cat /dev/clipboard|sed 's/'${_oldname}'/'${_newname}'/g'|sed 's/'${_oldname1}'/'${_newname1}'/g'|sed 's/'${_oldname2}'/'${_newname2}'/g'  > /dev/clipboard
+        cat /dev/clipboard|sed 's/'${_oldname}'/'${_newname}'/g'|sed 's/'${_oldname1}'/'${_newname1}'/g'|sed 's/'${_oldname2}'/'${_newname2}'/g'|sed 's/'${_oldname3}'/'${_newname3}'/g'  > /dev/clipboard
     fi
     exit
 fi
@@ -103,7 +117,7 @@ if [ "$2" = "-f" ];then
         exit
     fi
     cp $oldfile $newfile
-    vim -e -s -c ":%s/${_oldname}/${_newname}/g" -c ":%s/${_oldname1}/${_newname1}/g" -c ":%s/${_oldname2}/${_newname2}/g" -c ":wq" $newfile
+    vim -e -s -c ":%s/${_oldname}/${_newname}/g" -c ":%s/${_oldname1}/${_newname1}/g" -c ":%s/${_oldname2}/${_newname2}/g" -c ":%s/${_oldname3}/${_newname3}/g" -c ":wq" $newfile
     exit
 fi
 
@@ -145,9 +159,12 @@ echo xfind -v "-c \"%s/${_oldname1}/${_newname1}/g\""
 echo xfind -n "*${_oldname2}*" -r "${_oldname2}:${_newname2}"
 echo xfind -v "-c \"%s/${_oldname2}/${_newname2}/g\""
 
-__ask "确定替换吗"
-if [ "$?" = "$_FALSE_" ];then
-    exit
+
+if ! [ "$4" = "force" ];then
+    __ask "确定替换吗"
+    if [ "$?" = "$_FALSE_" ];then
+        exit
+    fi
 fi
 
 xfind -n "*${_oldname}*" -r "${_oldname}:${_newname}"
@@ -158,3 +175,7 @@ xfind -v "-c \"%s/${_oldname1}/${_newname1}/g\""
 
 xfind -n "*${_oldname2}*" -r "${_oldname2}:${_newname2}"
 xfind -v "-c \"%s/${_oldname2}/${_newname2}/g\""
+
+if [ "$_oldname3" != "__not_exists_word__" ];then
+    xfind -v "-c \"%s/${_oldname3}/${_newname3}/g\""
+fi
