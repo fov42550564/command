@@ -12,7 +12,7 @@ if [ "$1" = "--help" -o  "$1" = "-h" ];then
   exit
 fi
 if __windows;then
-    cp ./config/keymap_windows.cson $DIST/.atom/
+    cp ./config/keymap_windows.cson $DIST/.atom/keymap.cson
 else
     cp ./config/keymap.cson $DIST/.atom/
 fi

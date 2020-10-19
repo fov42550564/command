@@ -122,6 +122,15 @@ function __windows()
   local name=$(uname)
   [ ${name:0:5} = "MINGW" -o ${name:0:6} = "CYGWIN" ]&&return $_TRUE_||return $_FALSE_
 }
+function __mingw()
+{
+########################################
+#Usage: __mingw
+#	  check if is windows system
+########################################
+  local name=$(uname)
+  [ ${name:0:5} = "MINGW" ]&&return $_TRUE_||return $_FALSE_
+}
 function __cygwin()
 {
 ########################################
@@ -497,7 +506,11 @@ function __atom()
 		path=`__get_full_path "$@"`
 		dir=`cygpath -lw "$path"`
 	fi
-	atom=$WINDOWS_HOME/AppData/Local/atom/atom
+  if __cygwin ;then
+	  atom=$WINDOWS_HOME/AppData/Local/atom/atom
+  else
+	  atom=$HOME/AppData/Local/atom/atom
+  fi
 	"$atom" "$dir"
 }
 function __simple_cp()
