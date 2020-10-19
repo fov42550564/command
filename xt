@@ -15,9 +15,9 @@ function genrate_param_from_model() {
 
 function genrate_param_without_comment() {
     if __mac ;then
-        pbpaste|sed 's#\s*//.*$##'|sed 's/.* //'|pbcopy
+        pbpaste|sed 's#\s*//.*$##'|sed 's/ = .*/,/'|pbcopy
     else
-        cat /dev/clipboard|sed 's#\s*//.*$##'|sed 's/.* //' > /dev/clipboard
+         cat /dev/clipboard|sed 's#\s*//.*$##'|sed 's/ = .*/,/' > /dev/clipboard
     fi
 }
 
