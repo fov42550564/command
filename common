@@ -83,6 +83,7 @@ function _declare_global_variables__()
 
 	declare -i _argc_
 	declare -a _argv_
+	declare -a _args_
 	_opt_=""
 	_hasopt_=""
 	_result_=""
@@ -365,6 +366,7 @@ function __check_opts()
 				fi
 			fi
 			unset _argv_[$i]
+			_args_=("${_argv_[@]}")
 			[ "${_argv_[i+1]}" = "$_opt_" ] && unset _argv_[i+1]
 			_hasopt_="1"
 			return $_TRUE_
