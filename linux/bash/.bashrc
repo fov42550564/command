@@ -192,9 +192,6 @@ alias pt='~/tools/phantomjs-2.1.1-macosx/bin/phantomjs'
 #mongodb
 alias mongostart='mongod —config /usr/local/etc/mongod.conf'
 
-export NVM_DIR="/Users/apple/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
-
 #npm
 alias cnpm="npm --registry=https://registry.npm.taobao.org"
 
@@ -247,4 +244,9 @@ if __mac;then
 
     export EMSDK=~/tools/emsdk-portable
     export PATH=$PATH:$EMSDK/emscripten/1.37.35
+
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 fi
+

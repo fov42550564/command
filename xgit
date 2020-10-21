@@ -246,7 +246,7 @@ function git_command() {
 	if [ "$amend" = "" -a "$1" = "commit" -o "$1" = "ci" -o "$1" = "cm" -o "$1" = "cip" -o "$1" = "cmp" ];then
 		hasremote=$(git remote -v)
 		if [ -n "${hasremote}" ];then
-			hasupdate=$(git pl|sed -n '/Already up[ -]to[ -]date/p')
+			hasupdate=$(git pl 2>&1|sed -n '/Already up[ -]to[ -]date\|from the remote, but no such ref was fetched./p')
 		fi
 		if [ -z "$hasupdate" -a -n "${hasremote}" ];then
 			echo "fix conflit then commit"
