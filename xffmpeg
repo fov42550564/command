@@ -16,8 +16,8 @@ function cut_video()
 		echo "参数错误，正确格式为：xffmpeg -c srcVideo startTime timeLong distVideo"
 		exit
 	fi
-	echo ffmpeg -i "$1" -ss $2 -c copy -t $3 ${4} -y
-	ffmpeg -i "$1" -ss $2 -c copy -t $3 ${4} -y
+	echo ffmpeg -ss $2 -t $3 -accurate_seek -i "$1" -vcodec copy -acodec copy ${4} -y
+	ffmpeg -ss $2 -t $3 -accurate_seek -i "$1" -vcodec copy -acodec copy ${4} -y
 }
 function join_video()
 {
@@ -54,9 +54,8 @@ function cover_video()
 		echo "参数错误，正确格式为：xffmpeg -r srcVideo cover distVideo"
 		exit
 	fi
-	echo ffmpeg -f image2 -i $2 -vcodec libx264 __video.mp4
-	ffmpeg -f image2 -i $2 -vcodec libx264 __video.mp4
-	join_video __video.mp4 $1 $3
+	ffmpeg -ss $2 -t 0.001 -accurate_seek -i "$1" -vcodec copy -acodec copy __video.mp4 -y
+	join_video __video.mp4 "$1" "$3"
 	rm __video.mp4
 }
 function show_help()
@@ -67,7 +66,7 @@ function show_help()
 	list=("${list[@]}" "  -l video logo logoWidth logoHeight logoX logoY distVideo: xffmpeg -l 1.mp4 1.jpg 100 100 10 10 2.mp4")
 	list=("${list[@]}" "  -c srcVideo startTime timeLong distVideo: xffmpeg -c 1.mp4 05 10")
 	list=("${list[@]}" "  -j srcVideo1 srcVideo2 ... distVideo: xffmpeg -j 1.mp4 2.mp4")
-	list=("${list[@]}" "  -r srcVideo cover distVideo: xffmpeg -r 1.mp4 1.jpg  2.mp4")
+	list=("${list[@]}" "  -r srcVideo time distVideo: xffmpeg -r 1.mp4 7 2.mp4")
 	list=("${list[@]}" "  -h: show help ")
 	__msgbox "${list[@]}"
 	exit
