@@ -686,7 +686,7 @@ function __rm()
 			origin=${origin////#}
 			echo mv "$var" "$HOME/.Trash/$prefix$origin"
 			mv "$var" "$HOME/.Trash/$prefix$origin"
-		else
+		elif [ "$var" != "-f" -a "$var" != "-rf" -a "$var" != "-fr" ];then
 			echo "$var not exits"
 		fi
 	done
