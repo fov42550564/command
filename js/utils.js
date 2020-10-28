@@ -1,6 +1,19 @@
 var child_process = require('child_process');
 var fs = require('fs');
+var os = require('os');
 
+function getIPAdress() {
+    var interfaces = os.networkInterfaces();
+    for(var devName in interfaces){
+        var iface = interfaces[devName];
+        for(var i=0;i<iface.length;i++){
+            var alias = iface[i];
+            if(alias.family === 'IPv4' && alias.address !== '127.0.0.1' && !alias.internal){
+                return alias.address;
+            }
+        }
+    }
+}
 function copy(str) {
 	var command;
 	switch(process.platform) {
@@ -75,4 +88,5 @@ function paste(callback) {
 module.exports = {
     copy,
     paste,
+    getIPAdress,
 }
