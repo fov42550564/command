@@ -2,6 +2,28 @@ var child_process = require('child_process');
 var fs = require('fs');
 var os = require('os');
 
+function checkIdNo (idNo) {
+    if (!idNo) {
+        return console.log('empty');
+    }
+    const number = idNo.split('');
+    const W = [ 7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2 ];// 加权因子
+    const ValideCode = [ 1, 0, 10, 9, 8, 7, 6, 5, 4, 3, 2 ];// 身份证验证位值.10代表X
+    if (!number || number.length !== 18) {
+        return false;
+    }
+    if (number[17] === 'x' || number[17] === 'X') {
+        number[17] = 10;
+    }
+    let sum = 0;
+    for (let i = 0; i < 17; i++) {
+        sum += W[i] * number[i];
+    }
+    if (number[17] != ValideCode[sum % 11]) {
+        console.log(`[checkIdNo]: ${idNo} last number should be ${ValideCode[sum % 11]}`);
+    }
+    return console.log('success');
+}
 function getIPAdress () {
     var ip;
     var interfaces = os.networkInterfaces();
@@ -91,4 +113,5 @@ module.exports = {
     copy,
     paste,
     getIPAdress,
+    checkIdNo,
 }
