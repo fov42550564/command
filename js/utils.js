@@ -10,7 +10,7 @@ function checkIdNo (idNo) {
     const W = [ 7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2 ];// 加权因子
     const ValideCode = [ 1, 0, 10, 9, 8, 7, 6, 5, 4, 3, 2 ];// 身份证验证位值.10代表X
     if (!number || number.length !== 18) {
-        return false;
+        return console.log('error idNo');
     }
     if (number[17] === 'x' || number[17] === 'X') {
         number[17] = 10;
@@ -20,7 +20,7 @@ function checkIdNo (idNo) {
         sum += W[i] * number[i];
     }
     if (number[17] != ValideCode[sum % 11]) {
-        console.log(`[checkIdNo]: ${idNo} last number should be ${ValideCode[sum % 11]}`);
+        return console.log(`[checkIdNo]: ${idNo} last number should be ${ValideCode[sum % 11]}`);
     }
     return console.log('success');
 }
