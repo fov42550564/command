@@ -52,6 +52,14 @@ if __windows;then
         path=`cat /dev/clipboard`
         __extend_cd "${path//\\/\/}"
     }
+    function xpath() {
+        path=`cat /dev/clipboard`
+        echo "${path//\\/\/}" > /dev/clipboard
+    }
+    function xatom() {
+        path=`cat /dev/clipboard`
+        atom "${path//\\/\/}"
+    }
 fi
 
 #set options
