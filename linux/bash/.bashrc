@@ -198,7 +198,7 @@ alias xandroidinstall='xserver android/app/build/outputs/apk/app-debug.apk'
 alias pt='~/tools/phantomjs-2.1.1-macosx/bin/phantomjs'
 
 #mongodb
-alias mongostart='mongod —config /usr/local/etc/mongod.conf'
+alias mongostart='mongod —-dbpath ~/mongodb'
 
 #npm
 alias cnpm="npm --registry=https://registry.npm.taobao.org"
