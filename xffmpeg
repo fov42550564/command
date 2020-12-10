@@ -32,6 +32,7 @@ function join_video()
 	for ((i=1; i<n-1; i++));do
 		echo "file ${arr[i]}" >> .__video_list
 	done
+	cat .__video_list
 	echo ffmpeg -f concat -i .__video_list -c copy ${arr[i]} -y
 	ffmpeg -f concat -i .__video_list -c copy ${arr[i]} -y
 	rm .__video_list
@@ -54,8 +55,61 @@ function cover_video()
 		echo "参数错误，正确格式为：xffmpeg -r srcVideo cover distVideo"
 		exit
 	fi
+	echo ffmpeg -ss $2 -t 0.001 -accurate_seek -i "$1" -vcodec copy -acodec copy __video.mp4 -y
 	ffmpeg -ss $2 -t 0.001 -accurate_seek -i "$1" -vcodec copy -acodec copy __video.mp4 -y
 	join_video __video.mp4 "$1" "$3"
+	rm __video.mp4
+}
+function set_contrast_brightness_video()
+{
+	if [ $# != "4" ];then
+		echo "参数错误，正确格式为：xffmpeg -b srcVideo contrast brightness distVideo"
+		exit
+	fi
+	echo ffmpeg -i $1 -vf eq=contrast=$2:brightness=$3 -y $4
+	ffmpeg -i $1 -vf eq=contrast=$2:brightness=$3 -y $4
+}
+function get_video_time()
+{
+	local list sum var
+	list=($(ffmpeg -i "$1" 2>&1|grep Duration| cut -d ' ' -f 4 | sed 's/\..*//'|sed 's/:/ /g'))
+	if [ -z "$list" ];then
+		echo "这不是一个视频文件"
+		exit
+	fi
+	sum=0
+	for var in "${list[@]}";do
+		((sum=sum*60+var))
+	done
+	eval $2=$sum
+}
+function set_audio_video()
+{
+	local vtime atime n joinstr
+	if [ $# != "3" ];then
+		echo "参数错误，正确格式为：xffmpeg -a srcVideo srcAudio distVideo"
+		exit
+	fi
+	get_video_time "$1" vtime
+	get_video_time "$2" atime
+	((n=(vtime-1)/atime+1))
+
+	if ((n>1));then
+		joinstr=""
+		for ((i=0;i<n;i++));do
+			joinstr="$joinstr $2"
+		done
+		join_video $joinstr __audio.mp3
+	else
+		cp "$2" __audio.mp3
+	fi
+
+	echo ffmpeg -i $1 -c:v copy -an __video.mp4
+	ffmpeg -i $1 -c:v copy -an __video.mp4
+	echo ffmpeg -i __video.mp4 -i __audio.mp3 -t $vtime -c copy -y $3
+	ffmpeg -i __video.mp4 -i __audio.mp3 -t $vtime -c copy -y $3
+
+	rm __audio.mp3
 	rm __video.mp4
 }
 function show_help()
@@ -67,6 +121,8 @@ function show_help()
 	list=("${list[@]}" "  -c srcVideo startTime timeLong distVideo: xffmpeg -c 1.mp4 05 10")
 	list=("${list[@]}" "  -j srcVideo1 srcVideo2 ... distVideo: xffmpeg -j 1.mp4 2.mp4")
 	list=("${list[@]}" "  -r srcVideo time distVideo: xffmpeg -r 1.mp4 7 2.mp4")
+	list=("${list[@]}" "  -b srcVideo contrast brightness distVideo: xffmpeg -b 1.mp4 1.1 -0.1 2.mp4")
+	list=("${list[@]}" "  -a srcVideo srcAudio distVideo: xffmpeg -a 1.mp4 1.mp3 2.mp4")
 	list=("${list[@]}" "  -h: show help ")
 	__msgbox "${list[@]}"
 	exit
@@ -81,6 +137,8 @@ function main()
 	__check_opts "-j" && join_video ${_args_[@]}
 	__check_opts "-l" && logo_video ${_args_[@]}
 	__check_opts "-r" && cover_video ${_args_[@]}
+	__check_opts "-b" && set_contrast_brightness_video ${_args_[@]}
+	__check_opts "-a" && set_audio_video ${_args_[@]}
 }
 
 main "$@"
