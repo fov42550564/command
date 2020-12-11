@@ -9,7 +9,7 @@ const repl = require('repl');
 const utils = require('./js/utils');
 
 let lastLine;
-const historyPath = path.join(osHomedir(), `.xn_repl_history`);
+const historyPath = path.join(osHomedir(), `.xn_history/.xn_repl_history`);
 const deleteLeft = repl.REPLServer.prototype.__proto__._deleteLeft;
 const insertString = repl.REPLServer.prototype.__proto__._insertString;
 const addHistory = repl.REPLServer.prototype.__proto__._addHistory;

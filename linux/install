@@ -64,6 +64,8 @@ function install()
 {
     cd ~
     mkdir -p ${_backdir}
+    mkdir -p ~/.dest_path
+    mkdir -p ~/.xn_history
     if (($_targets&$targets_bash));then
         install_bash
     fi

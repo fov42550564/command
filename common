@@ -1045,11 +1045,11 @@ function __set_dest_path()
 ########################################
 	local param ret len tline line line2 line3 file config_file tmp_file _dp oldproj target t
 	param="$1"
-	file=~/.dest_path
-	config_file=~/.dest_path_config
-	tmp_file=~/.dest_path_tmp
+	file=~/.dest_path/.dest_path
+	config_file=~/.dest_path/.dest_path_config
+	tmp_file=~/.dest_path/.dest_path_tmp
 
-	[ -a "$file" ] || echo -n > $file
+	[ -a "$file" ] || echo ~/command > $file
 	[ -a "$config_file" ] || echo default > $config_file
 	tline=$(wc -l $file|awk '{print $1}')
 	if [ "$param" = "-h" ];then

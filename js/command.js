@@ -65,7 +65,7 @@ function stringify(obj, pretty) {
 }
 module.exports = (cmds, options = {}) => {
     let lastLine;
-    const historyPath = path.join(osHomedir(), `.xn_${options.prompt || 'common'}_history`);
+    const historyPath = path.join(osHomedir(), `.xn_history/.xn_${options.prompt || 'common'}_history`);
     const deleteLeft = readline.Interface.prototype._deleteLeft;
     const insertString = readline.Interface.prototype._insertString;
     const addHistory = readline.Interface.prototype._addHistory;

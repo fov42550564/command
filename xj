@@ -63,7 +63,7 @@ function clearCodes(line) {
         codes = [];
     } else if (line === 'all') {
         text = getFullCode();
-        const file = path.join(osHomedir(), '.xn_java_code_history');
+        const file = path.join(osHomedir(), '.xn_history/.xn_java_code_history');
         fs.appendFileSync(file, '\n\n==========================\n\n');
         fs.appendFileSync(file, text);
         codes = [];
