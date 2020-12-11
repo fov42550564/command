@@ -192,11 +192,19 @@ function crop_video()
 }
 function reverse_video()
 {
-	if [ $# != "6" ];then
+	if [ $# != "2" ];then
 		echo "参数错误，正确格式为：xffmpeg -reverse srcVideo distVideo"
 		exit
 	fi
 	ffmpeg -i "$1" -vf reverse -y "$2"
+}
+function get_video_image()
+{
+	if [ $# != "3" ];then
+		echo "参数错误，正确格式为：xffmpeg -image srcVideo time distImage"
+		exit
+	fi
+	ffmpeg -ss $2 -i "$1" -vframes 1 -q:v 2 "$3"
 }
 function get_video_info()
 {
@@ -218,6 +226,7 @@ function show_help()
 	list=("${list[@]}" "  -split srcVideo video|audio distFile: [分离音视频] xffmpeg -split 1.mp4 video 2.mp4")
 	list=("${list[@]}" "  -crop srcVideo x y width height distVideo: [裁剪视频] xffmpeg -crop 1.mp4 iw/4 ih/4 iw/2 ih/2 2.mp4")
 	list=("${list[@]}" "  -reverse srcVideo distVideo: [倒放视频] xffmpeg -reverse srcVideo distVideo")
+	list=("${list[@]}" "  -image srcVideo time distImage: [截图] xffmpeg -image 1.mp4 10 1.jpg")
 	list=("${list[@]}" "  -i srcVideo: [查看视频信息]")
 	list=("${list[@]}" "  -h: show help ")
 	list=("${list[@]}" "  --help: show full help ")
@@ -240,6 +249,7 @@ function main()
 	__check_opts "-split" && split_video_audio ${_args_[@]}
 	__check_opts "-crop" && crop_video ${_args_[@]}
 	__check_opts "-reverse" && reverse_video ${_args_[@]}
+	__check_opts "-image" && get_video_image ${_args_[@]}
 	__check_opts "-i" && get_video_info ${_args_[@]}
 }
 
