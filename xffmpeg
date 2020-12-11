@@ -15,6 +15,13 @@ _oper=0
 # ffmpeg -i 1.mp4 -vf "select=between(n\,0\,2)" -f image2 fang/%02d.jpg
 # 提取关键帧 eq(pict_type\,B) eq(pict_type\,P)
 # ffmpeg -i 2.mp4 -vf select='eq(pict_type\,I)' -vsync 2 -f image2 fang/%02d.jpeg
+# 把视频5-10s和15-20s静音
+# ffmpeg -i 1.mp4 -af "volume=enable='between(t,5,10)':volume=0, volume=enable='between(t,15,20)':volume=0" 2.mp4
+# 添加水印
+# ffmpeg -i 2.mp4 -i logo.png -filter_complex "overlay=W-w-5:H-h-5" -codec:a copy -y 3.mp4
+# ffmpeg -i 2.mp4 -i logo.png -filter_complex "overlay=main_w-overlay_w-5:main_h-overlay_h-5" -codec:a copy -y 3.mp4
+# 去除水印
+#ffmpeg -i 3.mp4 -vf delogo=x=5:y=5:w=72:h=72 4.mp4
 
 function cut_video()
 {
@@ -45,14 +52,34 @@ function join_video()
 }
 function logo_video()
 {
-	if [ $# != "7" ];then
-		echo "参数错误，正确格式为：xffmpeg -l video logo logoWidth logoHeight logoX logoY distVideo"
+	local dist overlay
+	if [ $# != "5" -a $# != "7" ];then
+		echo "参数错误，正确格式为：xffmpeg -l video logo logoX logoY [logoWidth logoHeight] distVideo"
 		exit
 	fi
-	echo ffmpeg -i $2 -s $3x$4 .__$2
-	ffmpeg -i $2 -s $3x$4 .__$2
-	echo ffmpeg -i "$1" -vf "movie=.__$2[watermark];[in][watermark] overlay=main_w-overlay_w-$5:main_h-overlay_h-$6[out]" "$7" -y
-	ffmpeg -i "$1" -vf "movie=.__$2[watermark];[in][watermark] overlay=main_w-overlay_w-$5:main_h-overlay_h-$6[out]" "$7" -y
+	if [ $# = "7" ];then
+		echo ffmpeg -i $2 -s $5x$6 .__$2
+		ffmpeg -i $2 -s $5x$6 .__$2
+		dist="$7"
+	else
+		cp $2 .__$2
+		dist="$5"
+	fi
+	if (($3<0));then
+		if (($4<0));then
+			overlay="W-w+$3:H-h+$4"
+		else
+			overlay="W-w+$3:$4"
+		fi
+	else
+		if (($4<0));then
+			overlay="$3:H-h+$4"
+		else
+			overlay="$3:$4"
+		fi
+	fi
+	echo ffmpeg -i "$1" -vf "movie=.__$2[watermark];[in][watermark] overlay=$overlay[out]" "$dist" -y
+	ffmpeg -i "$1" -vf "movie=.__$2[watermark];[in][watermark] overlay=$overlay[out]" "$dist" -y
 	rm .__$2
 }
 function cover_video()
@@ -156,7 +183,7 @@ function show_help()
 	local -a list
 	list="help"
 	list=("${list[@]}" "Usage: xffmpeg [OPTIONS]")
-	list=("${list[@]}" "  -l video logo logoWidth logoHeight logoX logoY distVideo: [设置logo] xffmpeg -l 1.mp4 1.jpg 100 100 10 10 2.mp4")
+	list=("${list[@]}" "  -l video logo logoX logoY [logoWidth logoHeight] distVideo: [设置logo -10 -10表示右下角] xffmpeg -l 1.mp4 1.jpg 10 10 [100 100] 2.mp4")
 	list=("${list[@]}" "  -c srcVideo startTime timeLong distVideo: [剪切] xffmpeg -c 1.mp4 05 10 2.mp4")
 	list=("${list[@]}" "  -j srcVideo1 srcVideo2 ... distVideo: [连接] xffmpeg -j 1.mp4 2.mp4")
 	list=("${list[@]}" "  -r srcVideo srcImage distVideo: [封面] xffmpeg -r 1.mp4 1.png 2.mp4")
