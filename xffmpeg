@@ -31,6 +31,9 @@ function show_full_help() {
 	echo
 	echo "视频或图像加上黑边pad, 原视频1920×1080，新视频2000x1160 40x2=2000-1920 40x2=1160-1080"
 	echo "ffmpeg -i 2.mp4 -vf pad=2000:1160:40:40:black -y 3.mp4"
+	echo
+	echo "添加水印，带scale"
+	echo "ffmpeg -i 1.mp4 -vf \"movie=test.PNG,scale=100:150[watermask];[in][watermask] overlay=100:100[out]\" -y 2.mp4"
 }
 
 function cut_video()
