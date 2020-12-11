@@ -36,7 +36,7 @@ function show_full_help() {
 function cut_video()
 {
 	if [ $# != "4" ];then
-		echo "参数错误，正确格式为：xffmpeg -c srcVideo startTime timeLong distVideo"
+		echo "参数错误，正确格式为：xffmpeg -cut srcVideo startTime timeLong distVideo"
 		exit
 	fi
 	echo ffmpeg -ss $2 -t $3 -accurate_seek -i "$1" -vcodec copy -acodec copy ${4} -y
@@ -46,7 +46,7 @@ function join_video()
 {
 	local i n arr
 	if [ $# -lt 3 ];then
-		echo "参数错误，正确格式为：xffmpeg -j srcVideo1 srcVideo2 ..."
+		echo "参数错误，正确格式为：xffmpeg -join srcVideo1 srcVideo2 ..."
 		exit
 	fi
 	n="$#"
@@ -64,7 +64,7 @@ function logo_video()
 {
 	local dist overlay
 	if [ $# != "5" -a $# != "7" ];then
-		echo "参数错误，正确格式为：xffmpeg -l video logo logoX logoY [logoWidth logoHeight] distVideo"
+		echo "参数错误，正确格式为：xffmpeg -logo video logo logoX logoY [logoWidth logoHeight] distVideo"
 		exit
 	fi
 	if [ $# = "7" ];then
@@ -96,7 +96,7 @@ function cover_video()
 {
 	local wh
 	if [ $# != "3" ];then
-		echo "参数错误，正确格式为：xffmpeg -r srcVideo srcImage distVideo"
+		echo "参数错误，正确格式为：xffmpeg -cover srcVideo srcImage distVideo"
 		exit
 	fi
 	get_video_width_height $1 wh
@@ -111,7 +111,7 @@ function cover_video()
 function set_contrast_brightness_video()
 {
 	if [ $# != "4" ];then
-		echo "参数错误，正确格式为：xffmpeg -b srcVideo contrast brightness distVideo"
+		echo "参数错误，正确格式为：xffmpeg -bright srcVideo contrast brightness distVideo"
 		exit
 	fi
 	echo ffmpeg -i $1 -vf eq=contrast=$2:brightness=$3 -y $4
@@ -141,7 +141,7 @@ function set_audio_video()
 {
 	local vtime atime n joinstr
 	if [ $# != "3" ];then
-		echo "参数错误，正确格式为：xffmpeg -a srcVideo srcAudio distVideo"
+		echo "参数错误，正确格式为：xffmpeg -audio srcVideo srcAudio distVideo"
 		exit
 	fi
 	get_video_time "$1" vtime
@@ -171,7 +171,7 @@ function set_audio_video()
 function split_video_audio()
 {
 	if [ $# != "3" ];then
-		echo "参数错误，正确格式为：xffmpeg -s srcVideo video|audio distFile"
+		echo "参数错误，正确格式为：xffmpeg -split srcVideo video|audio distFile"
 		exit
 	fi
 	if [ "$2" = "video" ];then
@@ -179,8 +179,24 @@ function split_video_audio()
 	elif [ "$2" = "audio" ];then
 		ffmpeg -i "$1" -acodec copy -vn "$3"
 	else
-		echo "参数错误，正确格式为：xffmpeg -s srcVideo video|audio distFile"
+		echo "参数错误，正确格式为：xffmpeg -split srcVideo video|audio distFile"
 	fi
+}
+function crop_video()
+{
+	if [ $# != "6" ];then
+		echo "参数错误，正确格式为：xffmpeg -crop srcVideo x y width height distVideo"
+		exit
+	fi
+	ffmpeg -i "$1" -vf crop=${4}:${5}:${2}:${3} -y "$6"
+}
+function reverse_video()
+{
+	if [ $# != "6" ];then
+		echo "参数错误，正确格式为：xffmpeg -reverse srcVideo distVideo"
+		exit
+	fi
+	ffmpeg -i "$1" -vf reverse -y "$2"
 }
 function get_video_info()
 {
@@ -193,13 +209,15 @@ function show_help()
 	local -a list
 	list="help"
 	list=("${list[@]}" "Usage: xffmpeg [OPTIONS]")
-	list=("${list[@]}" "  -l video logo logoX logoY [logoWidth logoHeight] distVideo: [设置logo -10 -10表示右下角] xffmpeg -l 1.mp4 1.jpg 10 10 [100 100] 2.mp4")
-	list=("${list[@]}" "  -c srcVideo startTime timeLong distVideo: [剪切] xffmpeg -c 1.mp4 05 10 2.mp4")
-	list=("${list[@]}" "  -j srcVideo1 srcVideo2 ... distVideo: [连接] xffmpeg -j 1.mp4 2.mp4")
-	list=("${list[@]}" "  -r srcVideo srcImage distVideo: [封面] xffmpeg -r 1.mp4 1.png 2.mp4")
-	list=("${list[@]}" "  -b srcVideo contrast brightness distVideo: [对比度亮度] xffmpeg -b 1.mp4 1.1 -0.1 2.mp4")
-	list=("${list[@]}" "  -a srcVideo srcAudio distVideo: [添加音频] xffmpeg -a 1.mp4 1.mp3 2.mp4")
-	list=("${list[@]}" "  -s srcVideo video|audio distFile: [分离音视频] xffmpeg -s 1.mp4 video 2.mp4")
+	list=("${list[@]}" "  -logo video logo logoX logoY [logoWidth logoHeight] distVideo: [设置logo -10 -10表示右下角] xffmpeg -logo 1.mp4 1.jpg 10 10 [100 100] 2.mp4")
+	list=("${list[@]}" "  -cut srcVideo startTime timeLong distVideo: [剪切] xffmpeg -cut 1.mp4 05 10 2.mp4")
+	list=("${list[@]}" "  -join srcVideo1 srcVideo2 ... distVideo: [连接] xffmpeg -join 1.mp4 2.mp4")
+	list=("${list[@]}" "  -cover srcVideo srcImage distVideo: [封面] xffmpeg -cover 1.mp4 1.png 2.mp4")
+	list=("${list[@]}" "  -bright srcVideo contrast brightness distVideo: [对比度亮度] xffmpeg -bright 1.mp4 1.1 -0.1 2.mp4")
+	list=("${list[@]}" "  -audio srcVideo srcAudio distVideo: [添加音频] xffmpeg -audio 1.mp4 1.mp3 2.mp4")
+	list=("${list[@]}" "  -split srcVideo video|audio distFile: [分离音视频] xffmpeg -split 1.mp4 video 2.mp4")
+	list=("${list[@]}" "  -crop srcVideo x y width height distVideo: [裁剪视频] xffmpeg -crop 1.mp4 iw/4 ih/4 iw/2 ih/2 2.mp4")
+	list=("${list[@]}" "  -reverse srcVideo distVideo: [倒放视频] xffmpeg -reverse srcVideo distVideo")
 	list=("${list[@]}" "  -i srcVideo: [查看视频信息]")
 	list=("${list[@]}" "  -h: show help ")
 	list=("${list[@]}" "  --help: show full help ")
@@ -213,13 +231,15 @@ function main()
 	__init_opts "$@"
 	__check_opts "-h" && show_help
 	__check_opts "--help" && show_full_help
-	__check_opts "-c" && cut_video ${_args_[@]}
-	__check_opts "-j" && join_video ${_args_[@]}
-	__check_opts "-l" && logo_video ${_args_[@]}
-	__check_opts "-r" && cover_video ${_args_[@]}
-	__check_opts "-b" && set_contrast_brightness_video ${_args_[@]}
-	__check_opts "-a" && set_audio_video ${_args_[@]}
-	__check_opts "-s" && split_video_audio ${_args_[@]}
+	__check_opts "-cut" && cut_video ${_args_[@]}
+	__check_opts "-join" && join_video ${_args_[@]}
+	__check_opts "-logo" && logo_video ${_args_[@]}
+	__check_opts "-cover" && cover_video ${_args_[@]}
+	__check_opts "-bright" && set_contrast_brightness_video ${_args_[@]}
+	__check_opts "-audio" && set_audio_video ${_args_[@]}
+	__check_opts "-split" && split_video_audio ${_args_[@]}
+	__check_opts "-crop" && crop_video ${_args_[@]}
+	__check_opts "-reverse" && reverse_video ${_args_[@]}
 	__check_opts "-i" && get_video_info ${_args_[@]}
 }
 
