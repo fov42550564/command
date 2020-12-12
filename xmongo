@@ -642,6 +642,13 @@ async function showTableRows (line, { db }) {
     if (!line) {
         return this.prompt();
     }
+    const matches = line.match(/out=[^\s]*/);
+    let writeFile;
+    if (matches) {
+        writeFile = matches[0].replace('out=', '');
+        line = line.replace(matches[0], '');
+    }
+
     let showCount = false;
     let list = formatLine(this, line);
     const table = list[0];
@@ -697,6 +704,10 @@ async function showTableRows (line, { db }) {
     db[table].find(cond, fields).sort(sort).limit(limit).toArray((err, docs)=>{
         if (err) {
             this.print('no record', 'red');
+        } else if (writeFile) {
+            fs.writeFileSync(writeFile, `module.exports=${JSON.stringify(formatResult(docs), null, 2)};`);
+            this.print('write result to ' + writeFile);
+            this.prompt();
         } else {
             showJson(this, docs);
         }
@@ -987,7 +998,7 @@ function showHelp () {
     this.print('    <q|exit>: exit');
     this.print('    cd: change to database');
     this.print('    ls: showTables|ls ..: showDatabases|ls table: showTableFields');
-    this.print('    s(showTableRows): s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit(-1:count) [+-]sortField');
+    this.print('    s(showTableRows): s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit(-1:count) [+-]sortField [out=file]');
     this.print('    m(modifyTable): m table f1:$f1+1;f2:xx;f3:(doc, _, moment)=>xx $cond limit [+-]sortField');
     this.print('    r(removeTable): # r table $cond limit [+-]sortField');
     this.print('    c(copyTableRows): c table $update $cond limit [+-]sortField');
