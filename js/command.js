@@ -54,14 +54,11 @@ function stringify(obj, pretty) {
             return undefined;
         }
         if (value instanceof Array && _.every(value, o=>+o==o)) {
-            return JSON.stringify(value);
-        }
-        if (typeof value === 'string' && /^\[.*]$/.test(value)) {
-            return `__$__${value}__$__`;
+            return `__$__${JSON.stringify(value)}__$__`;
         }
         return value;
     }, pretty ? 2 : 0);
-    return str.replace(/"\[/g, '[').replace(/\]"/g, ']').replace(/__\$__/g, '');
+    return str.replace(/"__\$__\[/g, '[').replace(/]__\$__"/g, ']');
 }
 module.exports = (cmds, options = {}) => {
     let lastLine;
