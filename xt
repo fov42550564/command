@@ -98,9 +98,9 @@ function add_for_number() {
 
 function get_text_from_xml() {
     if __mac ;then
-        pbpaste|sed "s#<[^>]*>##g"|pbcopy
+        pbpaste|sed "s#<[^>]*>##g"|sed "s#&nbsp;# #g"|pbcopy
     else
-        cat /dev/clipboard|sed "s#<[^>]*>##g" > /dev/clipboard
+        cat /dev/clipboard|sed "s#<[^>]*>##g"|sed "s#&nbsp;# #g" > /dev/clipboard
     fi
 }
 
