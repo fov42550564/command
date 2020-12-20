@@ -2,7 +2,8 @@
   "name": "command",
   "version": "1.0.0",
   "dependencies": {
-    "baidu-aip-sdk": "^2.4.4",
+    "@turf/turf": "5.1.6",
+    "baidu-aip-sdk": "2.4.4",
     "body-parser": "1.17.2",
     "chalk": "2.4.2",
     "colors": "1.4.0",

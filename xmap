@@ -1,0 +1,99 @@
+#!/usr/bin/env node
+
+const fs = require('fs-extra');
+const _ = require('lodash');
+const turf = require('@turf/turf');
+
+function get(jsonFile, origionName, distFile) {
+    const data = fs.readJsonSync(jsonFile);
+    data.features = _.filter(data.features, o=>o.properties.name == origionName);
+    fs.writeJSONSync(distFile, data);
+}
+function deleteName(jsonFile, origionName, distFile) {
+    const data = fs.readJsonSync(jsonFile);
+    _.remove(data.features, o=>o.properties.name == origionName);
+    fs.writeJSONSync(distFile, data);
+}
+function rename(jsonFile, origionName, distName, distFile) {
+    const data = fs.readJsonSync(jsonFile);
+    const feature = _.find(data.features, o=>o.properties.name == origionName);
+    feature.properties.name = distName;
+    fs.writeJSONSync(distFile, data);
+}
+function merge(jsonFile, name1, name2, distName, distFile) {
+    const data = fs.readJsonSync(jsonFile);
+    const features = data.features;
+    let index1, index2;
+    for (let i in features) {
+        if (features[i].properties.name == name1) {
+            index1 = i;
+        } else if (features[i].properties.name == name2) {
+            index2 = i;
+        }
+    }
+    const union = turf.union(features[index1], features[index2]);
+    union.properties.name = distName;
+    features[index1] = union;
+    features.splice(index2, 1);
+    fs.writeFileSync(distFile, JSON.stringify(data, null, 2));
+}
+function split(jsonFile, srcPolygonName, splitPolygonName, intersectName, differenceName, distFile) {
+    const data = fs.readJsonSync(jsonFile);
+    const features = data.features;
+    let index1, index2;
+    for (let i in features) {
+        if (features[i].properties.name == srcPolygonName) {
+            index1 = i;
+        } else if (features[i].properties.name == splitPolygonName) {
+            index2 = i;
+        }
+    }
+    const intersect = turf.intersect(features[index1], features[index2]);
+    intersect.properties.name = intersectName;
+    const difference = turf.difference(features[index1], features[index2]);
+    difference.properties.name = differenceName;
+    features.splice(_.max([index1, index2]), 1);
+    features.splice(_.min([index1, index2]), 1);
+    features.push(intersect);
+    features.push(difference);
+    fs.writeFileSync(distFile, JSON.stringify(data, null, 2));
+}
+function help() {
+    console.log('帮助:');
+    console.log('   -m: 源文件 源区域名称1 源区域名称2 合并的名称 目标文件');
+    console.log('   xmap -m 1.json name1 name2 distName 2.json');
+    console.log();
+    console.log('   -s: 源文件 源区域名称 分割区域名称 包含部分名称 不同部分名称 目标文件');
+    console.log('   xmap -s 1.json origion new intersectName differenceName 2.json');
+    console.log();
+    console.log('   -r: 源文件 源区域名称 修改后的名称 目标文件');
+    console.log('   xmap -r 1.json origionName distName 2.json');
+    console.log();
+    console.log('   -d: 源文件 源区域名称 目标文件');
+    console.log('   xmap -d 1.json origionName 2.json');
+    console.log();
+    console.log('   -g: 源文件 源区域名称 目标文件');
+    console.log('   xmap -g 1.json origionName 2.json');
+}
+function main(args) {
+    if (args[0] === '-h') {
+        return help();
+    }
+    if (args[0] === '-m') {
+        return merge(...args.slice(1));
+    }
+    if (args[0] === '-s') {
+        return split(...args.slice(1));
+    }
+    if (args[0] === '-r') {
+        return rename(...args.slice(1));
+    }
+    if (args[0] === '-d') {
+        return deleteName(...args.slice(1));
+    }
+    if (args[0] === '-g') {
+        return get(...args.slice(1));
+    }
+}
+
+main(process.argv.slice(2));
