@@ -4,6 +4,39 @@ const fs = require('fs-extra');
 const _ = require('lodash');
 const turf = require('@turf/turf');
 
+function getRawArea(totalFile, jsonFile, origionName, distFile) {
+    const data = fs.readJsonSync(jsonFile);
+    const feature = _.find(data.features, o=>o.properties.name == origionName);
+
+    const result = { type: 'FeatureCollection', features: [] };
+    let index = 1;
+    const total = fs.readJsonSync(totalFile);
+    for (const geometry of total.geometries) {
+        if (geometry.type == 'Polygon') {
+            const intersect = turf.intersect(geometry, feature);
+            if (intersect && intersect.geometry.coordinates[0].length == geometry.coordinates[0].length) {
+                result.features.push({
+                    type: 'Feature',
+                    geometry: { type: 'Polygon', coordinates: geometry.coordinates },
+                    properties: { name: index++ },
+                });
+            }
+        } else {
+            let _coordinates = geometry.coordinates;
+            for (const coordinates of _coordinates) {
+                const intersect = turf.intersect(turf.polygon(coordinates), feature);
+                if (intersect && intersect.geometry.coordinates[0].length == geometry.coordinates[0].length) {
+                    result.features.push({
+                        type: 'Feature',
+                        geometry: { type: 'Polygon', coordinates },
+                        properties: { name: index++ },
+                    });
+                }
+            }
+        }
+    }
+    fs.writeJSONSync(distFile, result);
+}
 function get(jsonFile, origionName, distFile) {
     !distFile && (distFile = jsonFile);
     const data = fs.readJsonSync(jsonFile);
@@ -43,11 +76,17 @@ function merge(jsonFile, name1, name2, distName, distFile) {
 }
 function mergeAll(jsonFile, names, distName, distFile) {
     !distFile && (distFile = jsonFile);
-    names = names.slipt(',');
+    names = names.split(',');
     const length = names.length;
-    merge(jsonFile, names[0], names[1], distName, distFile);
-    for (let i=2; i<length; i++) {
-        merge(jsonFile, distName, names[2], distName, distFile);
+    if (length == 1) {
+        rename(jsonFile, names[0], distName, distFile)
+    } else {
+        console.log("[merge]:", jsonFile, names[0], names[1], distName);
+        merge(jsonFile, names[0], names[1], distName, distFile);
+        for (let i=2; i<length; i++) {
+            console.log("[merge]:", jsonFile, distName, names[i], distName);
+            merge(jsonFile, distName, names[i], distName, distFile);
+        }
     }
 }
 function split(jsonFile, srcPolygonName, splitPolygonName, intersectName, differenceName, distFile) {
@@ -91,25 +130,31 @@ function help() {
     console.log();
     console.log('   -g: 源文件 源区域名称 [目标文件]');
     console.log('   xmap -g 1.json origionName 2.json');
+    console.log();
+    console.log('   -w: 总文件 源文件 分割区域名称 [目标文件]');
+    console.log('   xmap -w total.json 1.json origionName 2.json');
 }
 function main(args) {
-    if (args[0] === '-h') {
+    if (args[0] == '-h') {
         return help();
     }
-    if (args[0] === '-m') {
+    if (args[0] == '-m') {
         return mergeAll(...args.slice(1));
     }
-    if (args[0] === '-s') {
+    if (args[0] == '-s') {
         return split(...args.slice(1));
     }
-    if (args[0] === '-r') {
+    if (args[0] == '-r') {
         return rename(...args.slice(1));
     }
-    if (args[0] === '-d') {
+    if (args[0] == '-d') {
         return deleteName(...args.slice(1));
     }
-    if (args[0] === '-g') {
+    if (args[0] == '-g') {
         return get(...args.slice(1));
+    }
+    if (args[0] == '-w') {
+        return getRawArea(...args.slice(1));
     }
 }
 
