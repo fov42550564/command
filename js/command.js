@@ -58,7 +58,7 @@ function stringify(obj, pretty) {
         }
         return value;
     }, pretty ? 2 : 0);
-    return str.replace(/"__\$__\[/g, '[').replace(/]__\$__"/g, ']');
+    return str.replace(/"__\$__\[/g, '[').replace(/]__\$__"/g, ']').replace(/\\"/g, '"');
 }
 module.exports = (cmds, options = {}) => {
     let lastLine;
