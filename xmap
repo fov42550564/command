@@ -4,6 +4,9 @@ const fs = require('fs-extra');
 const _ = require('lodash');
 const turf = require('@turf/turf');
 
+function writeJson(file, data) {
+    fs.writeFileSync(file, JSON.stringify(data, null, 2));
+}
 function getRawArea(totalFile, jsonFile, origionName, distFile) {
     const data = fs.readJsonSync(jsonFile);
     const feature = _.find(data.features, o=>o.properties.name == origionName);
@@ -35,26 +38,26 @@ function getRawArea(totalFile, jsonFile, origionName, distFile) {
             }
         }
     }
-    fs.writeJSONSync(distFile, result);
+    writeJson(distFile, result);
 }
 function get(jsonFile, origionName, distFile) {
     !distFile && (distFile = jsonFile);
     const data = fs.readJsonSync(jsonFile);
     data.features = _.filter(data.features, o=>o.properties.name == origionName);
-    fs.writeJSONSync(distFile, data);
+    writeJson(distFile, data);
 }
 function deleteName(jsonFile, origionName, distFile) {
     !distFile && (distFile = jsonFile);
     const data = fs.readJsonSync(jsonFile);
     _.remove(data.features, o=>o.properties.name == origionName);
-    fs.writeJSONSync(distFile, data);
+    writeJson(distFile, data);
 }
 function rename(jsonFile, origionName, distName, distFile) {
     !distFile && (distFile = jsonFile);
     const data = fs.readJsonSync(jsonFile);
     const feature = _.find(data.features, o=>o.properties.name == origionName);
     feature.properties.name = distName;
-    fs.writeJSONSync(distFile, data);
+    writeJson(distFile, data);
 }
 function merge(jsonFile, name1, name2, distName, distFile) {
     !distFile && (distFile = jsonFile);
@@ -72,7 +75,7 @@ function merge(jsonFile, name1, name2, distName, distFile) {
     union.properties.name = distName;
     features[index1] = union;
     features.splice(index2, 1);
-    fs.writeFileSync(distFile, JSON.stringify(data, null, 2));
+    writeJson(distFile, data);
 }
 function mergeAll(jsonFile, names, distName, distFile) {
     !distFile && (distFile = jsonFile);
@@ -89,7 +92,9 @@ function mergeAll(jsonFile, names, distName, distFile) {
         }
     }
 }
-function split(jsonFile, srcPolygonName, splitPolygonName, intersectName, differenceName, distFile) {
+//-s: 源文件 源区域名称 分割区域名称 包含部分名称 不同部分名称 [目标文件]
+//xmap -s 1.json origion new intersectName differenceName 2.json
+function splitByPolygon(jsonFile, srcPolygonName, splitPolygonName, intersectName, differenceName, distFile) {
     !distFile && (distFile = jsonFile);
     const data = fs.readJsonSync(jsonFile);
     const features = data.features;
@@ -109,7 +114,61 @@ function split(jsonFile, srcPolygonName, splitPolygonName, intersectName, differ
     features.splice(_.min([index1, index2]), 1);
     features.push(intersect);
     features.push(difference);
-    fs.writeFileSync(distFile, JSON.stringify(data, null, 2));
+    writeJson(distFile, data);
+}
+function lineCoordinatesJoin(line1, line2) {
+    line1.geometry.coordinates = line1.geometry.coordinates.concat(line2.geometry.coordinates);
+    return line1;
+}
+function lineJoin(line1, line2) {
+    const coords1 = turf.getCoords(line1);
+    const coords2 = turf.getCoords(line2);
+    const point10 = _.first(coords1);
+    const point20 = _.first(coords2);
+    const point21 = _.last(coords2);
+    const len1 = turf.distance(point20, point10);
+    const len2 = turf.distance(point21, point10);
+    if (len1 < len2) {
+        line1.geometry.coordinates = line1.geometry.coordinates.concat(_.reverse([...line2.geometry.coordinates]));
+    } else {
+        line1.geometry.coordinates = line1.geometry.coordinates.concat(line2.geometry.coordinates);
+    }
+    return turf.lineToPolygon(line1);
+}
+function split(jsonFile, distFile) {
+    !distFile && (distFile = jsonFile);
+    const data = fs.readJsonSync(jsonFile);
+    let polygons = _.filter(data.features, o=>o.geometry.type === 'Polygon');
+    const lines = _.filter(data.features, o=>o.geometry.type == 'LineString');
+    for (const line of lines) {
+        const _polygons = [];
+        for (const polygon of polygons) {
+            const pline = turf.polygonToLine(polygon);
+            const intersect = turf.lineIntersect(pline, line);
+            if (intersect.features.length !== 2) {
+                _polygons.push(polygon);
+                continue;
+            }
+            const psplit = turf.lineSplit(pline, line);
+            const lsplit = turf.lineSplit(line, pline);
+            const polygonLine1 = psplit.features[1];
+            const polygonLine2 = lineCoordinatesJoin(psplit.features[2], psplit.features[0]);
+            const splitLine = lsplit.features[1];
+            const polygon1 = lineJoin(polygonLine1, splitLine);
+            const polygon2 = lineJoin(polygonLine2, splitLine);
+            _polygons.push(polygon1);
+            _polygons.push(polygon2);
+        }
+        polygons = _polygons;
+    }
+    writeJson(distFile, turf.featureCollection(polygons));
+}
+function showList(jsonFile) {
+    const data = fs.readJsonSync(jsonFile);
+    const features = data.features;
+    features.forEach((o, k)=>{
+        console.log(`${k}: ${o.properties.name} (${o.geometry.type})`);
+    });
 }
 function help() {
     console.log('帮助:');
@@ -117,22 +176,32 @@ function help() {
     console.log('   http://geojson.io');
     console.log();
     console.log('   -m: 源文件 源区域名称1,源区域名称2,... 合并的名称 [目标文件]');
+    console.log('   合并多个区域，如果源区域只有一个，则为重命名');
     console.log('   xmap -m 1.json name1,name2 distName 2.json');
     console.log();
-    console.log('   -s: 源文件 源区域名称 分割区域名称 包含部分名称 不同部分名称 [目标文件]');
-    console.log('   xmap -s 1.json origion new intersectName differenceName 2.json');
+    console.log('   -s: 源文件 [目标文件]');
+    console.log('   使用多条分割线分割出不同的部分');
+    console.log('   xmap -s 1.json 2.json');
     console.log();
     console.log('   -r: 源文件 源区域名称 修改后的名称 [目标文件]');
+    console.log('   重命名一个区域');
     console.log('   xmap -r 1.json origionName distName 2.json');
     console.log();
     console.log('   -d: 源文件 源区域名称 [目标文件]');
+    console.log('   删除一个区域');
     console.log('   xmap -d 1.json origionName 2.json');
     console.log();
     console.log('   -g: 源文件 源区域名称 [目标文件]');
+    console.log('   获取单独一个区域');
     console.log('   xmap -g 1.json origionName 2.json');
     console.log();
     console.log('   -w: 总文件 源文件 分割区域名称 [目标文件]');
-    console.log('   xmap -w total.json 1.json origionName 2.json');
+    console.log('   从总文件用分割区域分割出县级区域');
+    console.log('   xmap -w total.json 1.json new 2.json');
+    console.log();
+    console.log('   -l: 源文件');
+    console.log('   查看源文件的列表');
+    console.log('   xmap -l 1.json');
 }
 function main(args) {
     if (args[0] == '-h') {
@@ -155,6 +224,9 @@ function main(args) {
     }
     if (args[0] == '-w') {
         return getRawArea(...args.slice(1));
+    }
+    if (args[0] == '-l') {
+        return showList(...args.slice(1));
     }
 }
 
