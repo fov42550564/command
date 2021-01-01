@@ -7,9 +7,9 @@ const turf = require('@turf/turf');
 function writeJson(file, data) {
     fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
-function getRawArea(totalFile, jsonFile, origionName, distFile) {
+function getRawArea(totalFile, jsonFile, distFile) {
     const data = fs.readJsonSync(jsonFile);
-    const feature = _.find(data.features, o=>o.properties.name == origionName);
+    const feature = _.find(data.features, o=>o.geometry.type == 'Polygon');
 
     const result = { type: 'FeatureCollection', features: [] };
     let index = 1;
@@ -92,6 +92,18 @@ function mergeAll(jsonFile, names, distName, distFile) {
         }
     }
 }
+function concatFeatures(jsonFiles, distFile) {
+    jsonFiles = jsonFiles.split(',');
+    !distFile && (distFile = jsonFiles[0]);
+    const length = jsonFiles.length;
+    const data = fs.readJsonSync(jsonFiles[0]);
+    for (let i=1; i<length; i++) {
+        const _data = fs.readJsonSync(jsonFiles[i]);
+        data.features = data.features.concat(_data.features);
+    }
+    writeJson(distFile, data);
+}
+// 这个方法不好，因为intersect会失真
 //-s: 源文件 源区域名称 分割区域名称 包含部分名称 不同部分名称 [目标文件]
 //xmap -s 1.json origion new intersectName differenceName 2.json
 function splitByPolygon(jsonFile, srcPolygonName, splitPolygonName, intersectName, differenceName, distFile) {
@@ -195,9 +207,13 @@ function help() {
     console.log('   获取单独一个区域');
     console.log('   xmap -g 1.json origionName 2.json');
     console.log();
-    console.log('   -w: 总文件 源文件 分割区域名称 [目标文件]');
-    console.log('   从总文件用分割区域分割出县级区域');
-    console.log('   xmap -w total.json 1.json new 2.json');
+    console.log('   -raw: 总文件 分割文件 [目标文件]');
+    console.log('   从总文件用分割区域分割出县级区域, box.json可以使用四边形框处一个县的区域');
+    console.log('   xmap -w total.json box.json 2.json');
+    console.log();
+    console.log('   -concat: 源文件1,源文件2,... [目标文件]');
+    console.log('   链接文件');
+    console.log('   xmap -concat 1.json,2.json 3.json');
     console.log();
     console.log('   -l: 源文件');
     console.log('   查看源文件的列表');
@@ -222,8 +238,11 @@ function main(args) {
     if (args[0] == '-g') {
         return get(...args.slice(1));
     }
-    if (args[0] == '-w') {
+    if (args[0] == '-raw') {
         return getRawArea(...args.slice(1));
+    }
+    if (args[0] == '-concat') {
+        return concatFeatures(...args.slice(1));
     }
     if (args[0] == '-l') {
         return showList(...args.slice(1));
