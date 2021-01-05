@@ -34,6 +34,9 @@ function show_full_help() {
 	echo
 	echo "添加水印，带scale"
 	echo "ffmpeg -i 1.mp4 -vf \"movie=test.PNG,scale=100:150[watermask];[in][watermask] overlay=100:100[out]\" -y 2.mp4"
+	echo
+	echo "切割成m3u8"
+	echo "ffmpeg -i 1.mp4 -c:v libx264 -c:a aac -map 0 -f segment -segment_list dist/index.m3u8 -segment_time 5 dist/%03d.ts"
 }
 
 function cut_video()
