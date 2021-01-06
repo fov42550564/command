@@ -157,8 +157,8 @@ module.exports = (cmds, options = {}) => {
             console.log(hl(text, style || (process.platform === 'win32' ? 'railscasts' : 'github'), lang, hsBg));
             rl.prompt(true);
         },
-        log (msg) {
-            this.print(msg);
+        log (msg, color) {
+            this.print(msg, color);
             rl.prompt(true);
         },
         prompt () {

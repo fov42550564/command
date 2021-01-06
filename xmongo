@@ -967,39 +967,69 @@ async function changeToDatabase(line, { db }) {
     fs.writeJSONSync(configFile, { host: _host, database: _database });
     this.prompt();
 }
-async function dumpTables(line = '') {
+async function dumpDatabase(line = '') {
     let list = line.split(/\s+/).filter(Boolean);
-    let dir = _.find(list, o=>/\.mongo$/.test(o));
-    if (dir) {
-        _.remove(list, o=>o===dir);
-    } else {
-        dir = `${_database}.mongo`;
+    let index = list.indexOf('-o');
+    let dir;
+    if (index !== -1) {
+        const items = list.splice(index, 2);
+        dir = items[1];
     }
+    if (!dir) {
+        dir = _database;
+    }
+    if (fs.existsSync(path.join(dir, _database))) {
+        return this.error(`${path.join(dir, _database)} 已经存在`);
+    }
+    let condition;
     if (_.find(list, o=>/^-/.test(o))) {
-        const tables = await getTables(db, true);
-        list = _.filter(tables, _.map(list, o=>o.replace(/^-/, '')), m=>m!==o);
+        condition = _.map(list, o=>`--excludeCollection ${o.replace(/^-/, '')}`).join(' ');
+    } else {
+        condition = _.map(list, o=>`--collection ${o}`).join(' ');
     }
 
-    let cmd =`mongodump -h ${_host} -d ${_database} -o ${dir}`;
-    if (list.length === 1) {
-        cmd = `mongoexport -h ${_host} -d ${_database} -c ${list[0]} -o ${dir}`;
-    } else if (list.length > 1) {
-        cmd = list.map(o=>`mongoexport -h ${_host} -d ${_database} -c ${o} -o ${dir.replace(/\.mongo$/, `_${o}.mongo`)}`).join(';');
-    }
-    console.log("cmd: ", cmd);
+    const cmd = `mongodump -h ${_host} -d ${_database} ${condition} -o ${dir}`;
+    this.log(`cmd: ${cmd}`);
     shell.exec(cmd, { silent:true }, (code, stdout, stderr) => {
         if (stderr && /error/.test(stderr)) {
             this.error(stderr);
-            this.error(`目标文件：${process.cwd()}/${dir}`);
-            return this.prompt();
+            return this.error(`目标文件：${process.cwd()}/${dir}`);
         }
         this.success(`目标文件：${process.cwd()}/${dir}`);
-        this.prompt();
+    });
+}
+async function exportTables(line = '', { db }) {
+    let list = line.split(/\s+/).filter(Boolean);
+    let index = list.indexOf('-o');
+    let dir;
+    if (index !== -1) {
+        const items = list.splice(index, 2);
+        dir = items[1];
+    }
+    if (!dir) {
+        dir = _database;
+    }
+    let condition;
+    if (_.find(list, o=>/^-/.test(o))) {
+        const tables = await getTables(db, true);
+        const oblist = _.map(list, o=>o.replace(/^-/, ''));
+        list = _.reject(tables, o=>_.includes(oblist, o));
+    }
+
+    fs.ensureDirSync(dir);
+    const cmd = list.map(o=>`mongoexport -h ${_host} -d ${_database} -c ${o} -o ${path.join(dir, `${o}.json`)}`).join(';');
+    shell.exec(cmd, { silent:true }, (code, stdout, stderr) => {
+        if (stderr && /error/.test(stderr)) {
+            this.error(stderr);
+            return this.error(`目标文件：${process.cwd()}/${dir}`);
+        }
+        this.success(`目标文件：${process.cwd()}/${dir}`);
     });
 }
 function showHelp () {
     this.print('commands:', 'blue');
-    this.print('    <h|help>: show help');
+    this.print('    h: show help');
+    this.print('    help: show full help');
     this.print('    <q|exit>: exit');
     this.print('    cd: change to database');
     this.print('    ls: showTables|ls ..: showDatabases|ls table: showTableFields');
@@ -1007,7 +1037,29 @@ function showHelp () {
     this.print('    m(modifyTable): m table f1:$f1+1;f2:xx;f3:(doc, _, moment)=>xx $cond limit [+-]sortField');
     this.print('    r(removeTable): # r table $cond limit [+-]sortField');
     this.print('    c(copyTableRows): c table $update $cond limit [+-]sortField');
-    this.print('    d(dumpTables): d [[-]table1 [-]table2 xx.mongo]');
+    this.print('    d(dumpDatabase): d [[-]table1 table2 [-o outdir]]');
+    this.print('    e(exportTables): e [[-]table1 table2 [-o outdir]]');
+    this.print('    format: [undefined: $unset][id: \"xx\"|\'xx\':string xx:ObjectId][date:\"xx\":string xx|\'xx\':date][number:\"xx\"|\'xx\':string xx:number]');
+    this.print('    _: togglePrettyShell');
+    this.print('    v: toggleVerbose');
+    this.print('    hl: setHighLightStyle 0: railscasts 1: github else toggle');
+    this.print('    limit: setMaxLimit');
+    this.print('');
+    this.prompt();
+}
+function showFullHelp () {
+    this.print('commands:', 'blue');
+    this.print('    h: show help');
+    this.print('    help: show full help');
+    this.print('    <q|exit>: exit');
+    this.print('    cd: change to database');
+    this.print('    ls: showTables|ls ..: showDatabases|ls table: showTableFields');
+    this.print('    s(showTableRows): s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit(-1:count) [+-]sortField [out=file]');
+    this.print('    m(modifyTable): m table f1:$f1+1;f2:xx;f3:(doc, _, moment)=>xx $cond limit [+-]sortField');
+    this.print('    r(removeTable): # r table $cond limit [+-]sortField');
+    this.print('    c(copyTableRows): c table $update $cond limit [+-]sortField');
+    this.print('    d(dumpDatabase): d [[-]table1 table2 [-o outdir]]');
+    this.print('    e(exportTables): e [[-]table1 table2 [-o outdir]]');
     this.print('    format: [undefined: $unset][id: \"xx\"|\'xx\':string xx:ObjectId][date:\"xx\":string xx|\'xx\':date][number:\"xx\"|\'xx\':string xx:number]');
     this.print('    _: togglePrettyShell');
     this.print('    v: toggleVerbose');
@@ -1017,7 +1069,8 @@ function showHelp () {
     this.prompt();
 }
 const COMMANDS = {
-    'h|help': showHelp,
+    'h': showHelp,
+    'help': showFullHelp,
     'q|exit': function () { this.close() },
     'cls': function() { this.clear() },
     'cd': changeToDatabase,
@@ -1026,7 +1079,8 @@ const COMMANDS = {
     'm': modifyTable,
     'r': removeTable,
     'c': copyTableRows,
-    'd': dumpTables,
+    'd': dumpDatabase,
+    'e': exportTables,
     '_': togglePrettyShell,
     'v': toggleVerbose,
     'hl': setHighLightStyle,
@@ -1061,4 +1115,4 @@ if (options.host !== host || options.database !== database) {
 _host = host;
 _database = database;
 
-createMongo(COMMANDS, { prompt: 'mongo', history: [ 's', 'm', 'r', 'c', 'd' ] });
+createMongo(COMMANDS, { prompt: 'mongo', history: [ 's', 'm', 'r', 'c', 'd', 'e' ] });
