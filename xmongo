@@ -560,8 +560,8 @@ async function getFieldsOfTable(db, table, force, cond) {
     }
     return CACHE[table];
 }
-async function nativeMongo(self, line) {
-    const MOCMD=`mongo ${_host}:27017/${_database} --eval`;
+async function nativeMongo(self, line, isGlobal) {
+    const MOCMD = isGlobal ? `mongo ${_host}:27017 --eval` : `mongo ${_host}:27017/${_database} --eval`;
     return new Promise(resolve=>{
         if (!line) {
             resolve();
@@ -570,7 +570,7 @@ async function nativeMongo(self, line) {
             self.verbose(`${MOCMD} "${line}"`)
         }
         line = line.replace(/\$/g, '\\$');
-        shell.exec(`${MOCMD} "${line}"`, { silent:true }, (code, stdout, stderr) => {
+        shell.exec(`${MOCMD} "${line}"`, { silent:false }, (code, stdout, stderr) => {
             if (stderr) {
                 resolve();
             } else if (stdout) {
@@ -992,8 +992,7 @@ async function dumpDatabase(line = '') {
     this.log(`cmd: ${cmd}`);
     shell.exec(cmd, { silent:true }, (code, stdout, stderr) => {
         if (stderr && /error/.test(stderr)) {
-            this.error(stderr);
-            return this.error(`目标文件：${process.cwd()}/${dir}`);
+            return this.error(stderr);
         }
         this.success(`目标文件：${process.cwd()}/${dir}`);
     });
@@ -1020,11 +1019,38 @@ async function exportTables(line = '', { db }) {
     const cmd = list.map(o=>`mongoexport -h ${_host} -d ${_database} -c ${o} -o ${path.join(dir, `${o}.json`)}`).join(';');
     shell.exec(cmd, { silent:true }, (code, stdout, stderr) => {
         if (stderr && /error/.test(stderr)) {
-            this.error(stderr);
-            return this.error(`目标文件：${process.cwd()}/${dir}`);
+            return this.error(stderr);
         }
         this.success(`目标文件：${process.cwd()}/${dir}`);
     });
+}
+async function restoreDatabase(line = '') {
+    const dbname = line.replace(/.*\//, '');
+    const pathname = line.replace(/\/[^/]*$/, '');
+    const cmd = `mongorestore -d ${dbname} ${pathname}`;
+    shell.exec(cmd, { silent:true }, (code, stdout, stderr) => {
+        if (stderr && /error/.test(stderr)) {
+            return this.error(stderr);
+        }
+        this.success(`成功导入 ${dbname}`);
+    });
+}
+async function moveDatabase(line = '', { db }) {
+    let list = line.split(/\s+/).filter(Boolean);
+    if (list.length < 2) {
+        return this.error('格式不正确');
+    }
+    await nativeMongo(this, `
+        var source = '${list[0]}';
+        var dest = '${list[1]}';
+        var colls = db.getSiblingDB(source).getCollectionNames();
+        for (var i = 0; i < colls.length; i++) {
+            var from = source +  '.' + colls[i];
+            var to = dest + '.' + colls[i];
+            db.adminCommand({renameCollection: from, to: to});
+        }`, true
+    );
+    changeToDatabase.call(this, list[1], { db });
 }
 function showHelp () {
     this.print('commands:', 'blue');
@@ -1037,29 +1063,10 @@ function showHelp () {
     this.print('    m(modifyTable): m table f1:$f1+1;f2:xx;f3:(doc, _, moment)=>xx $cond limit [+-]sortField');
     this.print('    r(removeTable): # r table $cond limit [+-]sortField');
     this.print('    c(copyTableRows): c table $update $cond limit [+-]sortField');
-    this.print('    d(dumpDatabase): d [[-]table1 table2 [-o outdir]]');
-    this.print('    e(exportTables): e [[-]table1 table2 [-o outdir]]');
-    this.print('    format: [undefined: $unset][id: \"xx\"|\'xx\':string xx:ObjectId][date:\"xx\":string xx|\'xx\':date][number:\"xx\"|\'xx\':string xx:number]');
-    this.print('    _: togglePrettyShell');
-    this.print('    v: toggleVerbose');
-    this.print('    hl: setHighLightStyle 0: railscasts 1: github else toggle');
-    this.print('    limit: setMaxLimit');
-    this.print('');
-    this.prompt();
-}
-function showFullHelp () {
-    this.print('commands:', 'blue');
-    this.print('    h: show help');
-    this.print('    help: show full help');
-    this.print('    <q|exit>: exit');
-    this.print('    cd: change to database');
-    this.print('    ls: showTables|ls ..: showDatabases|ls table: showTableFields');
-    this.print('    s(showTableRows): s table f1,f2>,<f3> (f1=xx&f2=yy)|f3=zz|f4~<xx>|f5#1,2,3 limit(-1:count) [+-]sortField [out=file]');
-    this.print('    m(modifyTable): m table f1:$f1+1;f2:xx;f3:(doc, _, moment)=>xx $cond limit [+-]sortField');
-    this.print('    r(removeTable): # r table $cond limit [+-]sortField');
-    this.print('    c(copyTableRows): c table $update $cond limit [+-]sortField');
-    this.print('    d(dumpDatabase): d [[-]table1 table2 [-o outdir]]');
-    this.print('    e(exportTables): e [[-]table1 table2 [-o outdir]]');
+    this.print('    mv(moveDatabase): move dbname1 dbname2');
+    this.print('    dump(dumpDatabase): dump [[-]table1 table2 [-o outdir]]');
+    this.print('    restore(restoreDatabase): restore path/db')
+    this.print('    export(exportTables): e [[-]table1 table2 [-o outdir]]');
     this.print('    format: [undefined: $unset][id: \"xx\"|\'xx\':string xx:ObjectId][date:\"xx\":string xx|\'xx\':date][number:\"xx\"|\'xx\':string xx:number]');
     this.print('    _: togglePrettyShell');
     this.print('    v: toggleVerbose');
@@ -1070,7 +1077,7 @@ function showFullHelp () {
 }
 const COMMANDS = {
     'h': showHelp,
-    'help': showFullHelp,
+    'help': showHelp,
     'q|exit': function () { this.close() },
     'cls': function() { this.clear() },
     'cd': changeToDatabase,
@@ -1079,8 +1086,10 @@ const COMMANDS = {
     'm': modifyTable,
     'r': removeTable,
     'c': copyTableRows,
-    'd': dumpDatabase,
-    'e': exportTables,
+    'mv': moveDatabase,
+    'dump': dumpDatabase,
+    'restore': restoreDatabase,
+    'export': exportTables,
     '_': togglePrettyShell,
     'v': toggleVerbose,
     'hl': setHighLightStyle,
@@ -1115,4 +1124,4 @@ if (options.host !== host || options.database !== database) {
 _host = host;
 _database = database;
 
-createMongo(COMMANDS, { prompt: 'mongo', history: [ 's', 'm', 'r', 'c', 'd', 'e' ] });
+createMongo(COMMANDS, { prompt: 'mongo', history: [ 's', 'm', 'r', 'c', 'dump', 'restore', 'export' ] });
