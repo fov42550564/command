@@ -446,7 +446,7 @@ async function formatFields(db, table, line, cond) {
         include = false;
         line = line.substr(1);
     }
-    let list = line.split(',').filter(o=>o);
+    let list = line.split(',').filter(Boolean);
     const allFields = await getFieldsOfTable(db, table, true, cond);
     list = list.map(o => new RegExp(o.replace('<', '^').replace('>', '$'), 'i'));
 
@@ -516,7 +516,7 @@ function formatLine(self, line) {
     .replace(/\s*\|\s*/g, '|')
     .replace(/\s*&\s*/g, '&')
     .replace(/\s*#\s*/g, '#')
-    .trim().split(/\s/).filter(o=>o).map(o=>o.replace('&nbsp;', ' '));
+    .trim().split(/\s/).filter(Boolean).map(o=>o.replace('&nbsp;', ' '));
 }
 function j2s(obj) {
     return JSON.stringify(obj, (k, v)=>{
@@ -967,17 +967,22 @@ async function changeToDatabase(line, { db }) {
     fs.writeJSONSync(configFile, { host: _host, database: _database });
     this.prompt();
 }
-function dumpTables(line = '') {
-    let list = line.split(/\s+/).filter(o=>o);
+async function dumpTables(line = '') {
+    let list = line.split(/\s+/).filter(Boolean);
     let dir = _.find(list, o=>/\.mongo$/.test(o));
     if (dir) {
         _.remove(list, o=>o===dir);
     } else {
         dir = `${_database}.mongo`;
     }
+    if (_.find(list, o=>/^-/.test(o))) {
+        const tables = await getTables(db, true);
+        list = _.filter(tables, _.map(list, o=>o.replace(/^-/, '')), m=>m!==o);
+    }
+
     let cmd =`mongodump -h ${_host} -d ${_database} -o ${dir}`;
     if (list.length === 1) {
-        cmd = `mongoexport -h ${_host} -d ${_database} -c ${o} -o ${dir}`;
+        cmd = `mongoexport -h ${_host} -d ${_database} -c ${list[0]} -o ${dir}`;
     } else if (list.length > 1) {
         cmd = list.map(o=>`mongoexport -h ${_host} -d ${_database} -c ${o} -o ${dir.replace(/\.mongo$/, `_${o}.mongo`)}`).join(';');
     }
@@ -1002,7 +1007,7 @@ function showHelp () {
     this.print('    m(modifyTable): m table f1:$f1+1;f2:xx;f3:(doc, _, moment)=>xx $cond limit [+-]sortField');
     this.print('    r(removeTable): # r table $cond limit [+-]sortField');
     this.print('    c(copyTableRows): c table $update $cond limit [+-]sortField');
-    this.print('    d(dumpTables): d [table1 table2 xx.mongo]');
+    this.print('    d(dumpTables): d [[-]table1 [-]table2 xx.mongo]');
     this.print('    format: [undefined: $unset][id: \"xx\"|\'xx\':string xx:ObjectId][date:\"xx\":string xx|\'xx\':date][number:\"xx\"|\'xx\':string xx:number]');
     this.print('    _: togglePrettyShell');
     this.print('    v: toggleVerbose');
