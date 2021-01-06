@@ -997,33 +997,6 @@ async function dumpDatabase(line = '') {
         this.success(`目标文件：${process.cwd()}/${dir}`);
     });
 }
-async function exportTables(line = '', { db }) {
-    let list = line.split(/\s+/).filter(Boolean);
-    let index = list.indexOf('-o');
-    let dir;
-    if (index !== -1) {
-        const items = list.splice(index, 2);
-        dir = items[1];
-    }
-    if (!dir) {
-        dir = _database;
-    }
-    let condition;
-    if (_.find(list, o=>/^-/.test(o))) {
-        const tables = await getTables(db, true);
-        const oblist = _.map(list, o=>o.replace(/^-/, ''));
-        list = _.reject(tables, o=>_.includes(oblist, o));
-    }
-
-    fs.ensureDirSync(dir);
-    const cmd = list.map(o=>`mongoexport -h ${_host} -d ${_database} -c ${o} -o ${path.join(dir, `${o}.json`)}`).join(';');
-    shell.exec(cmd, { silent:true }, (code, stdout, stderr) => {
-        if (stderr && /error/.test(stderr)) {
-            return this.error(stderr);
-        }
-        this.success(`目标文件：${process.cwd()}/${dir}`);
-    });
-}
 async function restoreDatabase(line = '', { db }) {
     const dbname = line.replace(/.*\//, '');
     const cmd = `mongorestore -d ${dbname} ${line}`;
@@ -1067,7 +1040,6 @@ function showHelp () {
     this.print('    mv(moveDatabase): move dbname1 dbname2');
     this.print('    dump(dumpDatabase): dump [[-]table1 table2 [-o outdir]]');
     this.print('    restore(restoreDatabase): restore path/db')
-    this.print('    export(exportTables): e [[-]table1 table2 [-o outdir]]');
     this.print('    format: [undefined: $unset][id: \"xx\"|\'xx\':string xx:ObjectId][date:\"xx\":string xx|\'xx\':date][number:\"xx\"|\'xx\':string xx:number]');
     this.print('    _: togglePrettyShell');
     this.print('    v: toggleVerbose');
@@ -1090,7 +1062,6 @@ const COMMANDS = {
     'mv': moveDatabase,
     'dump': dumpDatabase,
     'restore': restoreDatabase,
-    'export': exportTables,
     '_': togglePrettyShell,
     'v': toggleVerbose,
     'hl': setHighLightStyle,
