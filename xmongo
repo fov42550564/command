@@ -1024,15 +1024,16 @@ async function exportTables(line = '', { db }) {
         this.success(`目标文件：${process.cwd()}/${dir}`);
     });
 }
-async function restoreDatabase(line = '') {
+async function restoreDatabase(line = '', { db }) {
     const dbname = line.replace(/.*\//, '');
-    const pathname = line.replace(/\/[^/]*$/, '');
-    const cmd = `mongorestore -d ${dbname} ${pathname}`;
+    const cmd = `mongorestore -d ${dbname} ${line}`;
+    this.log(cmd);
     shell.exec(cmd, { silent:true }, (code, stdout, stderr) => {
         if (stderr && /error/.test(stderr)) {
             return this.error(stderr);
         }
         this.success(`成功导入 ${dbname}`);
+        changeToDatabase.call(this, dbname, { db });
     });
 }
 async function moveDatabase(line = '', { db }) {
