@@ -11,11 +11,11 @@ _localpath="./"
 _remotepath="${_remote_root}"
 
 function xssh_enter() {
-	if type expect1 >/dev/null 2>&1; then
-		expect1 -c "
+	if type expect >/dev/null 2>&1; then
+		expect -c "
 		set timeout 30000;
 		spawn ssh root@${ip} -p ${port};
-		expect1 {
+		expect {
 			\"*password:\" {send \"${password}\r\"; exp_continue}
 			\"*#\" {send \" cd  ${_remote_root}\r\"}
 		}
@@ -31,11 +31,11 @@ function xssh_enter() {
 }
 function xssh_push() {
 	[ -z "${_localpath}" ]&&return
-	if type expect1 >/dev/null 2>&1; then
-		expect1 -c "
+	if type expect >/dev/null 2>&1; then
+		expect -c "
 		set timeout 30000;
 		spawn scp -P ${port}  -r "${_localpath}" "root@${ip}:${_remotepath}"
-		expect1 {
+		expect {
 			\"*password:\" {send \"${password}\r\"}
 		}
 		interact
@@ -49,11 +49,11 @@ function xssh_push() {
 }
 function xssh_pull() {
 	[ -z "${_localpath}" ]&&return
-	if type expect1 >/dev/null 2>&1; then
-		expect1 -c "
+	if type expect >/dev/null 2>&1; then
+		expect -c "
 		set timeout 30000;
 		spawn scp -P ${port}  -r "root@${ip}:${_remotepath}" "${_localpath}"
-		expect1 {
+		expect {
 			\"*password:\" {send \"${password}\r\"}
 		}
 		interact
