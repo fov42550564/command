@@ -188,6 +188,30 @@ function __ip()
 ########################################
 	ifconfig -a|grep -w inet|grep -v 127.0.0.1|awk '{print $2}'|tr -d "addr:"
 }
+function __getclipboard()
+{
+########################################
+#Usage: __getclipboard
+#	get clipboard
+########################################
+	if __mac;then
+		pbpaste
+	else
+		cat /dev/clipboard
+	fi
+}
+function __setclipboard()
+{
+########################################
+#Usage: __setclipboard text
+#	set clipboard
+########################################
+	if __mac ;then
+		echo -n "${1}"|pbcopy
+	else
+		echo -n "${1}" > /dev/clipboard
+	fi
+}
 function __join_path()
 {
 ########################################

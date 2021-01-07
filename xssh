@@ -10,143 +10,77 @@ _name=""
 _localpath="./"
 _remotepath="${_remote_root}"
 
-function xssh_enter()
-{
-	expect -c "
-	set timeout 30000;
-	spawn ssh root@${ip} -p ${port};
-	expect {
-		\"*password:\" {send \"${password}\r\"; exp_continue}
-		\"*#\" {send \" cd  ${_remote_root}\r\"}
-	}
-	interact
-	"
-}
-function xssh_push()
-{
-	[ -z "${_localpath}" ]&&return
-	expect -c "
-	set timeout 30000;
-	spawn scp -P ${port}  -r "${_localpath}" "root@${ip}:${_remotepath}"
-	expect {
-		\"*password:\" {send \"${password}\r\"}
-	}
-	interact
-	"
-}
-function xssh_pull()
-{
-	[ -z "${_localpath}" ]&&return
-	expect -c "
-	set timeout 30000;
-	spawn scp -P ${port}  -r "root@${ip}:${_remotepath}" "${_localpath}"
-	expect {
-		\"*password:\" {send \"${password}\r\"}
-	}
-	interact
-	"
-}
-function xssh_update_code()
-{
-	case ${_name} in
-		server)xssh_update_server;;
-		shop|client)xssh_update_web;;
-		website|pdclient_wx|protocals|resource|share)xssh_update_static;;
-	esac
-}
-function xssh_update_server()
-{
-	expect -c "
-	set timeout 30000;
-	spawn scp -P ${port}  -r "${HOME}/whxx/PDShopServer/tools/dist/${_name}.tar.gz" "root@${ip}:${_remote_root}${_name}/${_name}.tar.gz"
-	expect {
-		\"*password:\" {send \"${password}\r\"}
-	}
-	interact
-	"
-	expect -c "
-	set timeout 30000;
-	spawn ssh root@${ip} -p ${port};
-	expect {
-		\"*password:\" {send \"${password}\r\"; exp_continue}
-		\"*#\" {send \" cd  ${_remote_root}${_name}\rtar zxf ${_name}.tar.gz\rrm -f ${_name}.tar.gz\rpm2 restart ${_name} --update-env\rexit\r\"}
-	}
-	interact
-	"
-}
-function xssh_update_web()
-{
-	expect -c "
-	set timeout 30000;
-	spawn scp -P ${port}  -r "${HOME}/whxx/PDShopServer/tools/dist/${_name}.tar.gz" "root@${ip}:${_remote_root}${_name}/${_name}.tar.gz"
-	expect {
-		\"*password:\" {send \"${password}\r\"}
-	}
-	interact
-	"
-	expect -c "
-	set timeout 30000;
-	spawn ssh root@${ip} -p ${port};
-	expect {
-		\"*password:\" {send \"${password}\r\"; exp_continue}
-		\"*#\" {send \" cd  ${_remote_root}${_name}\rrm -fr public\rtar zxf ${_name}.tar.gz\rrm -f ${_name}.tar.gz\rpm2 restart ${_name} --update-env\rexit\r\"}
-	}
-	interact
-	"
-}
-function xssh_update_static()
-{
-	expect -c "
-	set timeout 30000;
-	spawn ssh root@${ip} -p ${port};
-	expect {
-		\"*password:\" {send \"${password}\r\"; exp_continue}
-		\"*#\" {send \"rm -fr ${_remote_root}server/public/${_name}\rexit\r\"}
-	}
-	interact
-	"
-	if [ "${_name}" = "website" -o "${_name}" = "pdclient_wx" ];then
-		expect -c "
+function xssh_enter() {
+	if type expect1 >/dev/null 2>&1; then
+		expect1 -c "
 		set timeout 30000;
-		spawn scp -P ${port}  -r "${HOME}/whxx/PDShopServer/tools/dist/${_name}" "root@${ip}:${_remote_root}server/public/${_name}"
-		expect {
+		spawn ssh root@${ip} -p ${port};
+		expect1 {
+			\"*password:\" {send \"${password}\r\"; exp_continue}
+			\"*#\" {send \" cd  ${_remote_root}\r\"}
+		}
+		interact
+		"
+	else
+		echo "密码: ${password}"
+		echo "命令: cd ${_remote_root}"
+		echo ssh root@${ip} -p ${port}
+		__setclipboard "${password}"
+		ssh root@${ip} -p ${port}
+	fi
+}
+function xssh_push() {
+	[ -z "${_localpath}" ]&&return
+	if type expect1 >/dev/null 2>&1; then
+		expect1 -c "
+		set timeout 30000;
+		spawn scp -P ${port}  -r "${_localpath}" "root@${ip}:${_remotepath}"
+		expect1 {
 			\"*password:\" {send \"${password}\r\"}
 		}
 		interact
 		"
 	else
-		expect -c "
+		echo "密码: ${password}"
+		echo scp -P ${port}  -r "${_localpath}" "root@${ip}:${_remotepath}"
+		__setclipboard "${password}"
+		scp -P ${port}  -r "${_localpath}" "root@${ip}:${_remotepath}"
+	fi
+}
+function xssh_pull() {
+	[ -z "${_localpath}" ]&&return
+	if type expect1 >/dev/null 2>&1; then
+		expect1 -c "
 		set timeout 30000;
-		spawn scp -P ${port}  -r "../project/public/${_name}" "root@${ip}:${_remote_root}server/public/${_name}"
-		expect {
+		spawn scp -P ${port}  -r "root@${ip}:${_remotepath}" "${_localpath}"
+		expect1 {
 			\"*password:\" {send \"${password}\r\"}
 		}
 		interact
 		"
+	else
+		echo "密码: ${password}"
+		echo scp -P ${port}  -r "root@${ip}:${_remotepath}" "${_localpath}"
+		__setclipboard "${password}"
+		scp -P ${port}  -r "root@${ip}:${_remotepath}" "${_localpath}"
 	fi
 }
-function show_help()
-{
+function show_help() {
 	local -a list
 	list="xssh"
-	list=("${list[@]}" "Usage: xssh [-s|-l|-u|-h]")
+	list=("${list[@]}" "Usage: xssh [-s|-l|-h]")
 	list=("${list[@]}" "xssh: login ssh")
-	list=("${list[@]}" "xssh -u [name]: update project code [server/shop/client/website/pdclient_wx/protocals/resource/share]")
 	list=("${list[@]}" "xssh -s [local:remote]: push local file/dir to ssh server")
 	list=("${list[@]}" "xssh -l [remote:local]: pull remote file/dir from ssh server to local")
 	list=("${list[@]}" "xssh -c [config file]: set config file")
 	list=("${list[@]}" "xssh -h: show help")
 	__msgbox "${list[@]}"
 }
-
-
-function main()
-{
-	while getopts :s:l:u:c:p:o:atrh opt;do
+function main() {
+	while getopts :s:l:c:p:o:atrh opt;do
 		case ${opt} in
-			u)_oper=1; _name="$OPTARG";;
-			s)_oper=2;_localpath="${OPTARG%%:*}";_remotepath="${OPTARG##*:}";;
-			l)_oper=3;_remotepath="${OPTARG%%:*}";_localpath="${OPTARG##*:}";;
+			s)_oper=1;_localpath="${OPTARG%%:*}";_remotepath="${OPTARG##*:}";;
+			l)_oper=2;_remotepath="${OPTARG%%:*}";_localpath="${OPTARG##*:}";;
             a)_config_file="${HOME}/account/ali_yun_config";;
             t)_config_file="${HOME}/account/shen_ou_config";;
             r)_config_file="${HOME}/account/oracle_config";;
@@ -172,9 +106,8 @@ function main()
 
 	case ${_oper} in
 		0)xssh_enter;;
-		1)xssh_update_code;;
-		2)xssh_push;;
-		3)xssh_pull;;
+		1)xssh_push;;
+		2)xssh_pull;;
 	esac
 }
 
