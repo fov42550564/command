@@ -96,25 +96,47 @@ function add_files_to_index()
 	echo "the last index is $((start_num-1))"
 }
 
+function classify_files_by_date()
+{
+	node -e " \
+	const fs = require('fs-extra'); \
+	const path = require('path'); \
+	const moment = require('moment'); \
+	function classifyFiles(srcDir, distDir) { \
+	    fs.readdirSync(dir).forEach(function(file, index) { \
+	        const fullname = path.join(dir, file); \
+	        const info = fs.statSync(fullname); \
+	        const distdir = path.join(distDir, moment(info.mtime).format('YYYY-MM-DD')); \
+	        const distname = path.join(distdir, file); \
+	        fs.ensureDirSync(distdir); \
+	        fs.copySync(fullname, distname); \
+	        console.log(distname+'完成'); \
+	    }); \
+	} \
+	classifyFiles('$1', '$2'); \
+	"
+}
+
 function show_help()
 {
 	local -a list
 	list="help"
 	list=("${list[@]}" "Usage: xfile [OPTIONS]")
 	list=("${list[@]}" "  -s [src_prefix]: set src prefix[default:jpg]")
-	list=("${list[@]}" "  -d [dst_prefix]: set src prefix[default:jpg]")
-	list=("${list[@]}" "  -c [_cur_dir]: set current dir[default:.]")
-	list=("${list[@]}" "  -w [n]: swap files with randow n ts in cur_dir/src_prefix file")
+	list=("${list[@]}" "  -d [dst_prefix]: set dst prefix[default:jpg]")
+	list=("${list[@]}" "  -c [cur_dir]: set current dir[default:.]")
+	list=("${list[@]}" "  -w [n]: swap files with random n times in cur_dir/src_prefix file")
 	list=("${list[@]}" "  -i [start_num]: set file to index from start_num in cur_dir/src_prefix file")
 	list=("${list[@]}" "  -a [from_dir]: add files in from_dir/src_prefix to cur_dir/dst_prefix")
+	list=("${list[@]}" "  -y [dist_dir]: 按照文件的修改日期将文件拷贝到相应的文件夹内 cur_dir->dist_dir/2021-01-01")
 	list=("${list[@]}" "  -h: show help ")
 	__msgbox "${list[@]}"
 }
 
 function main()
 {
-	local ts start_num from_dir
-	while getopts :s:d:w:i:a:c: opt;do
+	local ts start_num from_dir dist_dir
+	while getopts :s:d:w:i:y:a:c: opt;do
 		case $opt in
 			s)_src_prefix="$OPTARG";;
 			d)_dst_prefix="$OPTARG";;
@@ -122,6 +144,7 @@ function main()
 			w)_oper=0;ts="$OPTARG";;
 			i)_oper=1;start_num="$OPTARG";;
 			a)_oper=2;from_dir="$OPTARG";;
+			y)_oper=3;dist_dir="$OPTARG";;
 			*)show_help;exit;;
 		esac
 	done
@@ -132,6 +155,7 @@ function main()
 		0) swap_files_with_randow $ts;;
 		1) set_file_to_index $start_num;;
 		2) add_files_to_index "$from_dir";;
+		3) classify_files_by_date "$_cur_dir" "$dist_dir";;
 	esac
 }
 
