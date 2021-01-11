@@ -16,12 +16,12 @@ if [ "$1" = "-h" -o "$1"  = "--help" ];then
     echo "xd Usage:"
     echo ""
     echo "  xd"
-    echo "  xd git [-]: set from clipboard from git lg, - for log 1"
+    echo "  xd git [n]: set from clipboard from git lg, n for from log"
     echo "  xd line: set from clipboard from line"
     echo "  xd clear"
     echo "  xd history: show history"
     echo "  xd copy: copy to clipboard"
-    echo "  xd vim/atom"
+    echo "  xd vim/atom/reverse"
     echo "  xd summary(unused): set summary"
     echo "  xd send(unused)"
     echo ""
@@ -35,14 +35,14 @@ fi
 
 if [ "$1" = "git" ];then
     if [ "$2" -gt 0 ] 2>/dev/null;then
-        git lg -$2 |sed 's#.*]:##'|sed '/^\s*$/d' >> ${file}
+        git lg -$2 |sed 's#.*]:##'|sed '/^\s*$/d'|sed '1!G;h;$!d' >> ${file}
         echo >> ${file}
         exit
     else
         if __mac ;then
-            pbpaste|sed 's#.*]:##'|sed '/^\s*$/d' >> ${file}
+            pbpaste|sed 's#.*]:##'|sed '/^\s*$/d'|sed '1!G;h;$!d' >> ${file}
         else
-            cat /dev/clipboard|sed 's#.*]:##'|sed '/^\s*$/d' >> ${file}
+            cat /dev/clipboard|sed 's#.*]:##'|sed '/^\s*$/d'|sed '1!G;h;$!d' >> ${file}
         fi
         echo >> ${file}
         exit
@@ -90,6 +90,11 @@ fi
 
 if [ "$1" = "vim" ];then
     vim ${file}
+    exit
+fi
+
+if [ "$1" = "reverse" ];then
+    sed -i '1!G;h;$!d' ${file}
     exit
 fi
 
