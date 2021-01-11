@@ -2,6 +2,7 @@
 
 var fs = require('fs');
 var path = require('path');
+var tar = require('tar');
 var express = require('express');
 var bodyParser = require('body-parser');
 var multer  = require('multer')
@@ -11,6 +12,17 @@ var shell = require('shelljs');
 var utils = require('./js/utils');
 
 function startServer(port, file) {
+    app.all("*", function(req, res, next) {
+        res.header("Content-Type", "application/json;charset=utf-8");
+        var dir = req.url.split('/').filter(Boolean).join('/');
+        var info = fs.statSync(dir);
+        if (info.isDirectory()) {
+            res.header('Content-Disposition',`attachment;filename=${dir}.tar`);
+            tar.c({ gzip: true }, [ dir ]).pipe(res);
+        } else {
+            next();
+        }
+    });
     var server = app.listen(port);
     server.on('listening', function () {
         console.log(`http://${ip}:${port}`);
