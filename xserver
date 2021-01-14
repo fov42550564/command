@@ -15,8 +15,8 @@ function startServer(port, file) {
     app.all("*", function(req, res, next) {
         res.header("Content-Type", "application/json;charset=utf-8");
         var dir = req.url.split('/').filter(Boolean).join('/');
-        var info = fs.statSync(dir);
-        if (info.isDirectory()) {
+        var info = fs.existsSync(dir) && fs.statSync(dir);
+        if (info && info.isDirectory()) {
             res.header('Content-Disposition',`attachment;filename=${dir}.tar`);
             tar.c({ gzip: true }, [ dir ]).pipe(res);
         } else {
