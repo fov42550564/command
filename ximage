@@ -1,104 +1,85 @@
 #!/usr/bin/env node
 
-const fs = require("fs");
-const mkdirp = require("mkdirp");
-const shell = require("shelljs");
+const fs = require("fs-extra");
 const path = require("path");
-const program = require('commander');
-const sharp = require('sharp');
+const rl = require('readline');
 
-program
-.version('0.0.1')
-.option('-b, --base64 [src.jpg(.png|.gif):dest.html(.js)|html|js]', '将图片转为base64文件，可以是文件夹，html文件或js文件，直接用html|js使用原来的文件名')
-.option('-r, --resize [src.jpg(.png|.gif):dest.jpg(.png|.gif)]', '压缩图片大小')
-.option('-w, --width []', '设置图片的宽')
-.option('-t, --height []', '设置图片的高')
-.option('-f, --fit []', '设置图片的适配模式')
-.parse(process.argv);
-
-const { base64, resize, width, height, fit } = program;
-if (base64) {
-    createBase64(base64);
-} else if (resize) {
-    sharpImage(resize, width, height, fit );
-}
-
-function sharpImage(str, width, height, fit) {
-    const srcName = str.split(':')[0];
-    const destName = str.split(':')[1];
-    const extname = path.extname(srcName);
-    if ([".png", ".jpg", ".gif"].indexOf(extname) === -1) {
-        return console.log("文件格式只支持 png/jpg/gif");
-    }
-    let destFile;
-    if (destName) {
-        const destPath = path.dirname(destName);
-        const destExtname = path.extname(destName);
-        if (!destExtname) {
-            const basename = path.basename(srcName);
-            mkdirp.sync(destName);
-            destFile = path.join(destName, basename);
-        } else {
-            mkdirp.sync(destPath);
-            destFile = destName;
-        }
-    } else {
-        destFile = '.__'+srcName;
-    }
-    sharp(srcName)
-    .resize({ width: width && width*1, height: height && height*1, fit })
-    .toFile(destFile)
-    .then(()=>{
-        if (!destName) {
-            shell.mv(destFile, srcName);
-            console.log("覆盖文件："+ srcName);
-        } else {
-            console.log("生成文件："+ destFile);
-        }
-    });
-}
-
-function createBase64(str) {
-    const imagefile = str.split(':')[0];
-    let destFile = str.split(':')[1];
-    if (!imagefile || !destFile) {
-        return console.log(`参数格式：src.jpg(.png|.gif):dest.html(.js)|html|js`);
-    }
-    if (!fs.existsSync(imagefile)) {
-        return console.log(`文件: ${imagefile} 不存在`);
-    }
-    const extname = path.extname(imagefile);
+function createBase64(imageFile, distFile) {
+    const extname = path.extname(imageFile);
     if ([".png", ".jpg", ".gif"].indexOf(extname) === -1) {
         return console.log("文件格式只支持 png/jpg/gif");
     }
     let destExtname;
-    if (destFile == 'html' || destFile == '.html') {
-        const basename = path.basename(imagefile).replace(extname, '');
-        const dirname = path.dirname(imagefile);
-        destFile = path.join(dirname, basename+'.html');
+    if (distFile == 'html' || distFile == '.html') {
+        const basename = path.basename(imageFile).replace(extname, '');
+        const dirname = path.dirname(imageFile);
+        distFile = path.join(dirname, basename+'.html');
         destExtname = '.html';
-    } else if (destFile == 'js' || destFile == '.js') {
-        const basename = path.basename(imagefile).replace(extname, '');
-        const dirname = path.dirname(imagefile);
-        destFile = path.join(dirname, basename+'.js');
+    } else if (distFile == 'js' || distFile == '.js') {
+        const basename = path.basename(imageFile).replace(extname, '');
+        const dirname = path.dirname(imageFile);
+        distFile = path.join(dirname, basename+'.js');
         destExtname = '.js';
     } else {
-        const destPath = path.dirname(destFile);
-        destExtname = path.extname(destFile);
+        const destPath = path.dirname(distFile);
+        destExtname = path.extname(distFile);
         if (destExtname !== '.html' && destExtname !== '.js') {
             return console.log("目标文件格式只支持 html/js");
         }
-        mkdirp.sync(destPath);
+        fs.ensureDirSync(destPath);
     }
 
     const header = (destExtname==='.html' ? '<img src=' :'module.exports=')+'"data:image/'+extname.substr(1)+';base64,';
-    let base64Buf = header+fs.readFileSync(imagefile).toString("base64")+'"';
+    let base64Buf = header+fs.readFileSync(imageFile).toString("base64")+'"';
     if (destExtname==='.html') {
         base64Buf += '>';
     } else {
         base64Buf += ';';
     }
-    fs.writeFileSync(destFile, base64Buf);
+    fs.writeFileSync(distFile, base64Buf);
 
-    console.log("生成文件："+ destFile);
+    console.log("生成文件："+ distFile);
 }
+function replaceImageFileToBase64(htmlFile, distFile) {
+    const srcPath = path.dirname(htmlFile);
+    const lineReader = rl.createInterface({
+        input: fs.createReadStream(htmlFile)
+    });
+    lineReader.on('line', function (line) {
+        if (/src="[^ ]*"/.test(line)) {
+            const filename = line.replace(/.*src="([^"]*)".*/, '$1');
+            if (!/^https?:\/\//.test(filename)) {
+                const extname = path.extname(filename);
+                const basename = path.basename(filename);
+                if ([".png", ".jpg", ".gif"].indexOf(extname) !== -1) {
+                    const header = 'src="data:image/'+extname.substr(1)+';base64,'
+                    const imageBuf = fs.readFileSync(path.resolve(srcPath, filename));
+                    const base64 = header+imageBuf.toString("base64")+'"';
+                    line = line.replace(/src="[^ ]*"/, base64);
+                }
+            }
+        }
+        fs.appendFileSync(distFile, line+'\n');
+    });
+    console.log(`已经将文件 ${htmlFile} 中的图片全部替换为base64到文件 ${distFile} 中`);
+}
+
+function main(srcFile, distFile) {
+    if (srcFile === '-h' || srcFile === '--help') {
+        console.log('1. 将图片转为base64文件，可以是文件夹，html文件或js文件，直接用html|js使用原来的文件名');
+        console.log('   ximage src.jpg(.png|.gif) [xx/]dest.html(.js)|html|js]');
+        console.log('2. 将html文件中的图片全部替换为base64');
+        return console.log('   ximage src.html dest.html');
+    }
+    if (!fs.existsSync(srcFile)) {
+        return console.log(`文件: ${srcFile} 不存在`);
+    }
+    const extname = path.extname(srcFile);
+    if (extname === '.html') {
+        replaceImageFileToBase64(srcFile, distFile);
+    } else {
+        createBase64(srcFile, distFile);
+    }
+}
+
+main(...process.argv.slice(2));
