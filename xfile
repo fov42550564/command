@@ -11,15 +11,14 @@ source ~/command/common
 
 _cur_dir="."
 _tmp_file=_tmp_file_
-_src_prefix="jpg"
-_dst_prefix="jpg"
+_extname="jpg"
 _oper=0
 
 function swap_files_with_randow()
 {
 	local ts i files size file_no1 file_no2
 
-	files=(`ls "$_cur_dir"/*.$_src_prefix`)
+	files=(`ls "$_cur_dir"/*.$_extname`)
 	size=${#files[@]}
 	ts=$(($1))
 
@@ -43,7 +42,7 @@ function set_file_to_index()
 	[ "$1" = "" ]&&begin_num=1||begin_num=$1
 	moved_num=0
 	file_num=0
-	files=(`ls "$_cur_dir"/*.$_src_prefix`)
+	files=(`ls "$_cur_dir"/*.$_extname`)
 	size=${#files[@]}
 
 	for ((i=0; i<size; i++));do
@@ -56,15 +55,15 @@ function set_file_to_index()
 			continue
 		fi
 		((moved_num++))
-		if [ -f "$path/$index.$_src_prefix" ];then
-			echo "mv ${files[i]}  $path/$index.$_src_prefix failed"
+		if [ -f "$path/$index.$_extname" ];then
+			echo "mv ${files[i]}  $path/$index.$_extname failed"
 			((i--))
 		else
-			echo "mv ${files[i]}  $path/$index.$_src_prefix sucess"
-			mv "${files[i]}"  "$path/$index.$_src_prefix"
+			echo "mv ${files[i]}  $path/$index.$_extname sucess"
+			mv "${files[i]}"  "$path/$index.$_extname"
 		fi
 	done
-	echo "the last index is $((index-1))"
+	echo "the next index is $((index+1))"
 }
 
 function add_files_to_index()
@@ -83,15 +82,15 @@ function add_files_to_index()
 		oper=cp
 	fi
 
-	add_files=(`ls "$path"/*.$_src_prefix`)
+	add_files=(`ls "$path"/*.$_extname`)
 	len=${#add_files[@]}
 
 	for ((i=0; i<len; i++));do
-		while [ -f "$_cur_dir/$start_num.$_dst_prefix" ];do
+		while [ -f "$_cur_dir/$start_num.$_extname" ];do
 			((start_num++))
 		done
-		echo $oper "${add_files[i]}" "$_cur_dir/$start_num.$_dst_prefix"
-		$oper "${add_files[i]}" "$_cur_dir/$start_num.$_dst_prefix"
+		echo $oper "${add_files[i]}" "$_cur_dir/$start_num.$_extname"
+		$oper "${add_files[i]}" "$_cur_dir/$start_num.$_extname"
 	done
 	echo "the last index is $((start_num-1))"
 }
@@ -102,15 +101,15 @@ function classify_files_by_date()
 	const fs = require('fs-extra'); \
 	const path = require('path'); \
 	const moment = require('moment'); \
-	function classifyFiles(srcDir, distDir) { \
+	function classifyFiles(dir, dist) { \
 	    fs.readdirSync(dir).forEach(function(file, index) { \
 	        const fullname = path.join(dir, file); \
 	        const info = fs.statSync(fullname); \
-	        const distdir = path.join(distDir, moment(info.mtime).format('YYYY-MM-DD')); \
+	        const distdir = path.join(dist, moment(info.mtime).format('YYYY-MM-DD')); \
 	        const distname = path.join(distdir, file); \
 	        fs.ensureDirSync(distdir); \
 	        fs.copySync(fullname, distname); \
-	        console.log(distname+'完成'); \
+	        console.log(distname+' 完成'); \
 	    }); \
 	} \
 	classifyFiles('$1', '$2'); \
@@ -122,29 +121,27 @@ function show_help()
 	local -a list
 	list="help"
 	list=("${list[@]}" "Usage: xfile [OPTIONS]")
-	list=("${list[@]}" "  -s [src_prefix]: set src prefix[default:jpg]")
-	list=("${list[@]}" "  -d [dst_prefix]: set dst prefix[default:jpg]")
-	list=("${list[@]}" "  -c [cur_dir]: set current dir[default:.]")
-	list=("${list[@]}" "  -w [n]: swap files with random n times in cur_dir/src_prefix file")
-	list=("${list[@]}" "  -i [start_num]: set file to index from start_num in cur_dir/src_prefix file")
-	list=("${list[@]}" "  -a [from_dir]: add files in from_dir/src_prefix to cur_dir/dst_prefix")
-	list=("${list[@]}" "  -y [dist_dir]: 按照文件的修改日期将文件拷贝到相应的文件夹内 cur_dir->dist_dir/2021-01-01")
-	list=("${list[@]}" "  -h: show help ")
+	list=("${list[@]}" "  -e [extname]: 设置后缀名，默认为：jpg")
+	list=("${list[@]}" "  -c [cur_dir]: 设置当前目录，默认为：.")
+	list=("${list[@]}" "  -w [n]: 交换当前目录后缀名为 extname 的文件n次")
+	list=("${list[@]}" "  -i [start_num]: 当前目录后缀名为 extname 的文件从 start_num 起开始命名")
+	list=("${list[@]}" "  -a [from_dir]: 将 from_dir 文件夹中后缀名为 extname 的文件拷贝到当前文件夹中并按顺序命名 ")
+	list=("${list[@]}" "  -d [dist_dir]: 按照文件的修改日期将文件拷贝到相应的文件夹内 cur_dir->dist_dir/2021-01-01")
+	list=("${list[@]}" "  -h: 查看帮助 ")
 	__msgbox "${list[@]}"
 }
 
 function main()
 {
 	local ts start_num from_dir dist_dir
-	while getopts :s:d:w:i:y:a:c: opt;do
+	while getopts :e:w:i:d:a:c: opt;do
 		case $opt in
-			s)_src_prefix="$OPTARG";;
-			d)_dst_prefix="$OPTARG";;
+			e)_extname="$OPTARG";;
 			c)_cur_dir="$OPTARG";;
 			w)_oper=0;ts="$OPTARG";;
 			i)_oper=1;start_num="$OPTARG";;
 			a)_oper=2;from_dir="$OPTARG";;
-			y)_oper=3;dist_dir="$OPTARG";;
+			d)_oper=3;dist_dir="$OPTARG";;
 			*)show_help;exit;;
 		esac
 	done
