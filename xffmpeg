@@ -10,6 +10,12 @@ source ~/command/common
 _oper=0
 
 function show_full_help() {
+	echo "缩放视频"
+	echo "ffmpeg -i 1.mp4 -s 320x240 -y -acodec copy 2.mp4"
+	echo "ffmpeg -i 1.mp4 -vf scale=320:240 -y -acodec copy 2.mp4"
+	echo "ffmpeg -i 1.mp4 -vf scale=iw/2:ih/2 -y -acodec copy 2.mp4"
+	echo "ffmpeg -i 1.mp4 -vf scale=320:-2 -y -acodec copy 2.mp4"
+	echo
 	echo "按照帧剪切视频图片"
 	echo "ffmpeg -i 1.mp4 -vf \"select=between(n\,0\,10)\" -y -acodec copy 2.mp4"
 	echo
