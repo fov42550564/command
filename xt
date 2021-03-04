@@ -142,7 +142,7 @@ function to_list() {
 }
 
 function gen_pc_code() {
-    local  path _path pre post oldName newName newName1 _oldName _newName link
+    local  path _path pre post oldName newName newName1 _oldName _newName oldModule newMoule link
     pre="${1%,*}"
     post="${1#*,}"
     oldName="${pre%:*}"
@@ -153,6 +153,20 @@ function gen_pc_code() {
         echo "格式：class:function"
         exit
     fi
+    oldModule="${oldName%/*}"
+    newModule="${newName%/*}"
+    if [ "$oldName" = "$oldModule" ];then
+        oldModule=""
+    else
+        oldName="${oldName#*/}"
+        oldModule="${oldModule}/"
+    fi
+    if [ "$newName" = "$newModule" ];then
+        newModule=""
+    else
+        newModule="${newModule}/"
+        newName="${newName#*/}"
+    fi
 
     _path=`pwd`
     path="${_path%%/project*}"
@@ -162,46 +176,59 @@ function gen_pc_code() {
     fi
     newName1=`echo $newName|sed 's/^[a-z]/\u&/'`
 
-    if ! [ -d "${path}/project/App/shared/pages/client/pages/${oldName}s" ];then
-        echo "${path}/project/App/shared/pages/client/pages/${oldName}s 不存在"
+    if ! [ -d "${path}/project/App/shared/pages/client/pages/${oldModule}${oldName}s" ];then
+        echo "${path}/project/App/shared/pages/client/pages/${oldModule}${oldName}s 不存在"
         exit
     fi
-    if ! [ -f "${path}/project/App/shared/actions/${oldName}s.js" ];then
-        echo "${path}/project/App/shared/actions/${oldName}s.js 不存在"
+    if ! [ -f "${path}/project/App/shared/actions/${oldModule}${oldName}s.js" ];then
+        echo "${path}/project/App/shared/actions/${oldModule}${oldName}s.js 不存在"
         exit
     fi
-    if ! [ -d "${path}/project/App/server/graphql/mutations/${oldName}" ];then
-        echo "${path}/project/App/server/graphql/mutations/${oldName} 不存在"
+    if ! [ -d "${path}/project/App/server/graphql/mutations/${oldModule}${oldName}" ];then
+        echo "${path}/project/App/server/graphql/mutations/${oldModule}${oldName} 不存在"
         exit
     fi
-    if ! [ -d "${path}/project/App/server/graphql/queries/${oldName}" ];then
-        echo "${path}/project/App/server/graphql/queries/${oldName} 不存在"
+    if ! [ -d "${path}/project/App/server/graphql/queries/${oldModule}${oldName}" ];then
+        echo "${path}/project/App/server/graphql/queries/${oldModule}${oldName} 不存在"
         exit
     fi
-    cd "${path}/project/App/shared/pages/client/pages"
+
+    cd "${path}/project/App/shared/pages/client/pages/${oldModule}"
     xr "$oldName:$newName,$_oldName:$_newName" -c "${oldName}s" force
-    cd "${path}/project/App/shared/actions"
+    mkdir -p "${path}/project/App/shared/pages/client/pages/${newModule}"
+    mv "${path}/project/App/shared/pages/client/pages/${oldModule}${newName}s" "${path}/project/App/shared/pages/client/pages/${newModule}"
+
+    cd "${path}/project/App/shared/actions/${oldModule}"
     xr "$oldName:$newName,$_oldName:$_newName" -f "${oldName}s.js"
-    cd "${path}/project/App/server/graphql/mutations"
+    mkdir -p "${path}/project/App/shared/actions/${newModule}"
+    mv "${path}/project/App/shared/actions/${oldModule}${newName}s.js" "${path}/project/App/shared/actions/${newModule}"
+
+    cd "${path}/project/App/server/graphql/mutations/${oldModule}"
     xr "$oldName:$newName,$_oldName:$_newName" -c "${oldName}" force
-    sed -i '$a\export * from '"'"./${newName}"'"';'  index.js
-    cd "${path}/project/App/server/graphql/queries"
+    mkdir -p "${path}/project/App/server/graphql/mutations/${newModule}"
+    mv "${path}/project/App/server/graphql/mutations/${oldModule}${newName}" "${path}/project/App/server/graphql/mutations/${newModule}"
+    sed -i '$a\export * from '"'"./${newModule}${newName}"'"';' "${path}/project/App/server/graphql/mutations/index.js"
+
+    cd "${path}/project/App/server/graphql/queries/${oldModule}"
     xr "$oldName:$newName,$_oldName:$_newName" -c "${oldName}" force
-    sed -i '$a\export * from '"'"./${newName}"'"';'  index.js
-    sed -i '/===end===/i\const '${newName1}'s = AsyncLoad((cb) => require.ensure([], (require) => cb(require('"'"pages/client/pages/${newName}s"'"').default), '"'"${newName1}s"'"'));' "${path}/project/App/shared/routers/client.js"
-    sed -i '/===end===/i\const '${newName1}'Detail = AsyncLoad((cb) => require.ensure([], (require) => cb(require('"'"pages/client/pages/${newName}s/pages/detail"'"').default), '"'"${newName1}Detail"'"'));' "${path}/project/App/shared/routers/client.js"
+    mkdir -p "${path}/project/App/server/graphql/queries/${newModule}"
+    mv "${path}/project/App/server/graphql/queries/${oldModule}${newName}" "${path}/project/App/server/graphql/queries/${newModule}"
+    sed -i '$a\export * from '"'"./${newModule}${newName}"'"';'  "${path}/project/App/server/graphql/queries/index.js"
+
+    sed -i '/===end===/i\const '${newName1}'s = AsyncLoad((cb) => require.ensure([], (require) => cb(require('"'"pages/client/pages/${newModule}${newName}s"'"').default), '"'"${newName1}s"'"'));' "${path}/project/App/shared/routers/client.js"
+    sed -i '/===end===/i\const '${newName1}'Detail = AsyncLoad((cb) => require.ensure([], (require) => cb(require('"'"pages/client/pages/${newModule}${newName}s/pages/detail"'"').default), '"'"${newName1}Detail"'"'));' "${path}/project/App/shared/routers/client.js"
     sed -i '/<\/Route>,/i\\t\t<Route name='"'"${newName1}s"'"' path='"'"${newName}s"'"'>' "${path}/project/App/shared/routers/client.js"
     sed -i '/<\/Route>,/i\\t\t\t<IndexRoute component={'${newName1}'s} onEnter={authenticate} \/>' "${path}/project/App/shared/routers/client.js"
     sed -i '/<\/Route>,/i\\t\t\t<Route name='"'"${newName1}Detail"'"' path='"'"detail"'"' component={'${newName1}'Detail} onEnter={authenticate} />' "${path}/project/App/shared/routers/client.js"
     sed -i '/<\/Route>,/i\\t\t<\/Route>' "${path}/project/App/shared/routers/client.js"
-    sed -i '/};/i\\n\t// '${_newName}'' "${path}/project/App/server/shared/helpers/api/urls.js"
-    sed -i '/};/i\\t'${newName}'s: server + '"'"get${newName1}List"'"', // 获取'${_newName}'列表' "${path}/project/App/server/shared/helpers/api/urls.js"
-    sed -i '/};/i\\t'${newName}': server + '"'"get${newName1}Detail"'"', // 获取'${_newName}'详情' "${path}/project/App/server/shared/helpers/api/urls.js"
-    sed -i '/};/i\\tremove'${newName1}': server + '"'"remove${newName1}"'"', // 删除'${_newName}'' "${path}/project/App/server/shared/helpers/api/urls.js"
-    sed -i '/};/i\\tmodify'${newName1}': server + '"'"modify${newName1}"'"', // 修改'${_newName}'' "${path}/project/App/server/shared/helpers/api/urls.js"
-    sed -i '/};/i\\tcreate'${newName1}': server + '"'"create${newName1}"'"', // 创建'${_newName}'' "${path}/project/App/server/shared/helpers/api/urls.js"
-    link=`sed -n '{/link:.*'${oldName}s'/{p;q}}' "${path}/project/App/shared/config/menu.js"|sed 's/'${oldName}s'/'${newName}s'/'`
-    sed -i '/];/i\\t{\n\t\tlabel: '"'"${_newName}列表"'"',\n'"${link}"'\n\t\tkey: '"'"${newName}s"'"',\n\t},' "${path}/project/App/shared/config/menu.js"
+    sed -i '/};/i\\n\t// '${_newName}'' "${path}/project/App/server/api/urls.js"
+    sed -i '/};/i\\t'${newName}'s: server + '"'"get${newName1}List"'"', // 获取'${_newName}'列表' "${path}/project/App/server/api/urls.js"
+    sed -i '/};/i\\t'${newName}': server + '"'"get${newName1}Detail"'"', // 获取'${_newName}'详情' "${path}/project/App/server/api/urls.js"
+    sed -i '/};/i\\tremove'${newName1}': server + '"'"remove${newName1}"'"', // 删除'${_newName}'' "${path}/project/App/server/api/urls.js"
+    sed -i '/};/i\\tmodify'${newName1}': server + '"'"modify${newName1}"'"', // 修改'${_newName}'' "${path}/project/App/server/api/urls.js"
+    sed -i '/};/i\\tcreate'${newName1}': server + '"'"create${newName1}"'"', // 创建'${_newName}'' "${path}/project/App/server/api/urls.js"
+    link=`sed -n '{/link:.*'${oldName}s'/{p;q}}' "${path}/project/App/shared/config/sideMenu/system_menu.js"|sed 's/'${oldName}s'/'${newName}s'/'`
+    sed -i '/];/i\\t{\n\t\tlabel: '"'"${_newName}列表"'"',\n'"${link}"'\n\t\tkey: '"'"${newName}s"'"',\n\t},' "${path}/project/App/shared/config/sideMenu/system_menu.js"
 }
 
 function gen_server_code() {
