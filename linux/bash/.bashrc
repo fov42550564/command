@@ -31,6 +31,20 @@ if __windows;then
     export SHELLOPTS
     alias open='__open'
     alias atom='__atom'
+    function xcd() {
+        path=`cat /dev/clipboard`
+        __extend_cd "${path//\\/\/}"
+    }
+    function xpath() {
+        path=`cat /dev/clipboard`
+        echo "${path//\\/\/}" > /dev/clipboard
+    }
+    function xatom() {
+        path=`cat /dev/clipboard`
+        atom "${path//\\/\/}"
+    }
+fi
+if __cygwin;then
     if [ -n "$_pa_" ];then
       _pa_="`cygpath "$_pa_"`"
       if ! [ -d "$_pa_" ];then
@@ -48,17 +62,15 @@ if __windows;then
             C:/cygwin/CygwinEx.bat "'`cygpath -w "$p"`'"
         fi
     }
-    function xcd() {
-        path=`cat /dev/clipboard`
-        __extend_cd "${path//\\/\/}"
-    }
-    function xpath() {
-        path=`cat /dev/clipboard`
-        echo "${path//\\/\/}" > /dev/clipboard
-    }
-    function xatom() {
-        path=`cat /dev/clipboard`
-        atom "${path//\\/\/}"
+fi
+if __mingw;then
+    alias xn='node ~/command/xn'
+    alias xmongo='node ~/command/xmongo'
+    alias xmysql='node ~/command/xmysql'
+    alias xoracle='node ~/command/xoracle'
+    alias xj='node ~/command/xj'
+    function new() {
+        mintty -D
     }
 fi
 
@@ -257,4 +269,3 @@ if __mac;then
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
     [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 fi
-

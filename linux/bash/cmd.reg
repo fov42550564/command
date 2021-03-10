@@ -3,9 +3,9 @@ Windows Registry Editor Version 5.00
 [HKEY_CLASSES_ROOT\Directory\Background\shell\mycmd]
 @="mycmd"
 [HKEY_CLASSES_ROOT\Directory\Background\shell\mycmd\command]
-@="C:\\cygwin\\CmdEx.bat \"%V\""
+@="C:\\CmdEx.bat \"%V\""
 
 [HKEY_CLASSES_ROOT\AllFilesystemObjects\shell\mycmd]
 @="mycmd"
 [HKEY_CLASSES_ROOT\AllFilesystemObjects\shell\mycmd\command]
-@="C:\\cygwin\\CmdEx.bat \"%1\""
+@="C:\\CmdEx.bat \"%1\""

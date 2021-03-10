@@ -1,0 +1,7 @@
+Windows Registry Editor Version 5.00
+
+[-HKEY_CLASSES_ROOT\Directory\Background\shell\mycmd]
+[-HKEY_CLASSES_ROOT\Directory\Background\shell\mycmd\command]
+
+[-HKEY_CLASSES_ROOT\AllFilesystemObjects\shell\mycmd]
+[-HKEY_CLASSES_ROOT\AllFilesystemObjects\shell\mycmd\command]

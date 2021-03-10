@@ -3,9 +3,9 @@ Windows Registry Editor Version 5.00
 [HKEY_CLASSES_ROOT\Directory\Background\shell\cygwin]
 @="cygwin"
 [HKEY_CLASSES_ROOT\Directory\Background\shell\cygwin\command]
-@="C:\\cygwin\\CygwinEx.bat \"%V\""
+@="C:\\CygwinEx.bat \"%V\""
 
 [HKEY_CLASSES_ROOT\AllFilesystemObjects\shell\cygwin]
 @="cygwin"
 [HKEY_CLASSES_ROOT\AllFilesystemObjects\shell\cygwin\command]
-@="C:\\cygwin\\CygwinEx.bat \"%1\""
+@="C:\\CygwinEx.bat \"%1\""

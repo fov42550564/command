@@ -1,12 +1,17 @@
-windows 平台
+cygwin 平台
 一、鼠标右键
 1.修改CygwinEx.bat和cygwin.reg的路径
-2.将CygwinEx.bat  CmdEx.bat拷贝到/目录下
-3.双击cygwin.reg添加注册表
-3.双击cmd.reg添加注册表
-3.双击copy_path.reg添加注册表
+2.将CygwinEx.bat拷贝到C:目录下
+3.将CmdEx.bat拷贝到C:目录下
+4.双击cygwin.reg添加注册表
+5.双击cmd.reg添加注册表
+6.双击copy_path.reg添加注册表
 
 二、添加环境变量
 WINDOWS_HOME=C:\Users\Admin
 NODE_HOME=C:\Program Files\nodejs
 NODE_PATH=C:\Users\Admin\AppData\Roaming\npm\node_modules
+
+mingw 平台
+1.将CmdEx.bat拷贝到C:目录下
+2.双击cmd.reg添加注册表
