@@ -6,10 +6,10 @@
 # dispcripe: install for linux bashrc
 # CopyRight@fangyunjiang[42550564@qq.com]
 #############################################
+source ~/command/common
 
 _src_path=~/command/linux
 _backdir=".linux_backup"
-_platform=""
 
 function install_single()
 {
@@ -29,10 +29,10 @@ function install()
     mkdir -p ~/.dest_path
     mkdir -p ~/.xn_history
 
-    if [ "$_platform" != "MAC" ];then
+    if ! __mac;then
       mkdir -p ~/.Trash
     fi
-    if [ "$_platform" = "MAC" -o "$_platform" = "UNI" ];then
+    if __mac || __linux;then
         sudo chmod 666 /etc/profile
         sudo sed -i '/\/etc\/bashrc/a\\t[ -r ~/.bashrc ] && . ~/.bashrc' /etc/profile
         sudo chmod 444 /etc/profile
@@ -41,11 +41,11 @@ function install()
     install_single bash/.inputrc .inputrc
     install_single bash/.gitconfig .gitconfig
     #install_single bash/.mongorc.js .mongorc.js
-    if [ "$_platform" = "MIN" -o "$_platform" = "CYG" ];then
+    if __windows;then
         install_single bash/.minttyrc .minttyrc
         install_single bash/.dir_colors .dir_colors
     fi
-    if [ "$_platform" = "CYG" ];then
+    if __cygwin;then
         cd ~
         ln -s $WINDOWS_HOME/AppData/Roaming/npm/node_modules node_modules
         [ -a /cygdrive/c ] &&  ln -s /cygdrive/c c
@@ -57,13 +57,4 @@ function install()
     fi
 }
 
-function main()
-{
-    _platform=`uname`
-    echo "install for platform: ${_platform}"
-    _platform=${_platform:0:3}
-    install
-    echo "done"
-}
-
-main "$@"
+install

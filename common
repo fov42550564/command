@@ -109,7 +109,7 @@ function __mac()
 function __linux()
 {
 ########################################
-#Usage: __mac
+#Usage: __linux
 #	  check if is linux system
 ########################################
   [ $(uname) = "Linux" ]&&return $_TRUE_||return $_FALSE_
