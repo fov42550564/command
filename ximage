@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
+const request = require('request');
 const fs = require("fs-extra");
+const stream = require('stream');
 const path = require("path");
-const rl = require('readline');
 
 function createBase64(imageFile, distFile) {
     const extname = path.extname(imageFile);
@@ -40,12 +41,19 @@ function createBase64(imageFile, distFile) {
 
     console.log("生成文件："+ distFile);
 }
-function replaceImageFileToBase64(htmlFile, distFile) {
-    const srcPath = path.dirname(htmlFile);
-    const lineReader = rl.createInterface({
-        input: fs.createReadStream(htmlFile)
+function streamToBuffer (stream, encoding) {
+    return new Promise(resolve => {
+        const buffers = [];
+        stream.on('error', () => resolve(null));
+        stream.on('data', (data) => buffers.push(data));
+        stream.on('end', () => resolve(!encoding ? Buffer.concat(buffers) : Buffer.concat(buffers).toString(encoding)));
     });
-    lineReader.on('line', function (line) {
+}
+async function replaceImageFileToBase64(htmlFile, distFile, nourl) {
+    const srcPath = path.dirname(htmlFile);
+    const lines = fs.readFileSync(htmlFile, 'utf-8').split('\n');
+    fs.writeFileSync(distFile, '');
+    for (let line of lines) {
         if (/src="[^ ]*"/.test(line)) {
             const filename = line.replace(/.*src="([^"]*)".*/, '$1');
             if (!/^https?:\/\//.test(filename)) {
@@ -57,26 +65,32 @@ function replaceImageFileToBase64(htmlFile, distFile) {
                     const base64 = header+imageBuf.toString("base64")+'"';
                     line = line.replace(/src="[^ ]*"/, base64);
                 }
+            } else if (nourl !== 'nourl') {
+                const extname = path.extname(filename)||'.jpg';
+                const header = 'src="data:image/'+extname.substr(1)+';base64,'
+                let base64 = await streamToBuffer(request(filename), 'base64');
+                base64 = header+base64+'"';
+                line = line.replace(/src="[^ ]*"/, base64);
             }
         }
         fs.appendFileSync(distFile, line+'\n');
-    });
+    }
     console.log(`已经将文件 ${htmlFile} 中的图片全部替换为base64到文件 ${distFile} 中`);
 }
 
-function main(srcFile, distFile) {
+function main(srcFile, distFile, nourl) {
     if (srcFile === '-h' || srcFile === '--help') {
         console.log('1. 将图片转为base64文件，可以是文件夹，html文件或js文件，直接用html|js使用原来的文件名');
         console.log('   ximage src.jpg(.png|.gif) [xx/]dest.html(.js)|html|js]');
         console.log('2. 将html文件中的图片全部替换为base64');
-        return console.log('   ximage src.html dest.html');
+        return console.log('   ximage src.html dest.html [nourl]');
     }
     if (!fs.existsSync(srcFile)) {
         return console.log(`文件: ${srcFile} 不存在`);
     }
     const extname = path.extname(srcFile);
     if (extname === '.html') {
-        replaceImageFileToBase64(srcFile, distFile);
+        replaceImageFileToBase64(srcFile, distFile, nourl);
     } else {
         createBase64(srcFile, distFile);
     }
