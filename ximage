@@ -54,8 +54,8 @@ async function replaceImageFileToBase64(htmlFile, distFile, nourl) {
     const lines = fs.readFileSync(htmlFile, 'utf-8').split('\n');
     fs.writeFileSync(distFile, '');
     for (let line of lines) {
-        if (/src="[^ ]*"/.test(line)) {
-            const filename = line.replace(/.*src="([^"]*)".*/, '$1');
+        if (/.*src=['"][^'"]*['"].*/.test(line)) {
+            const filename = line.replace(/.*src=['"]([^'"]*)['"].*/, '$1').trim();
             if (!/^https?:\/\//.test(filename)) {
                 const extname = path.extname(filename);
                 const basename = path.basename(filename);
@@ -63,14 +63,14 @@ async function replaceImageFileToBase64(htmlFile, distFile, nourl) {
                     const header = 'src="data:image/'+extname.substr(1)+';base64,'
                     const imageBuf = fs.readFileSync(path.resolve(srcPath, filename));
                     const base64 = header+imageBuf.toString("base64")+'"';
-                    line = line.replace(/src="[^ ]*"/, base64);
+                    line = line.replace(/src=['"]([^'"]*)['"]/, base64);
                 }
             } else if (nourl !== 'nourl') {
                 const extname = path.extname(filename)||'.jpg';
                 const header = 'src="data:image/'+extname.substr(1)+';base64,'
                 let base64 = await streamToBuffer(request(filename), 'base64');
                 base64 = header+base64+'"';
-                line = line.replace(/src="[^ ]*"/, base64);
+                line = line.replace(/src=['"]([^'"]*)['"]/, base64);
             }
         }
         fs.appendFileSync(distFile, line+'\n');
