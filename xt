@@ -195,6 +195,8 @@ function gen_pc_code() {
 
     cd "${path}/project/App/shared/pages/client/pages/${oldModule}"
     xr "$oldName:$newName,$_oldName:$_newName" -c "${oldName}s" force
+    cd "${path}/project/App/shared/pages/client/pages/${oldModule}${newName}s"
+    xfind -t "actions/${oldModule}" -s "actions/${newModule}"
     mkdir -p "${path}/project/App/shared/pages/client/pages/${newModule}"
     mv "${path}/project/App/shared/pages/client/pages/${oldModule}${newName}s" "${path}/project/App/shared/pages/client/pages/${newModule}"
 
